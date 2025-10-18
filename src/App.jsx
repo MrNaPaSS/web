@@ -3466,8 +3466,9 @@ ${isLoss ? `
 
             <Card 
               onClick={() => {
-                if (!isForexMarketOpen()) {
-                  alert('Форекс рынок закрыт в выходные дни. Доступен только OTC режим.')
+                // Проверяем статус форекс рынка только для форекс режима
+                if (selectedMarket === 'forex' && !isForexMarketOpen()) {
+                  alert('Форекс рынок закрыт в выходные дни. Переключитесь на OTC режим.')
                   return
                 }
                 setSelectedMode('single')
@@ -3475,7 +3476,7 @@ ${isLoss ? `
                 clearSignalState()
                 setCurrentScreen('signal-selection')
               }}
-              className={`glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-purple-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${!isForexMarketOpen() ? 'opacity-60 cursor-not-allowed' : ''}`}
+              className={`glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-purple-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${selectedMarket === 'forex' && !isForexMarketOpen() ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -3485,7 +3486,7 @@ ${isLoss ? `
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">Одиночные сигналы</h3>
                     <p className="text-slate-400 text-sm mb-3">По одному сигналу за раз</p>
-                    {!isForexMarketOpen() && (
+                    {selectedMarket === 'forex' && !isForexMarketOpen() && (
                       <p className="text-xs text-rose-400 mb-2">
                         Форекс рынок закрыт (выходные)
                       </p>
