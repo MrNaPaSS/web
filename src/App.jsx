@@ -1654,7 +1654,16 @@ ${isLoss ? `
     setSignalTimer(0)
     setIsWaitingFeedback(false)
     
+    // Очищаем localStorage
+    localStorage.removeItem('pendingSignal')
+    localStorage.removeItem('signalTimer')
+    localStorage.removeItem('isWaitingFeedback')
+    localStorage.removeItem('signalStartTime')
+    
     alert(`✅ Фидбек принят: ${isSuccess ? 'Успешная сделка' : 'Убыточная сделка'}`)
+    
+    // Переходим на главное меню
+    setCurrentScreen('welcome')
   }
 
   // Проверка блокировки навигации

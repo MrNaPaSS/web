@@ -12,8 +12,23 @@ from datetime import datetime
 from functools import wraps
 
 # Добавляем путь к боту для импорта модулей
-BOT_DIR = 'e:/TelegramBot_RDP'
+BOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.insert(0, BOT_DIR)
+print(f'[DEBUG] BOT_DIR: {BOT_DIR}')
+print(f'[DEBUG] sys.path[0]: {sys.path[0]}')
+print(f'[DEBUG] signal_generator exists: {os.path.exists(os.path.join(BOT_DIR, "signal_generator.py"))}')
+
+# Проверим все файлы в директории
+if os.path.exists(BOT_DIR):
+    files = os.listdir(BOT_DIR)
+    python_files = [f for f in files if f.endswith('.py')]
+    print(f'[DEBUG] Python files in BOT_DIR: {python_files[:10]}')
+
+# Попробуем найти signal_generator.py в корневой директории
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+sys.path.insert(0, ROOT_DIR)
+print(f'[DEBUG] ROOT_DIR: {ROOT_DIR}')
+print(f'[DEBUG] signal_generator exists in ROOT: {os.path.exists(os.path.join(ROOT_DIR, "signal_generator.py"))}')
 
 # Импортируем генераторы сигналов из основного бота
 from signal_generator import SignalGenerator
@@ -147,9 +162,9 @@ async def generate_signal():
                 if best_signals:
                     for signal in best_signals:
                         print(f'[DEBUG] Обрабатываем Forex сигнал: {signal.pair} - {signal.direction}')
-                            signals.append({
-                                'signal_id': f'forex_{signal.pair.replace("/", "_")}_{int(datetime.now().timestamp())}',
-                                'pair': signal.pair,
+                        signals.append({
+                            'signal_id': f'forex_{signal.pair.replace("/", "_")}_{int(datetime.now().timestamp())}',
+                            'pair': signal.pair,
                             'type': signal.direction,
                             'direction': signal.direction,
                             'entry': signal.entry_price,
