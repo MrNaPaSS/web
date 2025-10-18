@@ -1149,7 +1149,7 @@ if __name__ == '__main__':
     print('=' * 60)
     print('[START] Signal API Server')
     print('=' * 60)
-    print(f'[URL] http://localhost:5002')
+    print(f'[URL] http://localhost:5000')
     print(f'[DIR] Bot Directory: {BOT_DIR}')
     print(f'[OK] Forex Generator: Initialized')
     print(f'[OK] OTC Generator: Initialized')
