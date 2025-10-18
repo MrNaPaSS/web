@@ -446,7 +446,7 @@ def get_signal_stats():
         feedback_data = stats.get('feedback', [])
         total_signals = len(feedback_data)
         successful_signals = len([f for f in feedback_data if f.get('feedback') == 'success'])
-        failed_signals = len([f for f in feedback_data if f.get('feedback') == 'failure'])
+        failed_signals = len([f for f in feedback_data if f.get('feedback') == 'failed'])
         
         win_rate = (successful_signals / total_signals * 100) if total_signals > 0 else 0.0
         
@@ -716,9 +716,13 @@ def get_all_users():
         # Загружаем авторизованных пользователей
         authorized_users = []
         try:
-            with open('authorized_users.json', 'r', encoding='utf-8') as f:
+            authorized_file = os.path.join(ROOT_DIR, 'authorized_users.json')
+            with open(authorized_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                authorized_users = data.get('authorized_users', [])
+                # Пользователи хранятся как объекты с ключами по telegram_id
+                for key, user_data in data.items():
+                    if key != 'authorized_users' and key != 'last_updated' and isinstance(user_data, dict):
+                        authorized_users.append(user_data)
         except FileNotFoundError:
             print('[WARNING] authorized_users.json не найден')
         
