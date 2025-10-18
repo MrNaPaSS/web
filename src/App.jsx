@@ -13,8 +13,8 @@ function App() {
   
   // Функция для определения правильного API URL
   const getApiUrl = (port) => {
-    // Используем Cloudflare туннель для продакшн
-    return `https://accessibility-gallery-column-olympus.trycloudflare.com`
+    // Временно используем localhost для тестирования
+    return `http://localhost:${port}`
   }
   
   const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
