@@ -982,10 +982,42 @@ function App() {
     }
   ] 
 
-  const deleteUser = (userId) => {
-    // В реальном приложении здесь будет API запрос
-    console.log(`Удаление пользователя ${userId}`)
-    alert(`Пользователь ${userId} удалён из бота`)
+  const deleteUser = async (userIdToDelete) => {
+    try {
+      // Подтверждение удаления
+      const confirmed = confirm(`Вы уверены, что хотите удалить пользователя ${userIdToDelete}? Это действие нельзя отменить.`)
+      if (!confirmed) return
+
+      console.log(`🗑️ Удаление пользователя ${userIdToDelete}`)
+      
+      // Отправляем запрос на удаление
+      const response = await fetch(`${getApiUrl(5000)}/api/admin/delete-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userIdToDelete,  // ID пользователя для удаления
+          admin_user_id: userId  // ID текущего пользователя (админа)
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        console.log('✅ Пользователь успешно удален')
+        alert(`✅ Пользователь ${userIdToDelete} успешно удален из бота`)
+        
+        // Обновляем список пользователей в админ панели
+        loadAdminStats()
+      } else {
+        console.error('❌ Ошибка удаления:', result.error)
+        alert(`❌ Ошибка удаления: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при удалении пользователя:', error)
+      alert(`❌ Ошибка при удалении пользователя: ${error.message}`)
+    }
   }
 
   // Функция анализа сигнала через OpenRouter GPT-4o mini
@@ -2588,15 +2620,13 @@ ${isLoss ? `
                               {signal.pair || `${signal.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`}
                             </h3>
                             <div className="flex items-center gap-2 mt-1">
-                              {signal.direction && (
-                                <Badge className={`${
-                                  signal.direction === 'BUY' 
-                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                                    : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                                } text-xs`}>
-                                  {signal.direction}
-                                </Badge>
-                              )}
+                              <Badge className={`${
+                                signal.direction === 'BUY' 
+                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                                  : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                              } text-xs`}>
+                                {signal.direction || 'SELL'}
+                              </Badge>
                               <Badge className={`${
                                 signal.signal_type === 'forex' 
                                   ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
@@ -2678,15 +2708,13 @@ ${isLoss ? `
                  {selectedSignalForAnalysis.pair || `${selectedSignalForAnalysis.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`}
                </h2>
                <div className="flex items-center gap-2 mt-1">
-                 {selectedSignalForAnalysis.direction && (
-                   <Badge className={`${
-                     selectedSignalForAnalysis.direction === 'BUY' 
-                       ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                       : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                   }`}>
-                     {selectedSignalForAnalysis.direction}
-                   </Badge>
-                 )}
+                 <Badge className={`${
+                   selectedSignalForAnalysis.direction === 'BUY' 
+                     ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                     : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                 }`}>
+                   {selectedSignalForAnalysis.direction || 'SELL'}
+                 </Badge>
                  <Badge className={`${
                    selectedSignalForAnalysis.signal_type === 'forex' 
                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
@@ -2720,14 +2748,12 @@ ${isLoss ? `
                     <span className="text-slate-400 text-xs block mb-1">Тип сигнала</span>
                     <span className="text-white font-bold">{selectedSignalForAnalysis.signal_type.toUpperCase()}</span>
                   </div>
-                  {selectedSignalForAnalysis.direction && (
-                    <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                      <span className="text-slate-400 text-xs block mb-1">Направление</span>
-                      <span className={`font-bold ${selectedSignalForAnalysis.direction === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {selectedSignalForAnalysis.direction}
-                      </span>
-                    </div>
-                  )}
+                  <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
+                    <span className="text-slate-400 text-xs block mb-1">Направление</span>
+                    <span className={`font-bold ${(selectedSignalForAnalysis.direction || 'SELL') === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {selectedSignalForAnalysis.direction || 'SELL'}
+                    </span>
+                  </div>
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
                     <span className="text-slate-400 text-xs block mb-1">Результат</span>
                     <span className={`font-bold ${selectedSignalForAnalysis.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>

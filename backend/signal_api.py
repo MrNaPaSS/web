@@ -798,6 +798,71 @@ def get_all_users():
         }), 500
 
 
+@app.route('/api/admin/delete-user', methods=['POST'])
+def delete_user():
+    """Удаление пользователя админом"""
+    try:
+        data = request.get_json()
+        user_id_to_delete = data.get('user_id')
+        admin_user_id = data.get('admin_user_id')
+        
+        print(f'[ADMIN] Запрос удаления пользователя {user_id_to_delete} от админа {admin_user_id}')
+        
+        # Проверяем, что это админ
+        if str(admin_user_id) != '511442168':
+            return jsonify({
+                'success': False,
+                'error': 'Доступ только для администратора'
+            }), 403
+        
+        # Проверяем, что не пытаемся удалить самого админа
+        if str(user_id_to_delete) == '511442168':
+            return jsonify({
+                'success': False,
+                'error': 'Нельзя удалить администратора'
+            }), 400
+        
+        # Загружаем авторизованных пользователей
+        authorized_file = os.path.join(ROOT_DIR, 'authorized_users.json')
+        try:
+            with open(authorized_file, 'r', encoding='utf-8') as f:
+                authorized_data = json.load(f)
+        except FileNotFoundError:
+            return jsonify({
+                'success': False,
+                'error': 'Файл пользователей не найден'
+            }), 404
+        
+        # Удаляем пользователя
+        user_id_str = str(user_id_to_delete)
+        if user_id_str in authorized_data:
+            del authorized_data[user_id_str]
+            authorized_data['last_updated'] = datetime.now().isoformat()
+            
+            # Сохраняем обновленные данные
+            with open(authorized_file, 'w', encoding='utf-8') as f:
+                json.dump(authorized_data, f, ensure_ascii=False, indent=2)
+            
+            print(f'[ADMIN] Пользователь {user_id_to_delete} успешно удален')
+            
+            return jsonify({
+                'success': True,
+                'message': f'Пользователь {user_id_to_delete} успешно удален'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Пользователь не найден'
+            }), 404
+            
+    except Exception as e:
+        print(f'[ERROR] Ошибка удаления пользователя: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Проверка работоспособности API"""
