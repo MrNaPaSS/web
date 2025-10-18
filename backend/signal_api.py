@@ -587,6 +587,47 @@ def test_otc_generator():
         })
 
 
+@app.route('/api/user/signals-history', methods=['GET'])
+def get_user_signals_history():
+    """Получение истории сигналов пользователя для аналитики"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id parameter is required'
+            }), 400
+        
+        print(f'[HISTORY] Запрос истории сигналов для пользователя: {user_id}')
+        
+        # Загружаем статистику
+        stats = load_signal_stats()
+        
+        # Фильтруем сигналы по пользователю
+        user_signals = []
+        if 'signals' in stats:
+            for signal in stats['signals']:
+                if signal.get('user_id') == str(user_id):
+                    user_signals.append(signal)
+        
+        # Сортируем по дате (новые сначала)
+        user_signals.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        print(f'[HISTORY] Найдено {len(user_signals)} сигналов для пользователя {user_id}')
+        
+        return jsonify({
+            'success': True,
+            'signals': user_signals
+        })
+    
+    except Exception as e:
+        print(f'[ERROR] Ошибка получения истории сигналов: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Проверка работоспособности API"""

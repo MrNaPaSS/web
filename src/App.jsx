@@ -78,6 +78,9 @@ function App() {
     otc: []
   })
 
+  // User signals history - история сигналов пользователя для аналитики
+  const [userSignalsHistory, setUserSignalsHistory] = useState([])
+
   // Загрузка метрик рынка
   const loadMarketMetrics = async () => {
     try {
@@ -167,6 +170,35 @@ function App() {
         avgSignalsPerDay: 0.0,
         signalsByMonth: []
       })
+    }
+  }
+
+  // Загрузка истории сигналов пользователя для аналитики
+  const loadUserSignalsHistory = async () => {
+    try {
+      console.log('📊 Загружаем историю сигналов пользователя:', userId)
+      
+      const response = await fetch(`${getApiUrl(5000)}/api/user/signals-history?user_id=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Получена история сигналов:', data)
+        
+        setUserSignalsHistory(data.signals || [])
+      } else {
+        console.error('❌ Ошибка загрузки истории сигналов:', response.status)
+        // Fallback - пустая история
+        setUserSignalsHistory([])
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки истории сигналов:', error)
+      // Fallback - пустая история
+      setUserSignalsHistory([])
     }
   }
 
