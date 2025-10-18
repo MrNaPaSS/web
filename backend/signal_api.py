@@ -8,6 +8,7 @@ import sys
 import os
 import json
 import asyncio
+import requests
 from datetime import datetime
 from functools import wraps
 
@@ -945,6 +946,20 @@ def delete_user():
             # Сохраняем обновленные данные
             with open(authorized_file, 'w', encoding='utf-8') as f:
                 json.dump(authorized_data, f, ensure_ascii=False, indent=2)
+            
+            # Уведомляем Telegram бот об удалении пользователя
+            try:
+                # Импортируем функцию из telegram_bot.py
+                sys.path.append(ROOT_DIR)
+                from telegram_bot import remove_user_from_telegram_bot
+                
+                success, message = remove_user_from_telegram_bot(user_id_to_delete)
+                if success:
+                    print(f'[ADMIN] Пользователь {user_id_to_delete} удален из Telegram бота')
+                else:
+                    print(f'[ADMIN] Ошибка удаления пользователя {user_id_to_delete} из Telegram бота: {message}')
+            except Exception as e:
+                print(f'[ADMIN] Ошибка импорта функции удаления пользователя: {e}')
             
             # Также удаляем все сигналы пользователя из статистики
             stats = load_signal_stats()
