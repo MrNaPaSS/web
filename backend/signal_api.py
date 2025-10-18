@@ -1007,7 +1007,9 @@ def get_access_requests():
                 # Запросы хранятся как объекты с ключами по telegram_id
                 for key, request_data in data.items():
                     if key != 'last_updated' and isinstance(request_data, dict):
-                        access_requests.append(request_data)
+                        # Показываем только pending заявки
+                        if request_data.get('status') == 'pending':
+                            access_requests.append(request_data)
         except FileNotFoundError:
             print('[WARNING] access_requests.json не найден')
         

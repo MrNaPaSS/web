@@ -323,9 +323,9 @@ function App() {
   }
 
   // Одобрение заявки на доступ
-  const approveAccessRequest = async (userId) => {
+  const approveAccessRequest = async (userIdToApprove) => {
     try {
-      console.log('✅ Одобряем заявку для пользователя:', userId)
+      console.log('✅ Одобряем заявку для пользователя:', userIdToApprove)
       
       const response = await fetch(`${getApiUrl(5000)}/api/admin/approve-access`, {
         method: 'POST',
@@ -333,8 +333,8 @@ function App() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          user_id: userId,
-          admin_user_id: userId // ID текущего админа из состояния
+          user_id: userIdToApprove,
+          admin_user_id: userId // ID текущего админа
         })
       })
       
@@ -342,7 +342,7 @@ function App() {
       
       if (data.success) {
         console.log('✅ Заявка одобрена')
-        alert(`✅ Пользователь ${userId} добавлен в систему`)
+        alert(`✅ Пользователь ${userIdToApprove} добавлен в систему`)
         
         // Обновляем данные
         loadAdminStats()
