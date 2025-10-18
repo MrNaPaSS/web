@@ -111,10 +111,12 @@ function App() {
     }
   }
 
-  // Загрузка реальной статистики из API
+  // Загрузка реальной статистики конкретного пользователя из API
   const loadUserStats = async () => {
     try {
-      const response = await fetch('/api/signal/stats', {
+      console.log('📊 Загружаем статистику пользователя:', userId)
+      
+      const response = await fetch(`${getApiUrl(5000)}/api/user/stats?user_id=${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -123,6 +125,8 @@ function App() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Получена статистика пользователя:', data)
+        
         setUserStats({
           totalSignals: data.total_signals || 0,
           successfulSignals: data.successful_signals || 0,
@@ -134,12 +138,35 @@ function App() {
           avgSignalsPerDay: data.avg_signals_per_day || 0.0,
           signalsByMonth: data.signals_by_month || []
         })
-        console.log('✅ Статистика загружена:', data)
       } else {
         console.error('❌ Ошибка загрузки статистики:', response.status)
+        // Fallback - пустая статистика
+        setUserStats({
+          totalSignals: 0,
+          successfulSignals: 0,
+          failedSignals: 0,
+          winRate: 0.0,
+          bestPair: 'N/A',
+          worstPair: 'N/A',
+          tradingDays: 0,
+          avgSignalsPerDay: 0.0,
+          signalsByMonth: []
+        })
       }
     } catch (error) {
       console.error('❌ Ошибка загрузки статистики:', error)
+      // Fallback - пустая статистика
+      setUserStats({
+        totalSignals: 0,
+        successfulSignals: 0,
+        failedSignals: 0,
+        winRate: 0.0,
+        bestPair: 'N/A',
+        worstPair: 'N/A',
+        tradingDays: 0,
+        avgSignalsPerDay: 0.0,
+        signalsByMonth: []
+      })
     }
   }
 
@@ -1663,8 +1690,8 @@ ${isLoss ? `
     
     alert(`✅ Фидбек принят: ${isSuccess ? 'Успешная сделка' : 'Убыточная сделка'}`)
     
-    // Переходим на главное меню
-    setCurrentScreen('welcome')
+    // Переходим в статистику пользователя
+    setCurrentScreen('user-stats')
   }
 
   // Проверка блокировки навигации
@@ -4789,4 +4816,5 @@ function AppWrapper() {
 }
 
 export default AppWrapper
+
 
