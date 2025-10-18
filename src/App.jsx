@@ -273,18 +273,17 @@ function App() {
       }
       
       let users = []
+      let onlineUsers = 0
       if (usersResponse.ok) {
         const usersData = await usersResponse.json()
         users = usersData.users || []
-        console.log('✅ Получены пользователи:', users.length)
+        onlineUsers = usersData.online_users || 0  // Количество онлайн пользователей
+        console.log('✅ Получены пользователи:', users.length, 'онлайн:', onlineUsers)
       }
       
-      // Подсчитываем активных пользователей (с хотя бы одним сигналом)
-      const activeUsers = users.filter(user => user.signals > 0).length
-      
       setAdminStats({
-        totalUsers: users.length,
-        activeUsers: activeUsers,
+        totalUsers: users.length,  // Общее количество подключенных пользователей
+        activeUsers: onlineUsers,  // Количество онлайн пользователей
         totalSignals: totalSignals,
         successfulSignals: successfulSignals,
         failedSignals: failedSignals,
@@ -1020,6 +1019,26 @@ function App() {
     }
   }
 
+  // Функция отправки активности пользователя
+  const sendUserActivity = async () => {
+    if (!userId) return
+    
+    try {
+      await fetch(`${getApiUrl(5000)}/api/user/activity`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          source: 'web'
+        })
+      })
+    } catch (error) {
+      console.log('⚠️ Не удалось отправить активность:', error)
+    }
+  }
+
   // Функция анализа сигнала через OpenRouter GPT-4o mini
   const analyzeSignal = async (signal) => {
     setIsAnalyzing(true)
@@ -1387,6 +1406,21 @@ ${isLoss ? `
       return () => clearInterval(interval)
     }
   }, [lastTop3Generation])
+
+  // Отправляем активность пользователя при загрузке и каждые 2 минуты
+  useEffect(() => {
+    if (userId && isAuthorized) {
+      // Отправляем сразу
+      sendUserActivity()
+      
+      // Отправляем каждые 2 минуты
+      const interval = setInterval(() => {
+        sendUserActivity()
+      }, 2 * 60 * 1000) // 2 минуты
+      
+      return () => clearInterval(interval)
+    }
+  }, [userId, isAuthorized])
 
   // Загрузка метрик рынка при выборе режима single
   useEffect(() => {
@@ -3935,7 +3969,7 @@ ${isLoss ? `
             </Card>
             <Card className="glass-effect border-cyan-500/20 p-4 card-3d shadow-xl shadow-cyan-500/10">
               <div className="flex flex-col">
-                <span className="text-cyan-400 text-xs font-medium mb-1">Активных</span>
+                <span className="text-cyan-400 text-xs font-medium mb-1">Онлайн</span>
                 <span className="text-2xl font-bold text-white">{adminStats.activeUsers.toLocaleString()}</span>
               </div>
             </Card>

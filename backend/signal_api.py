@@ -55,6 +55,7 @@ otc_generator = PowerfulOTCGenerator()
 # Файлы статистики
 SIGNAL_STATS_FILE = os.path.join(ROOT_DIR, 'signal_stats.json')
 AUTHORIZED_USERS_FILE = os.path.join(ROOT_DIR, 'authorized_users.json')
+ACTIVE_USERS_FILE = os.path.join(ROOT_DIR, 'active_users.json')
 
 def load_signal_stats():
     """Загрузка статистики сигналов"""
@@ -74,6 +75,63 @@ def save_signal_stats(stats):
             json.dump(stats, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f'[ERROR] Ошибка сохранения статистики: {e}')
+
+def load_active_users():
+    """Загрузка активных пользователей"""
+    try:
+        if os.path.exists(ACTIVE_USERS_FILE):
+            with open(ACTIVE_USERS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return {'active_users': {}, 'last_updated': datetime.now().isoformat()}
+    except Exception as e:
+        print(f'[ERROR] Ошибка загрузки активных пользователей: {e}')
+        return {'active_users': {}, 'last_updated': datetime.now().isoformat()}
+
+def save_active_users(data):
+    """Сохранение активных пользователей"""
+    try:
+        with open(ACTIVE_USERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'[ERROR] Ошибка сохранения активных пользователей: {e}')
+
+def update_user_activity(user_id, source='web'):
+    """Обновление активности пользователя"""
+    try:
+        data = load_active_users()
+        current_time = datetime.now().isoformat()
+        
+        data['active_users'][str(user_id)] = {
+            'last_seen': current_time,
+            'source': source,  # 'web' или 'telegram'
+            'is_online': True
+        }
+        data['last_updated'] = current_time
+        
+        save_active_users(data)
+        print(f'[ACTIVITY] Обновлена активность пользователя {user_id} из {source}')
+    except Exception as e:
+        print(f'[ERROR] Ошибка обновления активности: {e}')
+
+def get_online_users_count():
+    """Получение количества онлайн пользователей (активных за последние 5 минут)"""
+    try:
+        data = load_active_users()
+        current_time = datetime.now()
+        online_count = 0
+        
+        for user_id, activity in data['active_users'].items():
+            last_seen = datetime.fromisoformat(activity['last_seen'])
+            time_diff = (current_time - last_seen).total_seconds()
+            
+            # Считаем онлайн если активность была менее 5 минут назад
+            if time_diff < 300:  # 5 минут
+                online_count += 1
+        
+        return online_count
+    except Exception as e:
+        print(f'[ERROR] Ошибка подсчета онлайн пользователей: {e}')
+        return 0
 
 def save_feedback_to_stats(user_id, signal_id, feedback):
     """Сохранение фидбека в массив feedback"""
@@ -783,11 +841,16 @@ def get_all_users():
         # Сортируем по количеству сигналов
         users_with_stats.sort(key=lambda u: u['signals'], reverse=True)
         
-        print(f'[ADMIN] Найдено {len(users_with_stats)} пользователей')
+        # Получаем количество онлайн пользователей
+        online_count = get_online_users_count()
+        
+        print(f'[ADMIN] Найдено {len(users_with_stats)} пользователей, {online_count} онлайн')
         
         return jsonify({
             'success': True,
-            'users': users_with_stats
+            'users': users_with_stats,
+            'total_users': len(users_with_stats),
+            'online_users': online_count
         })
     
     except Exception as e:
@@ -797,6 +860,35 @@ def get_all_users():
             'error': str(e)
         }), 500
 
+
+@app.route('/api/user/activity', methods=['POST'])
+def update_activity():
+    """Обновление активности пользователя"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        source = data.get('source', 'web')  # 'web' или 'telegram'
+        
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id required'
+            }), 400
+        
+        # Обновляем активность пользователя
+        update_user_activity(user_id, source)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Activity updated'
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка обновления активности: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/admin/delete-user', methods=['POST'])
 def delete_user():
