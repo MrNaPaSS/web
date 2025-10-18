@@ -81,6 +81,16 @@ function App() {
   // User signals history - история сигналов пользователя для аналитики
   const [userSignalsHistory, setUserSignalsHistory] = useState([])
 
+  // Admin statistics - реальные данные для админ панели
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalSignals: 0,
+    successfulSignals: 0,
+    failedSignals: 0,
+    topUsers: []
+  })
+
   // Загрузка метрик рынка
   const loadMarketMetrics = async () => {
     try {
@@ -199,6 +209,72 @@ function App() {
       console.error('❌ Ошибка загрузки истории сигналов:', error)
       // Fallback - пустая история
       setUserSignalsHistory([])
+    }
+  }
+
+  // Загрузка админ статистики
+  const loadAdminStats = async () => {
+    try {
+      console.log('📊 Загружаем админ статистику...')
+      
+      // Загружаем общую статистику сигналов
+      const statsResponse = await fetch(`${getApiUrl(5000)}/api/signal/stats`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      // Загружаем всех пользователей
+      const usersResponse = await fetch(`${getApiUrl(5000)}/api/users/all`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      let totalSignals = 0
+      let successfulSignals = 0
+      let failedSignals = 0
+      
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        totalSignals = statsData.total_signals || 0
+        successfulSignals = statsData.successful_signals || 0
+        failedSignals = statsData.failed_signals || 0
+        console.log('✅ Получена общая статистика:', statsData)
+      }
+      
+      let users = []
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json()
+        users = usersData.users || []
+        console.log('✅ Получены пользователи:', users.length)
+      }
+      
+      // Подсчитываем активных пользователей (с хотя бы одним сигналом)
+      const activeUsers = users.filter(user => user.signals > 0).length
+      
+      setAdminStats({
+        totalUsers: users.length,
+        activeUsers: activeUsers,
+        totalSignals: totalSignals,
+        successfulSignals: successfulSignals,
+        failedSignals: failedSignals,
+        topUsers: users.slice(0, 10) // Топ 10 пользователей
+      })
+      
+    } catch (error) {
+      console.error('❌ Ошибка загрузки админ статистики:', error)
+      // Fallback - пустая статистика
+      setAdminStats({
+        totalUsers: 0,
+        activeUsers: 0,
+        totalSignals: 0,
+        successfulSignals: 0,
+        failedSignals: 0,
+        topUsers: []
+      })
     }
   }
 
@@ -877,119 +953,7 @@ function App() {
       monthlyPrice: '$199',
       lifetimePrice: '$999'
     }
-  ]
-
-  // Mock admin data
-  const adminStats = {
-    totalUsers: 1247,
-    activeUsers: 892,
-    totalSignals: 15420,
-    successfulSignals: 13461,
-    failedSignals: 1959,
-    newUsersToday: 23,
-    topUsers: [
-      { 
-        id: 1, 
-        name: 'User_001', 
-        signals: 156, 
-        successful: 139, 
-        failed: 17,
-        winRate: 89.1,
-        bestPair: 'EUR/USD',
-        worstPair: 'GBP/JPY',
-        tradingDays: 42,
-        avgSignalsPerDay: 3.7,
-        signalsByMonth: [
-          { month: 'Янв', successful: 21, failed: 2 },
-          { month: 'Фев', successful: 23, failed: 3 },
-          { month: 'Мар', successful: 24, failed: 3 },
-          { month: 'Апр', successful: 25, failed: 4 },
-          { month: 'Май', successful: 26, failed: 3 },
-          { month: 'Июнь', successful: 20, failed: 2 }
-        ]
-      },
-      { 
-        id: 2, 
-        name: 'Trader_Pro', 
-        signals: 203, 
-        successful: 185, 
-        failed: 18,
-        winRate: 91.1,
-        bestPair: 'USD/JPY',
-        worstPair: 'AUD/CAD',
-        tradingDays: 55,
-        avgSignalsPerDay: 3.7,
-        signalsByMonth: [
-          { month: 'Янв', successful: 28, failed: 2 },
-          { month: 'Фев', successful: 31, failed: 3 },
-          { month: 'Мар', successful: 33, failed: 4 },
-          { month: 'Апр', successful: 30, failed: 3 },
-          { month: 'Май', successful: 32, failed: 3 },
-          { month: 'Июнь', successful: 31, failed: 3 }
-        ]
-      },
-      { 
-        id: 3, 
-        name: 'FX_Master', 
-        signals: 134, 
-        successful: 116, 
-        failed: 18,
-        winRate: 86.6,
-        bestPair: 'GBP/USD',
-        worstPair: 'EUR/JPY',
-        tradingDays: 38,
-        avgSignalsPerDay: 3.5,
-        signalsByMonth: [
-          { month: 'Янв', successful: 18, failed: 3 },
-          { month: 'Фев', successful: 20, failed: 3 },
-          { month: 'Мар', successful: 19, failed: 3 },
-          { month: 'Апр', successful: 21, failed: 3 },
-          { month: 'Май', successful: 20, failed: 3 },
-          { month: 'Июнь', successful: 18, failed: 3 }
-        ]
-      },
-      { 
-        id: 4, 
-        name: 'Signal_Hunter', 
-        signals: 178, 
-        successful: 158, 
-        failed: 20,
-        winRate: 88.8,
-        bestPair: 'EUR/GBP',
-        worstPair: 'USD/CAD',
-        tradingDays: 48,
-        avgSignalsPerDay: 3.7,
-        signalsByMonth: [
-          { month: 'Янв', successful: 24, failed: 3 },
-          { month: 'Фев', successful: 26, failed: 3 },
-          { month: 'Мар', successful: 28, failed: 4 },
-          { month: 'Апр', successful: 27, failed: 4 },
-          { month: 'Май', successful: 28, failed: 3 },
-          { month: 'Июнь', successful: 25, failed: 3 }
-        ]
-      },
-      { 
-        id: 5, 
-        name: 'Forex_King', 
-        signals: 245, 
-        successful: 221, 
-        failed: 24,
-        winRate: 90.2,
-        bestPair: 'USD/CHF',
-        worstPair: 'NZD/USD',
-        tradingDays: 62,
-        avgSignalsPerDay: 4.0,
-        signalsByMonth: [
-          { month: 'Янв', successful: 35, failed: 4 },
-          { month: 'Фев', successful: 38, failed: 4 },
-          { month: 'Мар', successful: 37, failed: 4 },
-          { month: 'Апр', successful: 39, failed: 4 },
-          { month: 'Май', successful: 38, failed: 4 },
-          { month: 'Июнь', successful: 34, failed: 4 }
-        ]
-      }
-    ]
-  }
+  ] 
 
   const deleteUser = (userId) => {
     // В реальном приложении здесь будет API запрос
@@ -3425,7 +3389,10 @@ ${isLoss ? `
             {/* Admin Panel - Only visible for admins */}
             {isAdmin && (
               <Card 
-                onClick={() => setCurrentScreen('admin')}
+                onClick={() => {
+                  setCurrentScreen('admin')
+                  loadAdminStats()
+                }}
                 className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-red-500/50 transition-all duration-300 group card-3d border-red-500/30 shadow-xl"
               >
                 <div className="flex items-center justify-between">

@@ -329,24 +329,63 @@ def submit_feedback():
         }), 500
 
 
-@app.route('/api/stats/<user_id>', methods=['GET'])
-def get_user_stats(user_id):
+@app.route('/api/user/stats', methods=['GET'])
+def get_user_stats():
     """Получение статистики пользователя"""
     try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id parameter is required'
+            }), 400
+        
+        print(f'[STATS] Запрос статистики для пользователя: {user_id}')
+        
+        # Загружаем статистику
         stats = load_signal_stats()
-        user_stats = stats.get(str(user_id), {
-            'total_signals': 0,
-            'forex_signals': 0,
-            'otc_signals': 0,
-            'successful_trades': 0,
-            'failed_trades': 0,
-            'pending_trades': 0,
-            'win_rate': 0.0
-        })
+        
+        # Фильтруем сигналы по пользователю
+        user_signals = []
+        if 'signals' in stats:
+            user_signals = [s for s in stats['signals'] if s.get('user_id') == str(user_id)]
+        
+        # Подсчитываем статистику
+        total_signals = len(user_signals)
+        successful_signals = len([s for s in user_signals if s.get('result') == 'success'])
+        failed_signals = len([s for s in user_signals if s.get('result') == 'failed'])
+        win_rate = round((successful_signals / total_signals * 100), 1) if total_signals > 0 else 0
+        
+        # Находим лучшие и худшие пары
+        pair_stats = {}
+        for signal in user_signals:
+            pair = signal.get('pair', 'Unknown')
+            if pair not in pair_stats:
+                pair_stats[pair] = {'successful': 0, 'failed': 0}
+            if signal.get('result') == 'success':
+                pair_stats[pair]['successful'] += 1
+            elif signal.get('result') == 'failed':
+                pair_stats[pair]['failed'] += 1
+        
+        best_pair = 'N/A'
+        worst_pair = 'N/A'
+        if pair_stats:
+            best_pair = max(pair_stats.keys(), key=lambda p: pair_stats[p]['successful'])
+            worst_pair = min(pair_stats.keys(), key=lambda p: pair_stats[p]['failed'])
+        
+        print(f'[STATS] Статистика для {user_id}: {total_signals} сигналов, {successful_signals} успешных, {failed_signals} неудачных')
         
         return jsonify({
             'success': True,
-            'stats': user_stats
+            'total_signals': total_signals,
+            'successful_signals': successful_signals,
+            'failed_signals': failed_signals,
+            'win_rate': win_rate,
+            'best_pair': best_pair,
+            'worst_pair': worst_pair,
+            'trading_days': 1,  # Пока не реализовано
+            'avg_signals_per_day': round(total_signals, 1),
+            'signals_by_month': []  # Пока не реализовано
         })
     
     except Exception as e:
@@ -622,6 +661,93 @@ def get_user_signals_history():
     
     except Exception as e:
         print(f'[ERROR] Ошибка получения истории сигналов: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/users/all', methods=['GET'])
+def get_all_users():
+    """Получение всех пользователей для админ панели"""
+    try:
+        print('[ADMIN] Запрос всех пользователей для админ панели')
+        
+        # Загружаем авторизованных пользователей
+        authorized_users = []
+        try:
+            with open('authorized_users.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                authorized_users = data.get('authorized_users', [])
+        except FileNotFoundError:
+            print('[WARNING] authorized_users.json не найден')
+        
+        # Загружаем статистику сигналов
+        stats = load_signal_stats()
+        
+        # Создаем список пользователей с их статистикой
+        users_with_stats = []
+        for user in authorized_users:
+            user_id = str(user.get('telegram_id', ''))
+            
+            # Подсчитываем статистику для пользователя
+            user_signals = []
+            if 'signals' in stats:
+                user_signals = [s for s in stats['signals'] if s.get('user_id') == user_id]
+            
+            successful_signals = len([s for s in user_signals if s.get('result') == 'success'])
+            failed_signals = len([s for s in user_signals if s.get('result') == 'failed'])
+            total_signals = len(user_signals)
+            win_rate = round((successful_signals / total_signals * 100), 1) if total_signals > 0 else 0
+            
+            # Находим лучшие и худшие пары
+            pair_stats = {}
+            for signal in user_signals:
+                pair = signal.get('pair', 'Unknown')
+                if pair not in pair_stats:
+                    pair_stats[pair] = {'successful': 0, 'failed': 0}
+                if signal.get('result') == 'success':
+                    pair_stats[pair]['successful'] += 1
+                elif signal.get('result') == 'failed':
+                    pair_stats[pair]['failed'] += 1
+            
+            best_pair = 'N/A'
+            worst_pair = 'N/A'
+            if pair_stats:
+                best_pair = max(pair_stats.keys(), key=lambda p: pair_stats[p]['successful'])
+                worst_pair = min(pair_stats.keys(), key=lambda p: pair_stats[p]['failed'])
+            
+            user_data = {
+                'id': user_id,
+                'name': f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or f"User_{user_id}",
+                'username': user.get('username', ''),
+                'telegram_id': user_id,
+                'created_at': user.get('created_at', ''),
+                'signals': total_signals,
+                'successful': successful_signals,
+                'failed': failed_signals,
+                'winRate': win_rate,
+                'bestPair': best_pair,
+                'worstPair': worst_pair,
+                'tradingDays': 1,  # Пока не реализовано
+                'avgSignalsPerDay': round(total_signals, 1),
+                'signalsByMonth': []  # Пока не реализовано
+            }
+            
+            users_with_stats.append(user_data)
+        
+        # Сортируем по количеству сигналов
+        users_with_stats.sort(key=lambda u: u['signals'], reverse=True)
+        
+        print(f'[ADMIN] Найдено {len(users_with_stats)} пользователей')
+        
+        return jsonify({
+            'success': True,
+            'users': users_with_stats
+        })
+    
+    except Exception as e:
+        print(f'[ERROR] Ошибка получения пользователей: {e}')
         return jsonify({
             'success': False,
             'error': str(e)
