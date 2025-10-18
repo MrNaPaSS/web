@@ -26,13 +26,8 @@ export default defineConfig({
       '.ngrok.io'
     ],
     proxy: {
-      '/api/auth': {
-        target: 'http://localhost:5001',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api')
-      },
-      '/api/signal': {
-        target: 'http://localhost:5002',
+      '/api': {
+        target: 'https://equations-supervisors-find-cast.trycloudflare.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api')
       }

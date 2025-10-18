@@ -16,7 +16,7 @@ function App() {
     if (window.location.hostname === 'localhost') {
       return `http://localhost:${port}`
     } else {
-      // Для Cloudflare туннеля используем тот же домен с проксированием
+      // Для GitHub Pages используем туннель к основному боту
       return `https://ferry-legislation-latex-ties.trycloudflare.com`
     }
   }
@@ -82,6 +82,39 @@ function App() {
     otc: []
   })
 
+  // Загрузка метрик рынка
+  const loadMarketMetrics = async () => {
+    try {
+      console.log('📊 Загружаем метрики рынка...')
+      
+      const response = await fetch(`${getApiUrl(5002)}/api/signal/market-metrics`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Получены метрики рынка:', data)
+        
+        setMarketMetrics({
+          forex: data.forex || [],
+          otc: data.otc || []
+        })
+      } else {
+        console.error('❌ Ошибка загрузки метрик:', response.status)
+        // Fallback - пустые массивы
+        setMarketMetrics({
+          forex: [],
+          otc: []
+        })
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки метрик:', error)
+      // Fallback - пустые массивы
+      setMarketMetrics({
+        forex: [],
+        otc: []
+      })
+    }
+  }
+
   // Загрузка реальной статистики из API
   const loadUserStats = async () => {
     try {
@@ -114,40 +147,6 @@ function App() {
     }
   }
 
-  // Загрузка реальных метрик рынка
-  const loadMarketMetrics = async () => {
-    console.log('🔄 Загрузка метрик рынка...')
-    try {
-      const response = await fetch('/api/signal/market-metrics', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      console.log('📡 Ответ API:', response.status, response.statusText)
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('📊 Данные метрик:', data)
-        
-        setMarketMetrics({
-          forex: data.forex || [],
-          otc: data.otc || []
-        })
-        console.log('✅ Метрики рынка загружены:', {
-          forex: data.forex?.length || 0,
-          otc: data.otc?.length || 0
-        })
-      } else {
-        console.error('❌ Ошибка загрузки метрик:', response.status, response.statusText)
-        const errorText = await response.text()
-        console.error('❌ Текст ошибки:', errorText)
-      }
-    } catch (error) {
-      console.error('❌ Ошибка загрузки метрик:', error)
-    }
-  }
 
   // Translations
   const translations = {
@@ -1123,14 +1122,29 @@ ${isLoss ? `
         const savedSignal = localStorage.getItem('pendingSignal')
         if (savedSignal) {
           const signal = JSON.parse(savedSignal)
-          const timer = parseInt(localStorage.getItem('signalTimer')) || 0
+          const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
           const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
           
-          setPendingSignal(signal)
-          setSignalTimer(timer)
-          setIsWaitingFeedback(waitingFeedback)
-          setShowReloadWarning(true)
-          setCurrentScreen('main')
+          // Восстанавливаем время начала
+          signal.startTime = startTime
+          
+          // Рассчитываем оставшееся время на основе реального времени
+          const remainingTime = calculateRemainingTime(signal)
+          
+          if (remainingTime > 0) {
+            setPendingSignal(signal)
+            setSignalTimer(remainingTime)
+            setIsWaitingFeedback(waitingFeedback)
+            setShowReloadWarning(true)
+            setCurrentScreen('main')
+          } else {
+            // Время истекло, показываем фидбек
+            setPendingSignal(signal)
+            setSignalTimer(0)
+            setIsWaitingFeedback(true)
+            setShowReloadWarning(true)
+            setCurrentScreen('main')
+          }
         }
       } else {
         console.error('❌ Ошибка авторизации:', result.error)
@@ -1158,14 +1172,29 @@ ${isLoss ? `
       const savedSignal = localStorage.getItem('pendingSignal')
       if (savedSignal) {
         const signal = JSON.parse(savedSignal)
-        const timer = parseInt(localStorage.getItem('signalTimer')) || 0
+        const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
         const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
         
-        setPendingSignal(signal)
-        setSignalTimer(timer)
-        setIsWaitingFeedback(waitingFeedback)
-        setShowReloadWarning(true)
-        setCurrentScreen('main')
+        // Восстанавливаем время начала
+        signal.startTime = startTime
+        
+        // Рассчитываем оставшееся время на основе реального времени
+        const remainingTime = calculateRemainingTime(signal)
+        
+        if (remainingTime > 0) {
+          setPendingSignal(signal)
+          setSignalTimer(remainingTime)
+          setIsWaitingFeedback(waitingFeedback)
+          setShowReloadWarning(true)
+          setCurrentScreen('main')
+        } else {
+          // Время истекло, показываем фидбек
+          setPendingSignal(signal)
+          setSignalTimer(0)
+          setIsWaitingFeedback(true)
+          setShowReloadWarning(true)
+          setCurrentScreen('main')
+        }
       }
     }
   }
@@ -1285,32 +1314,44 @@ ${isLoss ? `
     }
   }, [currentScreen])
 
+  // Загрузка истории сигналов при переходе на экран аналитики
+  useEffect(() => {
+    if (currentScreen === 'analytics') {
+      loadUserSignalsHistory()
+    }
+  }, [currentScreen])
+
   // Сохранение активного сигнала в localStorage
   useEffect(() => {
     if (pendingSignal) {
       localStorage.setItem('pendingSignal', JSON.stringify(pendingSignal))
       localStorage.setItem('signalTimer', signalTimer.toString())
       localStorage.setItem('isWaitingFeedback', isWaitingFeedback.toString())
+      if (pendingSignal.startTime) {
+        localStorage.setItem('signalStartTime', pendingSignal.startTime.toString())
+      }
     } else {
       localStorage.removeItem('pendingSignal')
       localStorage.removeItem('signalTimer')
       localStorage.removeItem('isWaitingFeedback')
+      localStorage.removeItem('signalStartTime')
     }
   }, [pendingSignal, signalTimer, isWaitingFeedback])
 
   // Таймер для сигнала
   useEffect(() => {
     let interval = null
-    if (pendingSignal && signalTimer > 0 && !isWaitingFeedback) {
+    if (pendingSignal && !isWaitingFeedback) {
       interval = setInterval(() => {
-        setSignalTimer(timer => {
-          if (timer <= 1) {
-            // Таймер истёк - требуем фидбек
-            setIsWaitingFeedback(true)
-            return 0
-          }
-          return timer - 1
-        })
+        // Рассчитываем оставшееся время на основе реального времени
+        const remainingTime = calculateRemainingTime(pendingSignal)
+        
+        if (remainingTime <= 0) {
+          setSignalTimer(0)
+          setIsWaitingFeedback(true)
+        } else {
+          setSignalTimer(remainingTime)
+        }
       }, 1000)
     }
     return () => clearInterval(interval)
@@ -1379,7 +1420,7 @@ ${isLoss ? `
     
     try {
       // РЕАЛЬНЫЙ запрос к Signal API
-      const response = await fetch('/api/signal/generate', {
+      const response = await fetch(`${getApiUrl(5002)}/api/signal/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1546,12 +1587,33 @@ ${isLoss ? `
     }
   }
 
+  // Функция для расчета оставшегося времени на основе реального времени
+  const calculateRemainingTime = (signal) => {
+    if (!signal || !signal.startTime) return 0
+    
+    const startTime = signal.startTime
+    const expirationSeconds = signal.expiration * 60
+    const currentTime = Date.now()
+    const elapsedSeconds = Math.floor((currentTime - startTime) / 1000)
+    const remainingSeconds = Math.max(0, expirationSeconds - elapsedSeconds)
+    
+    return remainingSeconds
+  }
+
   // Активация сигнала
   const activateSignal = (signal) => {
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
-    setPendingSignal(signal)
+    const startTime = Date.now() // Время начала сигнала
+    
+    setPendingSignal({
+      ...signal,
+      startTime: startTime
+    })
     setSignalTimer(expirationSeconds)
     setIsWaitingFeedback(false)
+    
+    // Сохраняем время начала в localStorage
+    localStorage.setItem('signalStartTime', startTime.toString())
   }
 
   // Отправка фидбека на бэкенд
@@ -1631,14 +1693,29 @@ ${isLoss ? `
     const savedSignal = localStorage.getItem('pendingSignal')
     if (savedSignal) {
       const signal = JSON.parse(savedSignal)
-      const timer = parseInt(localStorage.getItem('signalTimer')) || 0
+      const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
       const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
       
-      setPendingSignal(signal)
-      setSignalTimer(timer)
-      setIsWaitingFeedback(waitingFeedback)
-      setShowReloadWarning(true)
-      setCurrentScreen('main')
+      // Восстанавливаем время начала
+      signal.startTime = startTime
+      
+      // Рассчитываем оставшееся время на основе реального времени
+      const remainingTime = calculateRemainingTime(signal)
+      
+      if (remainingTime > 0) {
+        setPendingSignal(signal)
+        setSignalTimer(remainingTime)
+        setIsWaitingFeedback(waitingFeedback)
+        setShowReloadWarning(true)
+        setCurrentScreen('main')
+      } else {
+        // Время истекло, показываем фидбек
+        setPendingSignal(signal)
+        setSignalTimer(0)
+        setIsWaitingFeedback(true)
+        setShowReloadWarning(true)
+        setCurrentScreen('main')
+      }
     }
   }
 
@@ -2598,6 +2675,117 @@ ${isLoss ? `
                   >
                     Закрыть анализ
                   </Button>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Main Screen - активный сигнал с блокировкой навигации
+  if (currentScreen === 'main') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        {/* Header с блокировкой */}
+        <header className="sticky top-0 z-50 backdrop-blur-xl bg-red-950/80 border-b border-red-800/50 shadow-xl">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-xl">
+                  <Lock className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-white">СДЕЛКА АКТИВИРОВАНА</h1>
+                  <p className="text-red-400 text-sm">Навигация заблокирована</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-6">
+          {pendingSignal && (
+            <>
+              {/* Активный сигнал */}
+              <Card className="glass-effect backdrop-blur-sm border-emerald-500/50 p-6 mb-6 shadow-xl shadow-emerald-500/20">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-white mb-2">{pendingSignal.pair}</h2>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      pendingSignal.type === 'BUY' ? 'bg-emerald-500/20' : 'bg-rose-500/20'
+                    }`}>
+                      {pendingSignal.type === 'BUY' ? (
+                        <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <TrendingDown className="w-4 h-4 text-rose-400" />
+                      )}
+                    </div>
+                    <Badge className={`${
+                      pendingSignal.type === 'BUY' 
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                        : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                    }`}>
+                      {pendingSignal.type}
+                    </Badge>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Таймер */}
+              <Card className="glass-effect backdrop-blur-sm border-amber-500/50 p-6 mb-6 shadow-xl shadow-amber-500/20">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <Clock className="w-6 h-6 text-amber-400" />
+                    <span className="text-3xl font-bold text-white">
+                      {Math.floor(signalTimer / 60)}:{(signalTimer % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <p className="text-slate-400 mb-4">Осталось до экспирации</p>
+                  <div className="w-full bg-slate-700 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-1000"
+                      style={{ width: `${((pendingSignal.expiration * 60 - signalTimer) / (pendingSignal.expiration * 60)) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Предупреждение о блокировке */}
+              <Card className="glass-effect backdrop-blur-sm border-red-500/50 p-6 mb-6 shadow-xl shadow-red-500/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-red-400" />
+                  </div>
+                  <span className="text-blue-400 font-semibold">Навигация заблокирована</span>
+                </div>
+                <p className="text-slate-400">
+                  Дождитесь экспирации сигнала и оставьте фидбек
+                </p>
+              </Card>
+
+              {/* Кнопки фидбека */}
+              {isWaitingFeedback && (
+                <Card className="glass-effect backdrop-blur-sm border-cyan-500/50 p-6 shadow-xl shadow-cyan-500/20">
+                  <div className="text-center">
+                    <p className="text-white mb-4 text-lg">Как прошла сделка?</p>
+                    <div className="flex gap-4 justify-center">
+                      <Button 
+                        onClick={() => submitFeedback(true)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3"
+                      >
+                        ✅ Успешно
+                      </Button>
+                      <Button 
+                        onClick={() => submitFeedback(false)}
+                        className="bg-rose-500 hover:bg-rose-600 text-white px-8 py-3"
+                      >
+                        ❌ Убыток
+                      </Button>
+                    </div>
+                  </div>
                 </Card>
               )}
             </>
