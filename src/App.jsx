@@ -1655,12 +1655,12 @@ ${isLoss ? `
     const feedbackData = {
       user_id: userId,
       signal_id: pendingSignal.signal_id,
-      feedback: isSuccess ? 'success' : 'failure'
+      feedback: isSuccess ? 'success' : 'failed'
     }
     
     try {
       // Отправляем фидбек на бэкенд
-      const response = await fetch('/api/signal/feedback', {
+      const response = await fetch(`${getApiUrl(5000)}/api/signal/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

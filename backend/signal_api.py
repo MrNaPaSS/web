@@ -53,8 +53,8 @@ forex_generator = SignalGenerator(TWELVEDATA_API_KEY)
 otc_generator = PowerfulOTCGenerator()
 
 # Файлы статистики
-SIGNAL_STATS_FILE = os.path.join(BOT_DIR, 'signal_stats.json')
-AUTHORIZED_USERS_FILE = os.path.join(BOT_DIR, 'authorized_users.json')
+SIGNAL_STATS_FILE = os.path.join(ROOT_DIR, 'signal_stats.json')
+AUTHORIZED_USERS_FILE = os.path.join(ROOT_DIR, 'authorized_users.json')
 
 def load_signal_stats():
     """Загрузка статистики сигналов"""
@@ -74,6 +74,39 @@ def save_signal_stats(stats):
             json.dump(stats, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f'[ERROR] Ошибка сохранения статистики: {e}')
+
+def save_feedback_to_stats(user_id, signal_id, feedback):
+    """Сохранение фидбека в массив feedback"""
+    from datetime import datetime
+    
+    stats = load_signal_stats()
+    
+    if 'feedback' not in stats:
+        stats['feedback'] = []
+    
+    # Создаем запись фидбека
+    feedback_record = {
+        'user_id': str(user_id),
+        'signal_id': signal_id,
+        'signal_type': 'forex' if 'forex' in signal_id else 'otc',
+        'feedback': feedback,
+        'timestamp': datetime.now().isoformat()
+    }
+    
+    # Добавляем в массив feedback
+    stats['feedback'].append(feedback_record)
+    
+    # Обновляем общую статистику
+    if feedback == 'success':
+        stats['successful_signals'] = stats.get('successful_signals', 0) + 1
+    elif feedback == 'failed':
+        stats['failed_signals'] = stats.get('failed_signals', 0) + 1
+    
+    stats['total_signals'] = stats.get('total_signals', 0) + 1
+    stats['last_updated'] = datetime.now().isoformat()
+    
+    save_signal_stats(stats)
+    print(f'[FEEDBACK] Сохранен фидбек: {feedback_record}')
 
 def update_user_stats(user_id, signal_type, feedback=None):
     """Обновление статистики пользователя"""
@@ -103,7 +136,7 @@ def update_user_stats(user_id, signal_type, feedback=None):
         stats[user_id]['successful_trades'] += 1
         if stats[user_id]['pending_trades'] > 0:
             stats[user_id]['pending_trades'] -= 1
-    elif feedback == 'failure':
+    elif feedback == 'failed':
         stats[user_id]['failed_trades'] += 1
         if stats[user_id]['pending_trades'] > 0:
             stats[user_id]['pending_trades'] -= 1
@@ -310,6 +343,9 @@ def submit_feedback():
         # Определяем тип сигнала
         signal_type = 'forex' if 'forex' in signal_id else 'otc'
         
+        # Сохраняем фидбек в массив feedback
+        save_feedback_to_stats(user_id, signal_id, feedback)
+        
         # Обновляем статистику
         user_stats = update_user_stats(user_id, signal_type, feedback)
         
@@ -344,16 +380,20 @@ def get_user_stats():
         
         # Загружаем статистику
         stats = load_signal_stats()
+        print(f'[STATS] Загружена статистика: {len(stats.get("feedback", []))} записей в feedback')
         
-        # Фильтруем сигналы по пользователю
+        # Фильтруем сигналы по пользователю из массива feedback
         user_signals = []
-        if 'signals' in stats:
-            user_signals = [s for s in stats['signals'] if s.get('user_id') == str(user_id)]
+        if 'feedback' in stats:
+            user_signals = [s for s in stats['feedback'] if str(s.get('user_id')) == str(user_id)]
+            print(f'[STATS] Найдено {len(user_signals)} сигналов для пользователя {user_id}')
+            for signal in user_signals:
+                print(f'[STATS] Сигнал: {signal.get("signal_id")}, feedback: {signal.get("feedback")}')
         
         # Подсчитываем статистику
         total_signals = len(user_signals)
-        successful_signals = len([s for s in user_signals if s.get('result') == 'success'])
-        failed_signals = len([s for s in user_signals if s.get('result') == 'failed'])
+        successful_signals = len([s for s in user_signals if s.get('feedback') == 'success'])
+        failed_signals = len([s for s in user_signals if s.get('feedback') == 'failed'])
         win_rate = round((successful_signals / total_signals * 100), 1) if total_signals > 0 else 0
         
         # Находим лучшие и худшие пары
@@ -362,9 +402,9 @@ def get_user_stats():
             pair = signal.get('pair', 'Unknown')
             if pair not in pair_stats:
                 pair_stats[pair] = {'successful': 0, 'failed': 0}
-            if signal.get('result') == 'success':
+            if signal.get('feedback') == 'success':
                 pair_stats[pair]['successful'] += 1
-            elif signal.get('result') == 'failed':
+            elif signal.get('feedback') == 'failed':
                 pair_stats[pair]['failed'] += 1
         
         best_pair = 'N/A'
@@ -642,11 +682,11 @@ def get_user_signals_history():
         # Загружаем статистику
         stats = load_signal_stats()
         
-        # Фильтруем сигналы по пользователю
+        # Фильтруем сигналы по пользователю из массива feedback
         user_signals = []
-        if 'signals' in stats:
-            for signal in stats['signals']:
-                if signal.get('user_id') == str(user_id):
+        if 'feedback' in stats:
+            for signal in stats['feedback']:
+                if str(signal.get('user_id')) == str(user_id):
                     user_signals.append(signal)
         
         # Сортируем по дате (новые сначала)
@@ -692,11 +732,11 @@ def get_all_users():
             
             # Подсчитываем статистику для пользователя
             user_signals = []
-            if 'signals' in stats:
-                user_signals = [s for s in stats['signals'] if s.get('user_id') == user_id]
+            if 'feedback' in stats:
+                user_signals = [s for s in stats['feedback'] if str(s.get('user_id')) == user_id]
             
-            successful_signals = len([s for s in user_signals if s.get('result') == 'success'])
-            failed_signals = len([s for s in user_signals if s.get('result') == 'failed'])
+            successful_signals = len([s for s in user_signals if s.get('feedback') == 'success'])
+            failed_signals = len([s for s in user_signals if s.get('feedback') == 'failed'])
             total_signals = len(user_signals)
             win_rate = round((successful_signals / total_signals * 100), 1) if total_signals > 0 else 0
             
@@ -706,9 +746,9 @@ def get_all_users():
                 pair = signal.get('pair', 'Unknown')
                 if pair not in pair_stats:
                     pair_stats[pair] = {'successful': 0, 'failed': 0}
-                if signal.get('result') == 'success':
+                if signal.get('feedback') == 'success':
                     pair_stats[pair]['successful'] += 1
-                elif signal.get('result') == 'failed':
+                elif signal.get('feedback') == 'failed':
                     pair_stats[pair]['failed'] += 1
             
             best_pair = 'N/A'
