@@ -13,8 +13,8 @@ function App() {
   
   // Функция для определения правильного API URL
   const getApiUrl = (port) => {
-    // Временно используем localhost для тестирования
-    return `http://localhost:${port}`
+    // Используем Cloudflare туннель для продакшн
+    return `https://accessibility-gallery-column-olympus.trycloudflare.com`
   }
   
   const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
@@ -1032,7 +1032,7 @@ function App() {
       monthlyPrice: '$199',
       lifetimePrice: '$999'
     }
-  ] 
+  ]
 
   const deleteUser = async (userIdToDelete) => {
     try {
@@ -1281,11 +1281,11 @@ ${isLoss ? `
           const remainingTime = calculateRemainingTime(signal)
           
           if (remainingTime > 0) {
-            setPendingSignal(signal)
+          setPendingSignal(signal)
             setSignalTimer(remainingTime)
-            setIsWaitingFeedback(waitingFeedback)
-            setShowReloadWarning(true)
-            setCurrentScreen('main')
+          setIsWaitingFeedback(waitingFeedback)
+          setShowReloadWarning(true)
+          setCurrentScreen('main')
           } else {
             // Время истекло, показываем фидбек
             setPendingSignal(signal)
@@ -1331,11 +1331,11 @@ ${isLoss ? `
         const remainingTime = calculateRemainingTime(signal)
         
         if (remainingTime > 0) {
-          setPendingSignal(signal)
+        setPendingSignal(signal)
           setSignalTimer(remainingTime)
-          setIsWaitingFeedback(waitingFeedback)
-          setShowReloadWarning(true)
-          setCurrentScreen('main')
+        setIsWaitingFeedback(waitingFeedback)
+        setShowReloadWarning(true)
+        setCurrentScreen('main')
         } else {
           // Время истекло, показываем фидбек
           setPendingSignal(signal)
@@ -1523,10 +1523,10 @@ ${isLoss ? `
         
         if (remainingTime <= 0) {
           setSignalTimer(0)
-          setIsWaitingFeedback(true)
+            setIsWaitingFeedback(true)
         } else {
           setSignalTimer(remainingTime)
-        }
+          }
       }, 1000)
     }
     return () => clearInterval(interval)
@@ -1890,11 +1890,11 @@ ${isLoss ? `
       const remainingTime = calculateRemainingTime(signal)
       
       if (remainingTime > 0) {
-        setPendingSignal(signal)
+      setPendingSignal(signal)
         setSignalTimer(remainingTime)
-        setIsWaitingFeedback(waitingFeedback)
-        setShowReloadWarning(true)
-        setCurrentScreen('main')
+      setIsWaitingFeedback(waitingFeedback)
+      setShowReloadWarning(true)
+      setCurrentScreen('main')
       } else {
         // Время истекло, показываем фидбек
         setPendingSignal(signal)
@@ -2802,7 +2802,7 @@ ${isLoss ? `
                       <TrendingDown className={`w-8 h-8 ${selectedSignalForAnalysis.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`} />
                     )}
                   </div>
-             <div>
+                  <div>
                <h2 className="text-2xl font-bold text-white">
                  {selectedSignalForAnalysis.pair || (() => {
                    // Извлекаем название пары из signal_id если pair отсутствует
@@ -2815,15 +2815,15 @@ ${isLoss ? `
                    return `${selectedSignalForAnalysis.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`
                  })()}
                </h2>
-               <div className="flex items-center gap-2 mt-1">
-                 <Badge className={`${
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className={`${
                    selectedSignalForAnalysis.direction === 'BUY' 
-                     ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                     : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                 }`}>
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                          : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                      }`}>
                    {selectedSignalForAnalysis.direction || 'SELL'}
-                 </Badge>
-                 <Badge className={`${
+                      </Badge>
+                      <Badge className={`${
                    selectedSignalForAnalysis.signal_type === 'forex' 
                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
                      : 'bg-purple-500/20 text-purple-400 border-purple-500/50'
@@ -2832,15 +2832,15 @@ ${isLoss ? `
                  </Badge>
                  <Badge className={`${
                    selectedSignalForAnalysis.feedback === 'success' 
-                     ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                     : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                 }`}>
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                          : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                      }`}>
                    {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
-                 </Badge>
+                      </Badge>
                  <span className="text-xs text-slate-500">
                    {new Date(selectedSignalForAnalysis.timestamp).toLocaleString('ru-RU')}
                  </span>
-               </div>
+                    </div>
                {selectedSignalForAnalysis.confidence && (
                  <div className="mt-2">
                    <span className="text-sm text-slate-400">
@@ -2848,7 +2848,7 @@ ${isLoss ? `
                    </span>
                  </div>
                )}
-             </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -2869,10 +2869,10 @@ ${isLoss ? `
                     </span>
                   </div>
                   {selectedSignalForAnalysis.entry_price && (
-                    <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
+                  <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
                       <span className="text-slate-400 text-xs block mb-1">Цена входа</span>
                       <span className="text-white font-bold">{selectedSignalForAnalysis.entry_price}</span>
-                    </div>
+                  </div>
                   )}
                   {selectedSignalForAnalysis.expiration && (
                     <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
@@ -3761,87 +3761,87 @@ ${isLoss ? `
                 >
                   <div className="flex flex-col gap-3">
                     {/* Top row: Icon and title */}
-                    <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-xl`}>
                           <span className="text-2xl">{model.emoji}</span>
-                        </div>
-                        <div className="flex-1">
+                      </div>
+                      <div className="flex-1">
                           <h3 className="text-lg font-bold text-white">{model.name}</h3>
                           <p className="text-slate-300 text-sm">{model.algorithm}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        {isActive && (
+                          {isActive && (
                           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs">
-                            ✓ АКТИВНА
-                          </Badge>
-                        )}
-                        {isRestricted && (
+                              ✓ АКТИВНА
+                            </Badge>
+                          )}
+                          {isRestricted && (
                           <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-xs">
-                            <Lock className="w-3 h-3 mr-1" />
-                            ЗАБЛОКИРОВАНА
-                          </Badge>
-                        )}
-                        {!isOwned && !isRestricted && (
+                              <Lock className="w-3 h-3 mr-1" />
+                              ЗАБЛОКИРОВАНА
+                            </Badge>
+                          )}
+                          {!isOwned && !isRestricted && (
                           <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-xs">
-                            <Lock className="w-3 h-3 mr-1" />
-                            ТРЕБУЕТСЯ ПОДПИСКА
-                          </Badge>
-                        )}
-                      </div>
+                              <Lock className="w-3 h-3 mr-1" />
+                              ТРЕБУЕТСЯ ПОДПИСКА
+                            </Badge>
+                          )}
+                        </div>
                     </div>
                     
                     {/* Stats row */}
                     <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Target className="w-4 h-4 text-emerald-400" />
-                        <span className="text-emerald-400 font-semibold">{model.winrate}</span>
-                      </div>
-                      <span className="text-slate-600">•</span>
-                      <span className="text-slate-400">{model.style}</span>
-                    </div>
+                          <div className="flex items-center gap-1">
+                            <Target className="w-4 h-4 text-emerald-400" />
+                            <span className="text-emerald-400 font-semibold">{model.winrate}</span>
+                          </div>
+                          <span className="text-slate-600">•</span>
+                          <span className="text-slate-400">{model.style}</span>
+                        </div>
                     
                     {/* Description */}
                     <p className="text-slate-400 text-sm italic">💬 {model.description}</p>
                     
-                    {model.warning && (
+                        {model.warning && (
                       <p className="text-red-400 text-sm font-semibold">⚠️ {model.warning}</p>
-                    )}
+                        )}
                     
                     {/* Bottom row: Pricing and button */}
                     <div className="flex items-center justify-between">
-                      {!isOwned && !isRestricted && (
+                        {!isOwned && !isRestricted && (
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-yellow-400 font-bold">{model.monthlyPrice}/мес</span>
-                          <span className="text-slate-600">или</span>
+                            <span className="text-slate-600">или</span>
                           <span className="text-green-400 font-bold">{model.lifetimePrice} навсегда</span>
-                        </div>
-                      )}
+                          </div>
+                        )}
                       <div className="flex items-center">
-                        {isActive ? (
+                      {isActive ? (
                           <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
                             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                          </div>
-                        ) : isOwned && !isRestricted ? (
-                          <Button
-                            variant="outline"
+                        </div>
+                      ) : isOwned && !isRestricted ? (
+                        <Button
+                          variant="outline"
                             size="sm"
                             className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 h-8 px-3"
-                          >
-                            Выбрать
-                          </Button>
-                        ) : isRestricted ? (
+                        >
+                          Выбрать
+                        </Button>
+                      ) : isRestricted ? (
                           <Lock className="w-5 h-5 text-red-400" />
-                        ) : (
-                          <Button
-                            variant="outline"
+                      ) : (
+                        <Button
+                          variant="outline"
                             size="sm"
                             className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-8 px-3"
-                          >
-                            Купить
-                          </Button>
-                        )}
+                        >
+                          Купить
+                        </Button>
+                      )}
                       </div>
                     </div>
                   </div>
