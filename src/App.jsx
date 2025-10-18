@@ -2551,21 +2551,9 @@ ${isLoss ? `
                             )}
                           </div>
                           <div>
-                            <h3 className="text-lg font-bold text-white">
-                              {signal.signal_type === 'forex' ? 'Forex Signal' : 'OTC Signal'}
-                            </h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge className={`${
-                                signal.signal_type === 'forex' 
-                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                                  : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                              } text-xs`}>
-                                {signal.signal_type.toUpperCase()}
-                              </Badge>
-                              <span className="text-xs text-slate-500">
-                                {new Date(signal.timestamp).toLocaleString('ru-RU')}
-                              </span>
-                            </div>
+                            <span className="text-xs text-slate-500">
+                              {new Date(signal.timestamp).toLocaleString('ru-RU')}
+                            </span>
                           </div>
                         </div>
                         <div className="text-right">
@@ -2576,10 +2564,6 @@ ${isLoss ? `
                           }`}>
                             {signal.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
                           </Badge>
-                          <div className="text-xs text-slate-500 mt-2">
-                            ID: {signal.signal_id}
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-cyan-400 mt-2" />
                         </div>
                       </div>
                     </div>
@@ -2617,53 +2601,52 @@ ${isLoss ? `
               <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl mb-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className={`w-16 h-16 rounded-xl flex items-center justify-center icon-3d shadow-xl ${
-                    selectedSignalForAnalysis.result === 'profit'
+                    selectedSignalForAnalysis.feedback === 'success'
                       ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 shadow-emerald-500/30' 
                       : 'bg-gradient-to-br from-rose-500/20 to-rose-600/10 shadow-rose-500/30'
                   }`}>
-                    {selectedSignalForAnalysis.type === 'BUY' ? (
-                      <TrendingUp className={`w-8 h-8 ${selectedSignalForAnalysis.result === 'profit' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                    {selectedSignalForAnalysis.signal_type === 'forex' ? (
+                      <TrendingUp className={`w-8 h-8 ${selectedSignalForAnalysis.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`} />
                     ) : (
-                      <TrendingDown className={`w-8 h-8 ${selectedSignalForAnalysis.result === 'profit' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                      <TrendingDown className={`w-8 h-8 ${selectedSignalForAnalysis.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`} />
                     )}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-white">{selectedSignalForAnalysis.pair}</h2>
+                    <h2 className="text-2xl font-bold text-white">
+                      {selectedSignalForAnalysis.signal_type === 'forex' ? 'Forex Signal' : 'OTC Signal'}
+                    </h2>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge className={`${
-                        selectedSignalForAnalysis.type === 'BUY' 
+                        selectedSignalForAnalysis.signal_type === 'forex' 
                           ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                           : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                       }`}>
-                        {selectedSignalForAnalysis.type}
+                        {selectedSignalForAnalysis.signal_type.toUpperCase()}
                       </Badge>
                       <Badge className={`${
-                        selectedSignalForAnalysis.result === 'profit' 
+                        selectedSignalForAnalysis.feedback === 'success' 
                           ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                           : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                       }`}>
-                        {selectedSignalForAnalysis.result === 'profit' ? 'Успешно' : 'Проигрыш'}
+                        {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
                       </Badge>
+                      <span className="text-xs text-slate-500">
+                        {new Date(selectedSignalForAnalysis.timestamp).toLocaleString('ru-RU')}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                    <span className="text-slate-400 text-xs block mb-1">Вход</span>
-                    <span className="text-white font-bold">{selectedSignalForAnalysis.entry}</span>
+                    <span className="text-slate-400 text-xs block mb-1">Тип сигнала</span>
+                    <span className="text-white font-bold">{selectedSignalForAnalysis.signal_type.toUpperCase()}</span>
                   </div>
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                    <span className="text-slate-400 text-xs block mb-1">Take Profit</span>
-                    <span className="text-white font-bold">{selectedSignalForAnalysis.tp.join(', ')}</span>
-                  </div>
-                  <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                    <span className="text-slate-400 text-xs block mb-1">Stop Loss</span>
-                    <span className="text-white font-bold">{selectedSignalForAnalysis.sl}</span>
-                  </div>
-                  <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                    <span className="text-slate-400 text-xs block mb-1">Закрытие</span>
-                    <span className="text-white font-bold">{selectedSignalForAnalysis.closePrice}</span>
+                    <span className="text-slate-400 text-xs block mb-1">Результат</span>
+                    <span className={`font-bold ${selectedSignalForAnalysis.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
+                    </span>
                   </div>
                 </div>
               </Card>
