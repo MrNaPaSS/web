@@ -3382,9 +3382,9 @@ ${isLoss ? `
           <div className="space-y-4">
             <Card 
               onClick={() => {
-                // Проверяем статус форекс рынка для форекс режима
+                // Проверяем статус форекс рынка только для форекс режима
                 if (selectedMarket === 'forex' && !isForexMarketOpen()) {
-                  alert('Форекс рынок закрыт в выходные дни. Доступен только OTC режим.')
+                  alert('Форекс рынок закрыт в выходные дни. Переключитесь на OTC режим.')
                   return
                 }
                 
@@ -3421,11 +3421,6 @@ ${isLoss ? `
                     {!canGenerateTop3() && (
                       <p className="text-xs text-amber-400 mb-2">
                         Доступно через: {Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)} мин
-                      </p>
-                    )}
-                    {selectedMarket === 'forex' && !isForexMarketOpen() && (
-                      <p className="text-xs text-rose-400 mb-2">
-                        Форекс рынок закрыт (выходные)
                       </p>
                     )}
                     <div className="space-y-1">
