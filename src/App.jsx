@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button.jsx'
 import { Card } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
-import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper } from 'lucide-react'
+import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check } from 'lucide-react'
 import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import './App.css'
 
@@ -117,6 +117,7 @@ function App() {
     failedSignals: 0,
     topUsers: []
   })
+  const [accessRequests, setAccessRequests] = useState([])
 
   // Загрузка метрик рынка
   const loadMarketMetrics = async () => {
@@ -301,6 +302,58 @@ function App() {
         failedSignals: 0,
         topUsers: []
       })
+    }
+  }
+
+  // Загрузка заявок на доступ
+  const loadAccessRequests = async () => {
+    try {
+      console.log('📋 Загружаем заявки на доступ...')
+      
+      const response = await fetch(`${getApiUrl(5000)}/api/admin/access-requests`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setAccessRequests(data.requests)
+        console.log('✅ Заявки на доступ загружены:', data.requests.length)
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки заявок на доступ:', error)
+    }
+  }
+
+  // Одобрение заявки на доступ
+  const approveAccessRequest = async (userId) => {
+    try {
+      console.log('✅ Одобряем заявку для пользователя:', userId)
+      
+      const response = await fetch(`${getApiUrl(5000)}/api/admin/approve-access`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          admin_user_id: userId // ID текущего админа из состояния
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('✅ Заявка одобрена')
+        alert(`✅ Пользователь ${userId} добавлен в систему`)
+        
+        // Обновляем данные
+        loadAdminStats()
+        loadAccessRequests()
+      } else {
+        console.error('❌ Ошибка одобрения:', data.error)
+        alert(`❌ Ошибка: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при одобрении заявки:', error)
+      alert(`❌ Ошибка: ${error.message}`)
     }
   }
 
@@ -3606,6 +3659,7 @@ ${isLoss ? `
                 onClick={() => {
                   setCurrentScreen('admin')
                   loadAdminStats()
+                  loadAccessRequests()
                 }}
                 className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-red-500/50 transition-all duration-300 group card-3d border-red-500/30 shadow-xl"
               >
@@ -4093,6 +4147,69 @@ ${isLoss ? `
                   </div>
                 </div>
               ))}
+            </div>
+          </Card>
+
+          {/* Заявки на доступ */}
+          <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center icon-3d shadow-xl shadow-amber-500/20">
+                  <UserPlus className="w-6 h-6 text-amber-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Заявки на доступ</h3>
+                {accessRequests.length > 0 && (
+                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
+                    {accessRequests.length}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {accessRequests.length > 0 ? (
+                accessRequests.map((request) => (
+                  <div 
+                    key={request.user_id} 
+                    className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 hover:border-amber-500/50 transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center">
+                        <User className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <div>
+                        <div className="text-white font-semibold">
+                          {request.first_name} {request.last_name}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          ID: {request.user_id}
+                          {request.username && ` • @${request.username}`}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {new Date(request.request_time * 1000).toLocaleString('ru-RU')}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => approveAccessRequest(request.user_id)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm"
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        Одобрить
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
+                    <UserPlus className="w-8 h-8 text-slate-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">Нет заявок на доступ</h3>
+                  <p className="text-slate-400">Новые заявки будут отображаться здесь</p>
+                </div>
+              )}
             </div>
           </Card>
         </div>

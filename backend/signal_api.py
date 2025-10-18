@@ -946,11 +946,37 @@ def delete_user():
             with open(authorized_file, 'w', encoding='utf-8') as f:
                 json.dump(authorized_data, f, ensure_ascii=False, indent=2)
             
-            print(f'[ADMIN] Пользователь {user_id_to_delete} успешно удален')
+            # Также удаляем все сигналы пользователя из статистики
+            stats = load_signal_stats()
+            if 'feedback' in stats:
+                # Фильтруем сигналы, оставляя только сигналы других пользователей
+                stats['feedback'] = [s for s in stats['feedback'] if str(s.get('user_id')) != user_id_str]
+                
+                # Пересчитываем общую статистику
+                total_signals = len(stats['feedback'])
+                successful_signals = len([s for s in stats['feedback'] if s.get('feedback') == 'success'])
+                failed_signals = len([s for s in stats['feedback'] if s.get('feedback') == 'failed'])
+                
+                stats['total_signals'] = total_signals
+                stats['successful_signals'] = successful_signals
+                stats['failed_signals'] = failed_signals
+                stats['win_rate'] = round((successful_signals / total_signals * 100), 1) if total_signals > 0 else 0
+                stats['last_updated'] = datetime.now().isoformat()
+                
+                # Удаляем индивидуальную статистику пользователя
+                if user_id_str in stats:
+                    del stats[user_id_str]
+                
+                # Сохраняем обновленную статистику
+                save_signal_stats(stats)
+                
+                print(f'[ADMIN] Удалены сигналы пользователя {user_id_to_delete} из статистики')
+            
+            print(f'[ADMIN] Пользователь {user_id_to_delete} полностью удален')
             
             return jsonify({
                 'success': True,
-                'message': f'Пользователь {user_id_to_delete} успешно удален'
+                'message': f'Пользователь {user_id_to_delete} полностью удален (включая все сигналы)'
             })
         else:
             return jsonify({
@@ -960,6 +986,133 @@ def delete_user():
             
     except Exception as e:
         print(f'[ERROR] Ошибка удаления пользователя: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/admin/access-requests', methods=['GET'])
+def get_access_requests():
+    """Получение запросов на доступ для админ панели"""
+    try:
+        print('[ADMIN] Запрос списка заявок на доступ')
+        
+        # Загружаем запросы на доступ
+        access_requests = []
+        try:
+            access_file = os.path.join(ROOT_DIR, 'access_requests.json')
+            with open(access_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Запросы хранятся как объекты с ключами по telegram_id
+                for key, request_data in data.items():
+                    if key != 'last_updated' and isinstance(request_data, dict):
+                        access_requests.append(request_data)
+        except FileNotFoundError:
+            print('[WARNING] access_requests.json не найден')
+        
+        print(f'[ADMIN] Найдено {len(access_requests)} заявок на доступ')
+        
+        return jsonify({
+            'success': True,
+            'requests': access_requests,
+            'total_requests': len(access_requests)
+        })
+    
+    except Exception as e:
+        print(f'[ERROR] Ошибка получения заявок на доступ: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/admin/approve-access', methods=['POST'])
+def approve_access_request():
+    """Одобрение заявки на доступ"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        admin_user_id = data.get('admin_user_id')
+        
+        print(f'[ADMIN] Запрос одобрения доступа для пользователя {user_id} от админа {admin_user_id}')
+        
+        # Проверяем, что это админ
+        if str(admin_user_id) != '511442168':
+            return jsonify({
+                'success': False,
+                'error': 'Доступ только для администратора'
+            }), 403
+        
+        # Загружаем заявку на доступ
+        access_file = os.path.join(ROOT_DIR, 'access_requests.json')
+        try:
+            with open(access_file, 'r', encoding='utf-8') as f:
+                access_data = json.load(f)
+        except FileNotFoundError:
+            return jsonify({
+                'success': False,
+                'error': 'Файл заявок не найден'
+            }), 404
+        
+        user_id_str = str(user_id)
+        if user_id_str not in access_data:
+            return jsonify({
+                'success': False,
+                'error': 'Заявка не найдена'
+            }), 404
+        
+        # Получаем данные пользователя из заявки
+        user_data = access_data[user_id_str]
+        
+        # Добавляем пользователя в авторизованных
+        authorized_file = os.path.join(ROOT_DIR, 'authorized_users.json')
+        try:
+            with open(authorized_file, 'r', encoding='utf-8') as f:
+                authorized_data = json.load(f)
+        except FileNotFoundError:
+            authorized_data = {'authorized_users': [], 'last_updated': datetime.now().isoformat()}
+        
+        # Добавляем пользователя
+        authorized_data[user_id_str] = {
+            'telegram_id': user_id_str,
+            'first_name': user_data.get('first_name', ''),
+            'last_name': user_data.get('last_name', ''),
+            'username': user_data.get('username', ''),
+            'language_code': user_data.get('language_code', 'ru'),
+            'is_premium': False,
+            'is_admin': False,
+            'last_login': datetime.now().isoformat(),
+            'subscriptions': ['logistic-spy'],
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Добавляем в список авторизованных если его там нет
+        if user_id not in authorized_data.get('authorized_users', []):
+            authorized_data['authorized_users'].append(user_id)
+        
+        authorized_data['last_updated'] = datetime.now().isoformat()
+        
+        # Сохраняем обновленные данные
+        with open(authorized_file, 'w', encoding='utf-8') as f:
+            json.dump(authorized_data, f, ensure_ascii=False, indent=2)
+        
+        # Удаляем заявку
+        del access_data[user_id_str]
+        access_data['last_updated'] = datetime.now().isoformat()
+        
+        with open(access_file, 'w', encoding='utf-8') as f:
+            json.dump(access_data, f, ensure_ascii=False, indent=2)
+        
+        print(f'[ADMIN] Пользователь {user_id} успешно добавлен в авторизованные')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Пользователь {user_id} успешно добавлен в систему'
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка одобрения заявки: {e}')
         return jsonify({
             'success': False,
             'error': str(e)
