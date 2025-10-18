@@ -13,8 +13,12 @@ function App() {
   
   // Функция для определения правильного API URL
   const getApiUrl = (port) => {
-    // Временно используем localhost для тестирования
-    return `http://localhost:${port}`
+    if (window.location.hostname === 'localhost') {
+      return `http://localhost:${port}`
+    } else {
+      // Для GitHub Pages используем существующий туннель
+      return `https://accessibility-gallery-column-olympus.trycloudflare.com`
+    }
   }
   
   const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
