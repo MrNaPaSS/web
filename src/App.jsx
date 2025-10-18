@@ -2551,9 +2551,21 @@ ${isLoss ? `
                             )}
                           </div>
                           <div>
-                            <span className="text-xs text-slate-500">
-                              {new Date(signal.timestamp).toLocaleString('ru-RU')}
-                            </span>
+                            <h3 className="text-lg font-bold text-white">
+                              {signal.signal_type === 'forex' ? 'Forex Signal' : 'OTC Signal'}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={`${
+                                signal.signal_type === 'forex' 
+                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                                  : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                              } text-xs`}>
+                                {signal.signal_type.toUpperCase()}
+                              </Badge>
+                              <span className="text-xs text-slate-500">
+                                {new Date(signal.timestamp).toLocaleString('ru-RU')}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="text-right">
@@ -2564,6 +2576,7 @@ ${isLoss ? `
                           }`}>
                             {signal.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
                           </Badge>
+                          <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-cyan-400 mt-2" />
                         </div>
                       </div>
                     </div>
