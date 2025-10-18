@@ -133,7 +133,7 @@ def get_online_users_count():
         print(f'[ERROR] Ошибка подсчета онлайн пользователей: {e}')
         return 0
 
-def save_feedback_to_stats(user_id, signal_id, feedback):
+def save_feedback_to_stats(user_id, signal_id, feedback, pair=None, direction=None, confidence=None):
     """Сохранение фидбека в массив feedback"""
     from datetime import datetime
     
@@ -150,6 +150,14 @@ def save_feedback_to_stats(user_id, signal_id, feedback):
         'feedback': feedback,
         'timestamp': datetime.now().isoformat()
     }
+    
+    # Добавляем дополнительные поля если они переданы
+    if pair:
+        feedback_record['pair'] = pair
+    if direction:
+        feedback_record['direction'] = direction
+    if confidence:
+        feedback_record['confidence'] = confidence
     
     # Добавляем в массив feedback
     stats['feedback'].append(feedback_record)
@@ -391,6 +399,9 @@ def submit_feedback():
         user_id = data.get('user_id')
         signal_id = data.get('signal_id')
         feedback = data.get('feedback')
+        pair = data.get('pair')
+        direction = data.get('direction')
+        confidence = data.get('confidence')
         
         if not all([user_id, signal_id, feedback]):
             return jsonify({
@@ -401,8 +412,8 @@ def submit_feedback():
         # Определяем тип сигнала
         signal_type = 'forex' if 'forex' in signal_id else 'otc'
         
-        # Сохраняем фидбек в массив feedback
-        save_feedback_to_stats(user_id, signal_id, feedback)
+        # Сохраняем фидбек в массив feedback с дополнительными полями
+        save_feedback_to_stats(user_id, signal_id, feedback, pair, direction, confidence)
         
         # Обновляем статистику
         user_stats = update_user_stats(user_id, signal_type, feedback)

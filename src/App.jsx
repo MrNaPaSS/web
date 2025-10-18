@@ -1753,7 +1753,10 @@ ${isLoss ? `
     const feedbackData = {
       user_id: userId,
       signal_id: pendingSignal.signal_id,
-      feedback: isSuccess ? 'success' : 'failed'
+      feedback: isSuccess ? 'success' : 'failed',
+      pair: pendingSignal.pair,
+      direction: pendingSignal.direction,
+      confidence: pendingSignal.confidence
     }
     
     try {
@@ -2651,7 +2654,16 @@ ${isLoss ? `
                           </div>
                           <div>
                             <h3 className="text-lg font-bold text-white">
-                              {signal.pair || `${signal.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`}
+                              {signal.pair || (() => {
+                                // Извлекаем название пары из signal_id если pair отсутствует
+                                if (signal.signal_id) {
+                                  const parts = signal.signal_id.split('_')
+                                  if (parts.length >= 3) {
+                                    return `${parts[1]}/${parts[2]}`.replace('USD', 'USD').replace('EUR', 'EUR').replace('GBP', 'GBP').replace('JPY', 'JPY').replace('CHF', 'CHF').replace('AUD', 'AUD').replace('CAD', 'CAD').replace('NZD', 'NZD')
+                                  }
+                                }
+                                return `${signal.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`
+                              })()}
                             </h3>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge className={`${
@@ -2739,7 +2751,16 @@ ${isLoss ? `
                   </div>
              <div>
                <h2 className="text-2xl font-bold text-white">
-                 {selectedSignalForAnalysis.pair || `${selectedSignalForAnalysis.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`}
+                 {selectedSignalForAnalysis.pair || (() => {
+                   // Извлекаем название пары из signal_id если pair отсутствует
+                   if (selectedSignalForAnalysis.signal_id) {
+                     const parts = selectedSignalForAnalysis.signal_id.split('_')
+                     if (parts.length >= 3) {
+                       return `${parts[1]}/${parts[2]}`.replace('USD', 'USD').replace('EUR', 'EUR').replace('GBP', 'GBP').replace('JPY', 'JPY').replace('CHF', 'CHF').replace('AUD', 'AUD').replace('CAD', 'CAD').replace('NZD', 'NZD')
+                     }
+                   }
+                   return `${selectedSignalForAnalysis.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`
+                 })()}
                </h2>
                <div className="flex items-center gap-2 mt-1">
                  <Badge className={`${
