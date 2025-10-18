@@ -2527,9 +2527,12 @@ ${isLoss ? `
               </div>
 
               <div className="space-y-4">
-                {historySignals.map((signal) => (
+                {userSignalsHistory.length > 0 ? (
+                  userSignalsHistory
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) // Сортируем по дате (свежие сверху)
+                    .map((signal) => (
                   <Card 
-                    key={signal.id}
+                    key={signal.signal_id}
                     onClick={() => setSelectedSignalForAnalysis(signal)}
                     className="glass-effect backdrop-blur-sm overflow-hidden transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer hover:border-cyan-500/50 hover:scale-102"
                   >
@@ -2537,47 +2540,60 @@ ${isLoss ? `
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center icon-3d shadow-xl ${
-                            signal.result === 'profit'
+                            signal.feedback === 'success'
                               ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 shadow-emerald-500/30' 
                               : 'bg-gradient-to-br from-rose-500/20 to-rose-600/10 shadow-rose-500/30'
                           }`}>
-                            {signal.type === 'BUY' ? (
-                              <TrendingUp className={`w-6 h-6 ${signal.result === 'profit' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                            {signal.signal_type === 'forex' ? (
+                              <TrendingUp className={`w-6 h-6 ${signal.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`} />
                             ) : (
-                              <TrendingDown className={`w-6 h-6 ${signal.result === 'profit' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                              <TrendingDown className={`w-6 h-6 ${signal.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`} />
                             )}
                           </div>
                           <div>
-                            <h3 className="text-lg font-bold text-white">{signal.pair}</h3>
+                            <h3 className="text-lg font-bold text-white">
+                              {signal.signal_type === 'forex' ? 'Forex Signal' : 'OTC Signal'}
+                            </h3>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge className={`${
-                                signal.type === 'BUY' 
+                                signal.signal_type === 'forex' 
                                   ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                                   : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                               } text-xs`}>
-                                {signal.type}
+                                {signal.signal_type.toUpperCase()}
                               </Badge>
-                              <span className="text-xs text-slate-500">{signal.time}</span>
+                              <span className="text-xs text-slate-500">
+                                {new Date(signal.timestamp).toLocaleString('ru-RU')}
+                              </span>
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
                           <Badge className={`${
-                            signal.result === 'profit' 
+                            signal.feedback === 'success' 
                               ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                               : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                           }`}>
-                            {signal.result === 'profit' ? 'Успешно' : 'Проигрыш'}
+                            {signal.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
                           </Badge>
                           <div className="text-xs text-slate-500 mt-2">
-                            {signal.entry} → {signal.closePrice}
+                            ID: {signal.signal_id}
                           </div>
                           <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-cyan-400 mt-2" />
                         </div>
                       </div>
                     </div>
                   </Card>
-                ))}
+                ))
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
+                      <BarChart3 className="w-8 h-8 text-slate-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Нет исполненных сигналов</h3>
+                    <p className="text-slate-400">Выполните несколько сделок, чтобы увидеть их в аналитике</p>
+                  </div>
+                )}
               </div>
             </>
           ) : (
