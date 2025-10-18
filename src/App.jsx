@@ -1596,6 +1596,19 @@ ${isLoss ? `
     return remainingSeconds
   }
 
+  // Функция для очистки состояния сигналов
+  const clearSignalState = () => {
+    setGeneratedSignals([])
+    setPendingSignal(null)
+    setSignalTimer(0)
+    setIsWaitingFeedback(false)
+    // Очищаем localStorage
+    localStorage.removeItem('pendingSignal')
+    localStorage.removeItem('signalTimer')
+    localStorage.removeItem('isWaitingFeedback')
+    localStorage.removeItem('signalStartTime')
+  }
+
   // Активация сигнала
   const activateSignal = (signal) => {
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
@@ -1646,15 +1659,7 @@ ${isLoss ? `
     console.log(`📊 Фидбек: ${isSuccess ? 'success' : 'failure'} для сигнала ${pendingSignal.signal_id}`)
     
     // Очищаем состояние
-    setPendingSignal(null)
-    setSignalTimer(0)
-    setIsWaitingFeedback(false)
-    
-    // Очищаем localStorage
-    localStorage.removeItem('pendingSignal')
-    localStorage.removeItem('signalTimer')
-    localStorage.removeItem('isWaitingFeedback')
-    localStorage.removeItem('signalStartTime')
+    clearSignalState()
     
     alert(`✅ Фидбек принят: ${isSuccess ? 'Успешная сделка' : 'Убыточная сделка'}`)
     
@@ -3193,6 +3198,8 @@ ${isLoss ? `
             <Card 
               onClick={() => {
                 setSelectedMode('top3')
+                // Очищаем состояние сгенерированных сигналов
+                clearSignalState()
                 generateTop3Signals()
               }}
               className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-amber-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
@@ -3233,6 +3240,8 @@ ${isLoss ? `
             <Card 
               onClick={() => {
                 setSelectedMode('single')
+                // Очищаем состояние сгенерированных сигналов
+                clearSignalState()
                 setCurrentScreen('signal-selection')
               }}
               className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-purple-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
