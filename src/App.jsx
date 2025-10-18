@@ -38,6 +38,33 @@ function App() {
   const [signalTimer, setSignalTimer] = useState(0) // Таймер экспирации в секундах
   const [isWaitingFeedback, setIsWaitingFeedback] = useState(false) // Флаг ожидания фидбека
   const [lastTop3Generation, setLastTop3Generation] = useState(null) // Время последней генерации ТОП-3
+
+  // Функция проверки доступности форекс рынка
+  const isForexMarketOpen = () => {
+    const now = new Date()
+    const moscowTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Moscow"}))
+    const dayOfWeek = moscowTime.getDay() // 0 = воскресенье, 1 = понедельник, ..., 6 = суббота
+    
+    // Рынок закрыт в субботу (6) и воскресенье (0)
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return false
+    }
+    
+    // Рынок открыт с понедельника 00:00 до пятницы 23:59
+    return true
+  }
+
+  // Функция проверки возможности генерации топ-3 (каждые 10 минут)
+  const canGenerateTop3 = () => {
+    if (!lastTop3Generation) return true
+    
+    const now = new Date()
+    const lastGeneration = new Date(lastTop3Generation)
+    const timeDiff = now - lastGeneration
+    const tenMinutes = 10 * 60 * 1000 // 10 минут в миллисекундах
+    
+    return timeDiff >= tenMinutes
+  }
   const [top3Cooldown, setTop3Cooldown] = useState(0) // Оставшееся время до следующей генерации ТОП-3 в секундах
   const [lastSignalGeneration, setLastSignalGeneration] = useState({}) // Время последней генерации по парам
   const [signalCooldown, setSignalCooldown] = useState(0) // Cooldown для одиночного сигнала
@@ -1318,6 +1345,17 @@ ${isLoss ? `
     }
   }, [currentScreen])
 
+  // Обновляем таймер cooldown для топ-3 каждую секунду
+  useEffect(() => {
+    if (!canGenerateTop3()) {
+      const interval = setInterval(() => {
+        // Принудительно обновляем компонент для пересчета времени
+        setLastTop3Generation(prev => prev)
+      }, 1000)
+      return () => clearInterval(interval)
+    }
+  }, [lastTop3Generation])
+
   // Загрузка метрик рынка при выборе режима single
   useEffect(() => {
     if (currentScreen === 'signal-selection' && selectedMode === 'single') {
@@ -1407,19 +1445,14 @@ ${isLoss ? `
     }
   }, [noSignalAvailable])
 
-  // Проверка возможности генерации ТОП-3
-  const canGenerateTop3 = () => {
-    if (!lastTop3Generation) return true
-    const now = Date.now()
-    const timePassed = now - lastTop3Generation
-    const tenMinutes = 10 * 60 * 1000
-    return timePassed >= tenMinutes
-  }
 
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
   const generateTop3Signals = async () => {
     setIsGenerating(true)
     setCurrentScreen('generating')
+    
+    // Сохраняем время последней генерации топ-3
+    setLastTop3Generation(new Date().toISOString())
     
     // Этапы генерации
     const stages = [
@@ -2552,13 +2585,22 @@ ${isLoss ? `
                           </div>
                           <div>
                             <h3 className="text-lg font-bold text-white">
-                              {signal.signal_type === 'forex' ? 'Forex Signal' : 'OTC Signal'}
+                              {signal.pair || `${signal.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`}
                             </h3>
                             <div className="flex items-center gap-2 mt-1">
+                              {signal.direction && (
+                                <Badge className={`${
+                                  signal.direction === 'BUY' 
+                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                                    : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                                } text-xs`}>
+                                  {signal.direction}
+                                </Badge>
+                              )}
                               <Badge className={`${
                                 signal.signal_type === 'forex' 
-                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                                  : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
+                                  : 'bg-purple-500/20 text-purple-400 border-purple-500/50'
                               } text-xs`}>
                                 {signal.signal_type.toUpperCase()}
                               </Badge>
@@ -2566,6 +2608,13 @@ ${isLoss ? `
                                 {new Date(signal.timestamp).toLocaleString('ru-RU')}
                               </span>
                             </div>
+                            {signal.confidence && (
+                              <div className="mt-1">
+                                <span className="text-xs text-slate-400">
+                                  Уверенность: {Math.round(signal.confidence * 100)}%
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
@@ -2624,43 +2673,85 @@ ${isLoss ? `
                       <TrendingDown className={`w-8 h-8 ${selectedSignalForAnalysis.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`} />
                     )}
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">
-                      {selectedSignalForAnalysis.signal_type === 'forex' ? 'Forex Signal' : 'OTC Signal'}
-                    </h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge className={`${
-                        selectedSignalForAnalysis.signal_type === 'forex' 
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                          : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                      }`}>
-                        {selectedSignalForAnalysis.signal_type.toUpperCase()}
-                      </Badge>
-                      <Badge className={`${
-                        selectedSignalForAnalysis.feedback === 'success' 
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                          : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                      }`}>
-                        {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
-                      </Badge>
-                      <span className="text-xs text-slate-500">
-                        {new Date(selectedSignalForAnalysis.timestamp).toLocaleString('ru-RU')}
-                      </span>
-                    </div>
-                  </div>
+             <div>
+               <h2 className="text-2xl font-bold text-white">
+                 {selectedSignalForAnalysis.pair || `${selectedSignalForAnalysis.signal_type === 'forex' ? 'Forex' : 'OTC'} Signal`}
+               </h2>
+               <div className="flex items-center gap-2 mt-1">
+                 {selectedSignalForAnalysis.direction && (
+                   <Badge className={`${
+                     selectedSignalForAnalysis.direction === 'BUY' 
+                       ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                       : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                   }`}>
+                     {selectedSignalForAnalysis.direction}
+                   </Badge>
+                 )}
+                 <Badge className={`${
+                   selectedSignalForAnalysis.signal_type === 'forex' 
+                     ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
+                     : 'bg-purple-500/20 text-purple-400 border-purple-500/50'
+                 }`}>
+                   {selectedSignalForAnalysis.signal_type.toUpperCase()}
+                 </Badge>
+                 <Badge className={`${
+                   selectedSignalForAnalysis.feedback === 'success' 
+                     ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                     : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
+                 }`}>
+                   {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
+                 </Badge>
+                 <span className="text-xs text-slate-500">
+                   {new Date(selectedSignalForAnalysis.timestamp).toLocaleString('ru-RU')}
+                 </span>
+               </div>
+               {selectedSignalForAnalysis.confidence && (
+                 <div className="mt-2">
+                   <span className="text-sm text-slate-400">
+                     Уверенность: {Math.round(selectedSignalForAnalysis.confidence * 100)}%
+                   </span>
+                 </div>
+               )}
+             </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
                     <span className="text-slate-400 text-xs block mb-1">Тип сигнала</span>
                     <span className="text-white font-bold">{selectedSignalForAnalysis.signal_type.toUpperCase()}</span>
                   </div>
+                  {selectedSignalForAnalysis.direction && (
+                    <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
+                      <span className="text-slate-400 text-xs block mb-1">Направление</span>
+                      <span className={`font-bold ${selectedSignalForAnalysis.direction === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {selectedSignalForAnalysis.direction}
+                      </span>
+                    </div>
+                  )}
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
                     <span className="text-slate-400 text-xs block mb-1">Результат</span>
                     <span className={`font-bold ${selectedSignalForAnalysis.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
                     </span>
                   </div>
+                  {selectedSignalForAnalysis.entry_price && (
+                    <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
+                      <span className="text-slate-400 text-xs block mb-1">Цена входа</span>
+                      <span className="text-white font-bold">{selectedSignalForAnalysis.entry_price}</span>
+                    </div>
+                  )}
+                  {selectedSignalForAnalysis.expiration && (
+                    <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
+                      <span className="text-slate-400 text-xs block mb-1">Экспирация</span>
+                      <span className="text-white font-bold">{selectedSignalForAnalysis.expiration} мин</span>
+                    </div>
+                  )}
+                  {selectedSignalForAnalysis.confidence && (
+                    <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
+                      <span className="text-slate-400 text-xs block mb-1">Уверенность</span>
+                      <span className="text-white font-bold">{Math.round(selectedSignalForAnalysis.confidence * 100)}%</span>
+                    </div>
+                  )}
                 </div>
               </Card>
 
@@ -3231,12 +3322,20 @@ ${isLoss ? `
           <div className="space-y-4">
             <Card 
               onClick={() => {
+                if (!canGenerateTop3()) {
+                  // Показываем уведомление о cooldown
+                  const remainingTime = Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000)
+                  const minutes = Math.floor(remainingTime / 60)
+                  const seconds = remainingTime % 60
+                  alert(`Топ-3 сигналы можно генерировать раз в 10 минут. Осталось: ${minutes}:${seconds.toString().padStart(2, '0')}`)
+                  return
+                }
                 setSelectedMode('top3')
                 // Очищаем состояние сгенерированных сигналов
                 clearSignalState()
                 generateTop3Signals()
               }}
-              className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-amber-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
+              className={`glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-amber-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${!canGenerateTop3() ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -3251,6 +3350,11 @@ ${isLoss ? `
                       </Badge>
                     </div>
                     <p className="text-slate-400 text-sm mb-3">Лучшие возможности дня</p>
+                    {!canGenerateTop3() && (
+                      <p className="text-xs text-amber-400 mb-2">
+                        Доступно через: {Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)} мин
+                      </p>
+                    )}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -3273,12 +3377,16 @@ ${isLoss ? `
 
             <Card 
               onClick={() => {
+                if (!isForexMarketOpen()) {
+                  alert('Форекс рынок закрыт в выходные дни. Доступен только OTC режим.')
+                  return
+                }
                 setSelectedMode('single')
                 // Очищаем состояние сгенерированных сигналов
                 clearSignalState()
                 setCurrentScreen('signal-selection')
               }}
-              className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-purple-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
+              className={`glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-purple-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${!isForexMarketOpen() ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -3288,6 +3396,11 @@ ${isLoss ? `
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">Одиночные сигналы</h3>
                     <p className="text-slate-400 text-sm mb-3">По одному сигналу за раз</p>
+                    {!isForexMarketOpen() && (
+                      <p className="text-xs text-rose-400 mb-2">
+                        Форекс рынок закрыт (выходные)
+                      </p>
+                    )}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
