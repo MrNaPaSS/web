@@ -3468,14 +3468,14 @@ ${isLoss ? `
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
         <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/50 shadow-xl">
-          <div className="container mx-auto px-4 py-4">
+          <div className="container mx-auto px-3 py-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 icon-3d">
-                  <Brain className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 icon-3d">
+                  <Brain className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">Выбор ML модели</h1>
+                  <h1 className="text-lg font-bold text-white">Выбор ML модели</h1>
                   <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-xs">
                     SELECT MODEL
                   </Badge>
@@ -3485,17 +3485,17 @@ ${isLoss ? `
                 onClick={() => setCurrentScreen('settings')}
                 variant="ghost" 
                 size="icon" 
-                className="text-slate-400 hover:text-white hover:bg-slate-800/50"
+                className="text-slate-400 hover:text-white hover:bg-slate-800/50 w-10 h-10"
               >
-                <ChevronRight className="w-5 h-5 rotate-180" />
+                <ChevronRight className="w-4 h-4 rotate-180" />
               </Button>
             </div>
           </div>
         </header>
 
         {/* ML Models List */}
-        <div className="container mx-auto px-4 py-6">
-          <div className="space-y-4">
+        <div className="container mx-auto px-3 py-4">
+          <div className="space-y-3">
             {mlModels.map((model) => {
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
@@ -3514,7 +3514,7 @@ ${isLoss ? `
                       setCurrentScreen('premium')
                     }
                   }}
-                  className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer ${
+                  className={`glass-effect p-4 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer ${
                     isActive 
                       ? 'border-emerald-500/70 bg-emerald-500/10' 
                       : isOwned
@@ -3524,76 +3524,90 @@ ${isLoss ? `
                       : 'hover:border-yellow-500/50 hover:scale-102'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-xl`}>
-                        <span className="text-3xl">{model.emoji}</span>
+                  <div className="flex flex-col gap-3">
+                    {/* Top row: Icon and title */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-xl`}>
+                          <span className="text-2xl">{model.emoji}</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-white">{model.name}</h3>
+                          <p className="text-slate-300 text-sm">{model.algorithm}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-bold text-white">{model.name}</h3>
-                          {isActive && (
-                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
-                              ✓ АКТИВНА
-                            </Badge>
-                          )}
-                          {isRestricted && (
-                            <Badge className="bg-red-500/20 text-red-400 border-red-500/50">
-                              <Lock className="w-3 h-3 mr-1" />
-                              ЗАБЛОКИРОВАНА
-                            </Badge>
-                          )}
-                          {!isOwned && !isRestricted && (
-                            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
-                              <Lock className="w-3 h-3 mr-1" />
-                              ТРЕБУЕТСЯ ПОДПИСКА
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-slate-300 text-sm mb-2">{model.algorithm}</p>
-                        <div className="flex items-center gap-4 text-sm mb-2">
-                          <div className="flex items-center gap-1">
-                            <Target className="w-4 h-4 text-emerald-400" />
-                            <span className="text-emerald-400 font-semibold">{model.winrate}</span>
-                          </div>
-                          <span className="text-slate-600">•</span>
-                          <span className="text-slate-400">{model.style}</span>
-                        </div>
-                        <p className="text-slate-400 text-xs italic">💬 {model.description}</p>
-                        {model.warning && (
-                          <p className="text-red-400 text-xs mt-2 font-semibold">⚠️ {model.warning}</p>
+                      <div className="flex flex-col items-end gap-1">
+                        {isActive && (
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs">
+                            ✓ АКТИВНА
+                          </Badge>
+                        )}
+                        {isRestricted && (
+                          <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-xs">
+                            <Lock className="w-3 h-3 mr-1" />
+                            ЗАБЛОКИРОВАНА
+                          </Badge>
                         )}
                         {!isOwned && !isRestricted && (
-                          <div className="flex items-center gap-3 mt-3">
-                            <span className="text-yellow-400 font-bold text-sm">{model.monthlyPrice}/мес</span>
-                            <span className="text-slate-600">или</span>
-                            <span className="text-green-400 font-bold text-sm">{model.lifetimePrice} навсегда</span>
-                          </div>
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-xs">
+                            <Lock className="w-3 h-3 mr-1" />
+                            ТРЕБУЕТСЯ ПОДПИСКА
+                          </Badge>
                         )}
                       </div>
                     </div>
-                    <div>
-                      {isActive ? (
-                        <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                    
+                    {/* Stats row */}
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Target className="w-4 h-4 text-emerald-400" />
+                        <span className="text-emerald-400 font-semibold">{model.winrate}</span>
+                      </div>
+                      <span className="text-slate-600">•</span>
+                      <span className="text-slate-400">{model.style}</span>
+                    </div>
+                    
+                    {/* Description */}
+                    <p className="text-slate-400 text-sm italic">💬 {model.description}</p>
+                    
+                    {model.warning && (
+                      <p className="text-red-400 text-sm font-semibold">⚠️ {model.warning}</p>
+                    )}
+                    
+                    {/* Bottom row: Pricing and button */}
+                    <div className="flex items-center justify-between">
+                      {!isOwned && !isRestricted && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-yellow-400 font-bold">{model.monthlyPrice}/мес</span>
+                          <span className="text-slate-600">или</span>
+                          <span className="text-green-400 font-bold">{model.lifetimePrice} навсегда</span>
                         </div>
-                      ) : isOwned && !isRestricted ? (
-                        <Button
-                          variant="outline"
-                          className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
-                        >
-                          Выбрать
-                        </Button>
-                      ) : isRestricted ? (
-                        <Lock className="w-6 h-6 text-red-400" />
-                      ) : (
-                        <Button
-                          variant="outline"
-                          className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
-                        >
-                          Купить
-                        </Button>
                       )}
+                      <div className="flex items-center">
+                        {isActive ? (
+                          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          </div>
+                        ) : isOwned && !isRestricted ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 h-8 px-3"
+                          >
+                            Выбрать
+                          </Button>
+                        ) : isRestricted ? (
+                          <Lock className="w-5 h-5 text-red-400" />
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-8 px-3"
+                          >
+                            Купить
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
@@ -3602,13 +3616,13 @@ ${isLoss ? `
           </div>
 
           {/* Info */}
-          <Card className="glass-effect border-cyan-500/30 p-6 mt-6 card-3d shadow-2xl">
+          <Card className="glass-effect border-cyan-500/30 p-4 mt-4 card-3d shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center icon-3d shadow-lg shadow-cyan-500/20">
-                <Brain className="w-5 h-5 text-cyan-400" />
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center icon-3d shadow-lg shadow-cyan-500/20">
+                <Brain className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white mb-1">О ML моделях</h3>
+                <h3 className="text-base font-bold text-white mb-1">О ML моделях</h3>
                 <p className="text-slate-400 text-sm">
                   Вы можете переключаться между купленными моделями в любое время. Каждая модель имеет свой уникальный алгоритм и винрейт.
                 </p>
