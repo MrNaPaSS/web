@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button.jsx'
 import { Card } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
-import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check } from 'lucide-react'
+import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check, RefreshCw } from 'lucide-react'
 import { TelegramAuth } from '@/components/TelegramAuth.jsx'
+import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 
 function App() {
@@ -13,8 +14,8 @@ function App() {
   
   // Функция для определения правильного API URL
   const getApiUrl = (port) => {
-    // Используем новый рабочий туннель
-    return `https://typing-evans-direct-presents.trycloudflare.com`
+    // Используем API поддомен
+    return `https://bot.nomoneynohoney.online`
   }
   
   const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
@@ -29,9 +30,207 @@ function App() {
   const [selectedMLModel, setSelectedMLModel] = useState('logistic-spy') // shadow-stack, forest-necromancer, gray-cardinal, logistic-spy, sniper-80x
   const [selectedUser, setSelectedUser] = useState(null) // Выбранный пользователь для детальной статистики
   const [userSubscriptions, setUserSubscriptions] = useState(['logistic-spy']) // Купленные модели пользователя (по умолчанию базовая)
+  const [subscriptionTemplates, setSubscriptionTemplates] = useState([]) // Шаблоны подписок
+  const [selectedUsersForBulk, setSelectedUsersForBulk] = useState([]) // Выбранные пользователи для массовых операций
+  const [selectedModelForPurchase, setSelectedModelForPurchase] = useState(null) // Модель для покупки
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false) // Показать модальное окно покупки
+  
+  // Функция для загрузки подписок пользователя
+  const loadUserSubscriptions = async (userId) => {
+    try {
+      console.log('🔄 Загружаем подписки для пользователя:', userId)
+      const response = await fetch(`${getApiUrl()}/api/user/subscriptions?user_id=${userId}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setUserSubscriptions(data.subscriptions)
+        console.log('✅ Подписки пользователя загружены:', data.subscriptions)
+        
+        // Обновляем выбранную ML модель на первую доступную из подписок
+        if (data.subscriptions && data.subscriptions.length > 0) {
+          const firstAvailableModel = data.subscriptions[0]
+          if (firstAvailableModel !== selectedMLModel) {
+            setSelectedMLModel(firstAvailableModel)
+            console.log('🔄 ML модель обновлена на:', firstAvailableModel)
+          }
+        }
+      } else {
+        console.error('❌ Ошибка загрузки подписок:', data.error)
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки подписок:', error)
+    }
+  }
+
+  // Функция для обновления подписки пользователя
+  const updateUserSubscription = async (userId, subscriptions) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/user/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          subscriptions: subscriptions
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Если это текущий пользователь, обновляем его подписку
+        if (userId === userData?.id) {
+          setUserSubscriptions(subscriptions)
+        }
+        console.log('Подписка пользователя обновлена:', subscriptions)
+        return true
+      } else {
+        console.error('Ошибка обновления подписки:', data.error)
+        return false
+      }
+    } catch (error) {
+      console.error('Ошибка обновления подписки:', error)
+      return false
+    }
+  }
   const [selectedSignalForAnalysis, setSelectedSignalForAnalysis] = useState(null) // Выбранный сигнал для анализа
   const [analysisResult, setAnalysisResult] = useState(null) // Результат анализа от GPT
   const [isAnalyzing, setIsAnalyzing] = useState(false) // Флаг процесса анализа
+  
+  // Автоматическая загрузка подписок при возврате в меню
+  useEffect(() => {
+    if (currentScreen === 'menu' && userData?.id) {
+      console.log('🔄 Возврат в меню - загружаем подписки')
+      loadUserSubscriptions(userData.id)
+    }
+  }, [currentScreen, userData?.id])
+
+  // Принудительная загрузка подписок при каждом переходе в меню
+  useEffect(() => {
+    if (currentScreen === 'menu' && userData?.id) {
+      // Небольшая задержка для гарантии загрузки
+      const timer = setTimeout(() => {
+        console.log('🔄 Принудительная загрузка подписок в меню')
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [currentScreen])
+
+  // Периодическая проверка подписок каждые 2 секунды
+  useEffect(() => {
+    if (!userData?.id) return
+
+    const interval = setInterval(() => {
+      console.log('🔄 Периодическая проверка подписок')
+      loadUserSubscriptions(userData.id)
+    }, 2000) // 2 секунды для очень быстрого обновления
+
+    return () => clearInterval(interval)
+  }, [userData?.id])
+
+  // Загрузка подписок при инициализации пользователя
+  useEffect(() => {
+    if (userData?.id) {
+      console.log('🔄 Инициализация пользователя - загружаем подписки')
+      loadUserSubscriptions(userData.id)
+    }
+  }, [userData?.id])
+
+  // Загрузка подписок при переходе на экран настроек
+  useEffect(() => {
+    if (currentScreen === 'settings' && userData?.id) {
+      console.log('🔄 Переход в настройки - загружаем подписки')
+      loadUserSubscriptions(userData.id)
+    }
+  }, [currentScreen, userData?.id])
+
+  // Загрузка подписок при переходе на экран выбора ML модели
+  useEffect(() => {
+    if (currentScreen === 'ml-selector' && userData?.id) {
+      console.log('🔄 Переход в выбор ML модели - загружаем подписки')
+      loadUserSubscriptions(userData.id)
+    }
+  }, [currentScreen, userData?.id])
+
+  // Загрузка шаблонов при переходе в админ-панель
+  useEffect(() => {
+    if (currentScreen === 'admin' && isAdmin) {
+      console.log('🔄 Переход в админ-панель - загружаем шаблоны')
+      loadSubscriptionTemplates()
+    }
+  }, [currentScreen, isAdmin])
+
+  // Глобальное обновление подписок при всех переходах между экранами
+  useEffect(() => {
+    if (userData?.id && currentScreen !== 'auth' && currentScreen !== 'language-select') {
+      console.log('🔄 Глобальное обновление подписок при переходе на экран:', currentScreen)
+      // Принудительное обновление с задержкой
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+    }
+  }, [currentScreen, userData?.id])
+
+  // WebSocket для real-time обновлений подписок
+  useWebSocket(userData?.id, (newSubscriptions) => {
+    setUserSubscriptions(newSubscriptions);
+    console.log('🔄 Подписки обновлены через WebSocket:', newSubscriptions);
+  });
+
+  // Функция для загрузки шаблонов подписок
+  const loadSubscriptionTemplates = async () => {
+    try {
+      console.log('🔄 Загружаем шаблоны подписок...')
+      const response = await fetch(`${getApiUrl()}/api/admin/subscription-templates`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setSubscriptionTemplates(data.templates)
+        console.log('✅ Шаблоны подписок загружены:', data.templates)
+      } else {
+        console.error('❌ Ошибка загрузки шаблонов:', data.error)
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки шаблонов:', error)
+    }
+  }
+
+  // Функция для массового обновления подписок
+  const bulkUpdateSubscriptions = async (userIds, subscriptions) => {
+    try {
+      console.log('🔄 Массовое обновление подписок для пользователей:', userIds)
+      const response = await fetch(`${getApiUrl()}/api/admin/bulk-subscription-update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_ids: userIds,
+          subscriptions: subscriptions,
+          admin_user_id: userData?.id
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('✅ Массовое обновление завершено:', data)
+        alert(`✅ Обновлено ${data.successful_updates} из ${data.total_users} пользователей`)
+        return true
+      } else {
+        console.error('❌ Ошибка массового обновления:', data.error)
+        alert(`❌ Ошибка массового обновления: ${data.error}`)
+        return false
+      }
+    } catch (error) {
+      console.error('❌ Ошибка массового обновления:', error)
+      alert(`❌ Ошибка массового обновления: ${error.message}`)
+      return false
+    }
+  }
   
   // Блокировка навигации и ожидание фидбека
   const [pendingSignal, setPendingSignal] = useState(null) // Активный сигнал ожидающий фидбека
@@ -342,18 +541,18 @@ function App() {
       
       if (data.success) {
         console.log('✅ Заявка одобрена')
-        alert(`✅ Пользователь ${userIdToApprove} добавлен в систему`)
+        alert(`✅ ${t('userAdded')}`)
         
         // Обновляем данные
         loadAdminStats()
         loadAccessRequests()
       } else {
         console.error('❌ Ошибка одобрения:', data.error)
-        alert(`❌ Ошибка: ${data.error}`)
+        alert(`❌ ${t('errorOccurred')}: ${data.error}`)
       }
     } catch (error) {
       console.error('❌ Ошибка при одобрении заявки:', error)
-      alert(`❌ Ошибка: ${error.message}`)
+      alert(`❌ ${t('errorOccurred')}: ${error.message}`)
     }
   }
 
@@ -397,7 +596,204 @@ function App() {
       consciousRisk: 'Каждый вход — осознанный риск.',
       activeModel: 'АКТИВНАЯ',
       model: 'МОДЕЛЬ:',
-      modelReady: 'Модель обучена и готова к работе'
+      modelReady: 'Модель обучена и готова к работе',
+      // Новые переводы
+      comingSoon: 'СКОРО',
+      comingSoonDescription: 'Скоро будет доступно',
+      chatWithTraders: 'Общение с другими трейдерами',
+      manageParameters: 'Управление параметрами',
+      manageAppSettings: 'Управление параметрами приложения',
+      mlModel: 'ML Модель',
+      statistics: 'Статистика',
+      viewDetails: 'Просмотр детальной статистики',
+      notifications: 'Уведомления',
+      setupPushNotifications: 'Настройка push-уведомлений',
+      // Уведомления - детали
+      newSignals: 'Новые сигналы',
+      newSignalsDescription: 'Уведомления о новых сигналах',
+      signalResults: 'Результаты сигналов',
+      signalResultsDescription: 'Уведомления о закрытии сделок',
+      dailySummary: 'Ежедневная сводка',
+      dailySummaryDescription: 'Итоги дня в 21:00',
+      systemNotifications: 'Системные уведомления',
+      marketNews: 'Новости рынка',
+      marketNewsDescription: 'Важные события на рынке',
+      systemUpdates: 'Обновления системы',
+      systemUpdatesDescription: 'Новые функции и исправления',
+      soundAndVibration: 'Звук и вибрация',
+      soundNotification: 'Звук',
+      soundNotificationsDescription: 'Звуковые уведомления',
+      vibration: 'Вибрация',
+      vibrationDescription: 'Вибро-сигнал при уведомлениях',
+      emailNotifications: 'Email уведомления',
+      emailNotificationsDescription: 'Дублировать на почту',
+      smartNotifications: 'Умные уведомления',
+      smartNotificationsDescription: 'Получайте своевременные уведомления о важных событиях. Вы можете настроить каждый тип отдельно.',
+      // Новые ключи для главного меню
+      chooseAction: 'Выберите действие',
+      getTradingSignals: 'Получайте сигналы для торговли',
+      aiSignalAnalysis: 'Анализ сигналов с AI',
+      // Сигналы
+      direction: 'Направление',
+      expiration: 'Экспирация',
+      confidence: 'Уверенность',
+      clickToActivate: 'Нажмите для активации',
+      signalReady: 'Сигнал готов',
+      activateSignalForTrading: 'Активируйте сигнал для торговли',
+      // Подтверждения
+      confirmDeleteUser: 'Вы уверены, что хотите удалить пользователя',
+      actionCannotBeUndone: 'Это действие нельзя отменить',
+      // Аналитика
+      signalType: 'Тип сигнала',
+      result: 'Результат',
+      entryPrice: 'Цена входа',
+      runAIAnalysis: 'Запустить AI анализ',
+      analyzingTrade: 'Анализирую сделку...',
+      gptProcessingData: 'GPT-4o mini обрабатывает данные',
+      // Админ-панель
+      totalUsers: 'Всего пользователей',
+      online: 'Онлайн',
+      noAccessRequests: 'Нет заявок на доступ',
+      newRequestsWillAppearHere: 'Новые заявки будут отображаться здесь',
+      detailedInformation: 'Детальная информация',
+      tradingDays: 'Дней торговли',
+      // Генерация сигналов
+      connectingToMarket: 'Подключение к рынку...',
+      analyzingTechnicalIndicators: 'Анализ технических индикаторов...',
+      evaluatingNewsBackground: 'Оценка новостного фона...',
+      calculatingOptimalExpiration: 'Расчёт оптимальной экспирации...',
+      applyingMLModels: 'Применение ML моделей...',
+      formingTop3Signals: 'Формирование ТОП-3 сигналов...',
+      analyzingPair: 'Анализ пары {pair}...',
+      calculatingTechnicalIndicators: 'Расчёт технических индикаторов...',
+      applyingMLModel: 'Применение ML модели...',
+      determiningEntryPoint: 'Определение точки входа...',
+      // ML модели
+      shadowStack: 'ТЕНЕВОЙ СТЕК',
+      shadowStackDesc: 'Не палится, не лагает, не брешет. Просто делает грязь.',
+      shadowStackAlgo: 'Ensemble (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      shadowStackStyle: 'Среднесрок, интрадей',
+      forestNecromancer: 'ЛЕСНОЙ НЕКРОМАНТ',
+      forestNecromancerDesc: 'С виду ботаник, по факту шаман рынков.',
+      forestNecromancerAlgo: 'RandomForest - Призванный из леса решений',
+      forestNecromancerStyle: 'Информер с визуализацией импульсных зон',
+      grayCardinal: 'СЕРЫЙ КАРДИНАЛ',
+      grayCardinalDesc: 'Ты его не видишь, но он знает твой вход раньше тебя.',
+      grayCardinalAlgo: 'XGBoost - Не на слуху, зато всё под контролем',
+      grayCardinalStyle: 'Сигналы на младших ТФ, с доп. фильтрами',
+      logisticSpy: 'ЛОГИСТИЧЕСКИЙ ШПИОН',
+      logisticSpyDesc: 'Старая школа, но знает все ходы.',
+      logisticSpyAlgo: 'LogisticRegression - Классик в мире ML',
+      logisticSpyStyle: 'Консервативный, проверенный временем',
+      sniper80x: 'СНАЙПЕР 80Х',
+      sniper80xDesc: 'Запускаешь — и рынок замолкает. Один вход — один труп.',
+      sniper80xAlgo: 'Финальная модель - Легенда среди своих',
+      sniper80xStyle: 'Точный вход, позиционный, иногда скальп',
+      sniper80xWarning: 'Только по команде. Авто не включается.',
+      // Статусы
+      activeStatus: 'АКТИВНА',
+      inactive: 'НЕАКТИВНА',
+      available: 'ДОСТУПНА',
+      blocked: 'ЗАБЛОКИРОВАНА',
+      success: 'Успешно',
+      failure: 'Проигрыш',
+      // Действия
+      buyAction: 'Купить',
+      selectAction: 'Выбрать',
+      approve: 'Одобрить',
+      delete: 'Удалить',
+      save: 'Сохранить',
+      cancel: 'Отмена',
+      apply: 'Применить',
+      update: 'Обновить',
+      // Генерация сигналов
+      loadingMarkets: 'Загрузка рынков...',
+      analyzingTrends: 'Анализ трендов...',
+      applyingML: 'Применение ML моделей...',
+      calculatingEntry: 'Расчет точек входа...',
+      assessingRisks: 'Оценка рисков...',
+      finalCheck: 'Финальная проверка...',
+      // Админ-панель
+      activeUsers: 'Активные пользователи',
+      totalSignals: 'Всего сигналов',
+      successful: 'Успешных',
+      failed: 'Проигрышных',
+      topUsers: 'Топ пользователи',
+      accessRequests: 'Заявки на доступ',
+      subscriptionHistory: 'История изменений подписок',
+      // Статистика
+      myStatistics: 'Моя статистика',
+      winRate: 'Винрейт',
+      currentStreak: 'Текущая серия',
+      bestStreak: 'Лучшая серия',
+      averageProfit: 'Средняя прибыль',
+      signalsPerDay: 'Сигналов в день',
+      bestPair: 'Лучшая пара',
+      worstPair: 'Худшая пара',
+      // Подписки
+      monthlySubscription: 'Ежемесячная подписка',
+      lifetimePurchase: 'Пожизненная покупка',
+      autoRenewal: 'Автоматическое продление',
+      noTimeLimit: 'Без ограничений по времени',
+      selectSubscriptionType: 'Выберите тип подписки:',
+      // Уведомления
+      soundNotification: 'Звук',
+      vibration: 'Вибрация',
+      pushNotification: 'Push',
+      enabled: 'Включен',
+      disabled: 'Выключен',
+      // Аналитика
+      aiAnalytics: 'AI Аналитика',
+      successfulTradesHistory: 'История успешных сделок',
+      analyzeSignal: 'Проанализировать сигнал',
+      analyzingInProgress: 'Анализ выполняется...',
+      cancelAnalysis: 'Отменить анализ',
+      // Системные сообщения
+      userAdded: 'Пользователь добавлен в систему',
+      errorOccurred: 'Произошла ошибка',
+      loadingData: 'Загрузка данных...',
+      // Модальные окна
+      tradeActivated: 'СДЕЛКА АКТИВИРОВАНА',
+      timeExpired: '⏰ Время истекло!',
+      leaveFeedback: 'Оставьте фидбек о результате сделки',
+      pair: 'Пара',
+      direction: 'Направление',
+      resultButtonsActive: 'Кнопки результата стали активными',
+      indicateTradeResult: 'После истечения времени укажите результат торговли',
+      successfulTrade: 'Успешная сделка',
+      losingTrade: 'Убыточная сделка',
+      leaveFeedbackToUnlock: '⚠️ Оставьте фидбек чтобы разблокировать навигацию',
+      navigationLocked: 'Навигация заблокирована',
+      waitForExpiration: 'Дождитесь экспирации сигнала и оставьте фидбек',
+      timeRemaining: 'Осталось до экспирации',
+      noSuitableEntry: '⚠️ Нет подходящей точки входа',
+      marketConditionsNotOptimal: 'Текущие рыночные условия не оптимальны для открытия позиции',
+      analysisCompleted: 'Анализ завершён',
+      recommendations: 'Рекомендации',
+      tryAnotherPair: 'Попробуйте другую пару',
+      selectAnotherPairDescription: 'Выберите другую валютную пару с более благоприятными условиями',
+      waitForOptimalConditions: 'Подождите оптимальных условий',
+      tryAgainWhen: 'Попробуйте снова через {seconds} секунд, когда рынок стабилизируется',
+      returnToPairSelection: 'Вернуться к выбору пары',
+      patienceIsKey: '💡 Терпение — ключ к успешной торговле',
+      warningAttention: '⚠️ ВНИМАНИЕ!',
+      systemBypassDetected: 'Обнаружена попытка обхода системы',
+      activeSignalRequiresCompletion: 'У вас есть активный сигнал, который требует завершения. Перезагрузка страницы не поможет обойти блокировку навигации.',
+      activeSignal: 'Активный сигнал',
+      feedbackRequired: '⏰ Требуется фидбек!',
+      returnToOpenTrade: 'Вернуться к открытой сделке',
+      bypassProtectionActive: 'Система защиты от обхода блокировки навигации активирована',
+      waitForActiveSignal: '⚠️ Дождитесь завершения активного сигнала и оставьте фидбек перед переходом!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ Подписка обновлена для {name}! Пользователь получит доступ к выбранным ML моделям.',
+      subscriptionUpdateError: '❌ Ошибка обновления подписки для {name}',
+      subscriptionDisabled: '✅ Подписка отключена для {name}!',
+      subscriptionDisableError: '❌ Ошибка отключения подписки для {name}',
+      confirmDeleteUser: 'Вы уверены, что хотите удалить пользователя {name}? Это действие нельзя отменить.',
+      userDeleted: '✅ Пользователь {name} удалён из системы',
+      userDeleteError: '❌ Ошибка удаления пользователя {name}',
+      accessRequestApproved: '✅ Заявка на доступ одобрена для {name}',
+      accessRequestError: '❌ Ошибка одобрения заявки для {name}'
     },
     en: {
       welcome: 'Welcome',
@@ -436,7 +832,162 @@ function App() {
       consciousRisk: 'Every entry is a conscious risk.',
       activeModel: 'ACTIVE',
       model: 'MODEL:',
-      modelReady: 'Model trained and ready for work'
+      modelReady: 'Model trained and ready for work',
+      // Новые переводы
+      comingSoon: 'SOON',
+      comingSoonDescription: 'Coming soon',
+      chatWithTraders: 'Chat with other traders',
+      manageParameters: 'Manage parameters',
+      manageAppSettings: 'Manage app settings',
+      mlModel: 'ML Model',
+      statistics: 'Statistics',
+      viewDetails: 'View detailed statistics',
+      notifications: 'Notifications',
+      setupPushNotifications: 'Setup push notifications',
+      // Уведомления - детали
+      newSignals: 'New Signals',
+      newSignalsDescription: 'Notifications about new signals',
+      signalResults: 'Signal Results',
+      signalResultsDescription: 'Notifications about trade closures',
+      dailySummary: 'Daily Summary',
+      dailySummaryDescription: 'Day summary at 21:00',
+      systemNotifications: 'System Notifications',
+      marketNews: 'Market News',
+      marketNewsDescription: 'Important market events',
+      systemUpdates: 'System Updates',
+      systemUpdatesDescription: 'New features and fixes',
+      soundAndVibration: 'Sound & Vibration',
+      soundNotification: 'Sound',
+      soundNotificationsDescription: 'Sound notifications',
+      vibration: 'Vibration',
+      vibrationDescription: 'Vibration signal for notifications',
+      emailNotifications: 'Email Notifications',
+      emailNotificationsDescription: 'Duplicate to email',
+      smartNotifications: 'Smart Notifications',
+      smartNotificationsDescription: 'Get timely notifications about important events. You can configure each type separately.',
+      // Новые ключи для главного меню
+      chooseAction: 'Choose action',
+      getTradingSignals: 'Get trading signals',
+      aiSignalAnalysis: 'AI signal analysis',
+      // Сигналы
+      direction: 'Direction',
+      expiration: 'Expiration',
+      confidence: 'Confidence',
+      clickToActivate: 'Click to activate',
+      signalReady: 'Signal ready',
+      activateSignalForTrading: 'Activate signal for trading',
+      // Подтверждения
+      confirmDeleteUser: 'Are you sure you want to delete user',
+      actionCannotBeUndone: 'This action cannot be undone',
+      // Аналитика
+      signalType: 'Signal type',
+      result: 'Result',
+      entryPrice: 'Entry price',
+      runAIAnalysis: 'Run AI analysis',
+      analyzingTrade: 'Analyzing trade...',
+      gptProcessingData: 'GPT-4o mini processing data',
+      // Админ-панель
+      totalUsers: 'Total users',
+      online: 'Online',
+      noAccessRequests: 'No access requests',
+      newRequestsWillAppearHere: 'New requests will appear here',
+      detailedInformation: 'Detailed information',
+      tradingDays: 'Trading days',
+      // Генерация сигналов
+      connectingToMarket: 'Connecting to market...',
+      analyzingTechnicalIndicators: 'Analyzing technical indicators...',
+      evaluatingNewsBackground: 'Evaluating news background...',
+      calculatingOptimalExpiration: 'Calculating optimal expiration...',
+      applyingMLModels: 'Applying ML models...',
+      formingTop3Signals: 'Forming TOP-3 signals...',
+      analyzingPair: 'Analyzing pair {pair}...',
+      calculatingTechnicalIndicators: 'Calculating technical indicators...',
+      applyingMLModel: 'Applying ML model...',
+      determiningEntryPoint: 'Determining entry point...',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      shadowStackDesc: 'Doesn\'t miss, doesn\'t lag, doesn\'t lie. Just does the dirty work.',
+      shadowStackAlgo: 'Ensemble (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      shadowStackStyle: 'Medium-term, intraday',
+      forestNecromancer: 'FOREST NECROMANCER',
+      forestNecromancerDesc: 'Looks like a nerd, acts like a market shaman.',
+      forestNecromancerAlgo: 'RandomForest - Summoned from the forest of decisions',
+      forestNecromancerStyle: 'Informer with impulse zone visualization',
+      grayCardinal: 'GRAY CARDINAL',
+      grayCardinalDesc: 'You don\'t see him, but he knows your entry before you.',
+      grayCardinalAlgo: 'XGBoost - Not on the radar, but everything is under control',
+      grayCardinalStyle: 'Signals on lower timeframes, with extra filters',
+      logisticSpy: 'LOGISTIC SPY',
+      logisticSpyDesc: 'Old school, but knows all the moves.',
+      logisticSpyAlgo: 'LogisticRegression - A classic in the ML world',
+      logisticSpyStyle: 'Conservative, time-tested',
+      sniper80x: 'SNIPER 80X',
+      sniper80xDesc: 'You launch it — and the market goes silent. One entry — one kill.',
+      sniper80xAlgo: 'Final model - Legend among its own',
+      sniper80xStyle: 'Precise entry, positional, sometimes scalp',
+      sniper80xWarning: 'By command only. Auto doesn\'t activate.',
+      // Статусы
+      activeStatus: 'ACTIVE',
+      inactive: 'INACTIVE',
+      available: 'AVAILABLE',
+      blocked: 'BLOCKED',
+      success: 'Success',
+      failure: 'Failure',
+      // Действия
+      buyAction: 'Buy',
+      selectAction: 'Select',
+      approve: 'Approve',
+      delete: 'Delete',
+      save: 'Save',
+      cancel: 'Cancel',
+      apply: 'Apply',
+      update: 'Update',
+      // Генерация сигналов
+      loadingMarkets: 'Loading markets...',
+      analyzingTrends: 'Analyzing trends...',
+      applyingML: 'Applying ML models...',
+      calculatingEntry: 'Calculating entry points...',
+      assessingRisks: 'Assessing risks...',
+      finalCheck: 'Final check...',
+      // Админ-панель
+      activeUsers: 'Active users',
+      totalSignals: 'Total signals',
+      successful: 'Successful',
+      failed: 'Failed',
+      topUsers: 'Top users',
+      accessRequests: 'Access requests',
+      subscriptionHistory: 'Subscription history',
+      // Статистика
+      myStatistics: 'My statistics',
+      winRate: 'Win rate',
+      currentStreak: 'Current streak',
+      bestStreak: 'Best streak',
+      averageProfit: 'Average profit',
+      signalsPerDay: 'Signals per day',
+      bestPair: 'Best pair',
+      worstPair: 'Worst pair',
+      // Подписки
+      monthlySubscription: 'Monthly subscription',
+      lifetimePurchase: 'Lifetime purchase',
+      autoRenewal: 'Auto renewal',
+      noTimeLimit: 'No time limit',
+      selectSubscriptionType: 'Select subscription type:',
+      // Уведомления
+      soundNotification: 'Sound',
+      vibration: 'Vibration',
+      pushNotification: 'Push',
+      enabled: 'Enabled',
+      disabled: 'Disabled',
+      // Аналитика
+      aiAnalytics: 'AI Analytics',
+      successfulTradesHistory: 'Successful trades history',
+      analyzeSignal: 'Analyze signal',
+      analyzingInProgress: 'Analyzing...',
+      cancelAnalysis: 'Cancel analysis',
+      // Системные сообщения
+      userAdded: 'User added to system',
+      errorOccurred: 'An error occurred',
+      loadingData: 'Loading data...'
     },
     th: {
       welcome: 'ยินดีต้อนรับ',
@@ -475,7 +1026,146 @@ function App() {
       consciousRisk: 'ทุกการเข้าเป็นความเสี่ยงที่รู้ตัว',
       activeModel: 'ใช้งานอยู่',
       model: 'โมเดล:',
-      modelReady: 'โมเดลได้รับการฝึกฝนและพร้อมใช้งาน'
+      modelReady: 'โมเดลได้รับการฝึกฝนและพร้อมใช้งาน',
+      // Новые переводы
+      comingSoon: 'เร็วๆ นี้',
+      comingSoonDescription: 'เร็วๆ นี้จะเปิดให้บริการ',
+      chatWithTraders: 'แชทกับเทรดเดอร์คนอื่น',
+      manageParameters: 'จัดการพารามิเตอร์',
+      manageAppSettings: 'จัดการการตั้งค่าแอป',
+      mlModel: 'โมเดล ML',
+      statistics: 'สถิติ',
+      viewDetails: 'ดูสถิติแบบละเอียด',
+      notifications: 'การแจ้งเตือน',
+      setupPushNotifications: 'ตั้งค่าการแจ้งเตือนแบบ push',
+      // Уведомления - детали
+      newSignals: 'สัญญาณใหม่',
+      newSignalsDescription: 'การแจ้งเตือนเกี่ยวกับสัญญาณใหม่',
+      signalResults: 'ผลสัญญาณ',
+      signalResultsDescription: 'การแจ้งเตือนเกี่ยวกับการปิดการเทรด',
+      dailySummary: 'สรุปประจำวัน',
+      dailySummaryDescription: 'สรุปวันในเวลา 21:00',
+      systemNotifications: 'การแจ้งเตือนระบบ',
+      marketNews: 'ข่าวตลาด',
+      marketNewsDescription: 'เหตุการณ์สำคัญในตลาด',
+      systemUpdates: 'อัปเดตระบบ',
+      systemUpdatesDescription: 'ฟีเจอร์ใหม่และการแก้ไข',
+      soundAndVibration: 'เสียงและการสั่นสะเทือน',
+      soundNotification: 'เสียง',
+      soundNotificationsDescription: 'การแจ้งเตือนด้วยเสียง',
+      vibration: 'การสั่นสะเทือน',
+      vibrationDescription: 'สัญญาณการสั่นสะเทือนสำหรับการแจ้งเตือน',
+      emailNotifications: 'การแจ้งเตือนทางอีเมล',
+      emailNotificationsDescription: 'ส่งซ้ำทางอีเมล',
+      smartNotifications: 'การแจ้งเตือนอัจฉริยะ',
+      smartNotificationsDescription: 'รับการแจ้งเตือนที่ทันเวลาเกี่ยวกับเหตุการณ์สำคัญ คุณสามารถกำหนดค่าประเภทต่างๆ แยกกันได้',
+      // Новые ключи для главного меню
+      chooseAction: 'เลือกการดำเนินการ',
+      getTradingSignals: 'รับสัญญาณการซื้อขาย',
+      aiSignalAnalysis: 'การวิเคราะห์สัญญาณด้วย AI',
+      // Сигналы
+      direction: 'ทิศทาง',
+      expiration: 'หมดอายุ',
+      confidence: 'ความมั่นใจ',
+      clickToActivate: 'คลิกเพื่อเปิดใช้งาน',
+      signalReady: 'สัญญาณพร้อม',
+      activateSignalForTrading: 'เปิดใช้งานสัญญาณสำหรับการเทรด',
+      // Подтверждения
+      confirmDeleteUser: 'คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้',
+      actionCannotBeUndone: 'การดำเนินการนี้ไม่สามารถยกเลิกได้',
+      // Аналитика
+      signalType: 'ประเภทสัญญาณ',
+      result: 'ผลลัพธ์',
+      entryPrice: 'ราคาเข้า',
+      runAIAnalysis: 'รันการวิเคราะห์ AI',
+      analyzingTrade: 'กำลังวิเคราะห์การเทรด...',
+      gptProcessingData: 'GPT-4o mini กำลังประมวลผลข้อมูล',
+      // Админ-панель
+      totalUsers: 'ผู้ใช้ทั้งหมด',
+      online: 'ออนไลน์',
+      noAccessRequests: 'ไม่มีคำขอเข้าถึง',
+      newRequestsWillAppearHere: 'คำขอใหม่จะปรากฏที่นี่',
+      detailedInformation: 'ข้อมูลรายละเอียด',
+      tradingDays: 'วันเทรด',
+      // Генерация сигналов
+      connectingToMarket: 'กำลังเชื่อมต่อตลาด...',
+      analyzingTechnicalIndicators: 'วิเคราะห์ตัวชี้วัดทางเทคนิค...',
+      evaluatingNewsBackground: 'ประเมินข่าวสารพื้นหลัง...',
+      calculatingOptimalExpiration: 'คำนวณการหมดอายุที่เหมาะสม...',
+      applyingMLModels: 'ใช้โมเดล ML...',
+      formingTop3Signals: 'สร้างสัญญาณ TOP-3...',
+      analyzingPair: 'วิเคราะห์คู่ {pair}...',
+      calculatingTechnicalIndicators: 'คำนวณตัวชี้วัดทางเทคนิค...',
+      applyingMLModel: 'ใช้โมเดล ML...',
+      determiningEntryPoint: 'กำหนดจุดเข้า...',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      forestNecromancer: 'FOREST NECROMANCER',
+      grayCardinal: 'GRAY CARDINAL',
+      logisticSpy: 'LOGISTIC SPY',
+      sniper80x: 'SNIPER 80X',
+      // Статусы
+      activeStatus: 'ใช้งานอยู่',
+      inactive: 'ไม่ใช้งาน',
+      available: 'ใช้ได้',
+      blocked: 'ถูกบล็อก',
+      success: 'สำเร็จ',
+      failure: 'ล้มเหลว',
+      // Действия
+      buyAction: 'ซื้อ',
+      selectAction: 'เลือก',
+      approve: 'อนุมัติ',
+      delete: 'ลบ',
+      save: 'บันทึก',
+      cancel: 'ยกเลิก',
+      apply: 'ใช้',
+      update: 'อัปเดต',
+      // Генерация сигналов
+      loadingMarkets: 'กำลังโหลดตลาด...',
+      analyzingTrends: 'กำลังวิเคราะห์เทรนด์...',
+      applyingML: 'กำลังใช้โมเดล ML...',
+      calculatingEntry: 'กำลังคำนวณจุดเข้า...',
+      assessingRisks: 'กำลังประเมินความเสี่ยง...',
+      finalCheck: 'กำลังตรวจสอบขั้นสุดท้าย...',
+      // Админ-панель
+      activeUsers: 'ผู้ใช้ที่ใช้งานอยู่',
+      totalSignals: 'สัญญาณทั้งหมด',
+      successful: 'สำเร็จ',
+      failed: 'ล้มเหลว',
+      topUsers: 'ผู้ใช้ยอดนิยม',
+      accessRequests: 'คำขอเข้าถึง',
+      subscriptionHistory: 'ประวัติการเปลี่ยนแปลงการสมัครสมาชิก',
+      // Статистика
+      myStatistics: 'สถิติของฉัน',
+      winRate: 'อัตราชนะ',
+      currentStreak: 'ชุดปัจจุบัน',
+      bestStreak: 'ชุดที่ดีที่สุด',
+      averageProfit: 'กำไรเฉลี่ย',
+      signalsPerDay: 'สัญญาณต่อวัน',
+      bestPair: 'คู่ที่ดีที่สุด',
+      worstPair: 'คู่ที่แย่ที่สุด',
+      // Подписки
+      monthlySubscription: 'การสมัครสมาชิกรายเดือน',
+      lifetimePurchase: 'การซื้อตลอดชีพ',
+      autoRenewal: 'ต่ออายุอัตโนมัติ',
+      noTimeLimit: 'ไม่มีข้อจำกัดเวลา',
+      selectSubscriptionType: 'เลือกประเภทการสมัครสมาชิก:',
+      // Уведомления
+      soundNotification: 'เสียง',
+      vibration: 'การสั่น',
+      pushNotification: 'Push',
+      enabled: 'เปิดใช้งาน',
+      disabled: 'ปิดใช้งาน',
+      // Аналитика
+      aiAnalytics: 'การวิเคราะห์ AI',
+      successfulTradesHistory: 'ประวัติการเทรดที่สำเร็จ',
+      analyzeSignal: 'วิเคราะห์สัญญาณ',
+      analyzingInProgress: 'กำลังวิเคราะห์...',
+      cancelAnalysis: 'ยกเลิกการวิเคราะห์',
+      // Системные сообщения
+      userAdded: 'เพิ่มผู้ใช้เข้าระบบแล้ว',
+      errorOccurred: 'เกิดข้อผิดพลาด',
+      loadingData: 'กำลังโหลดข้อมูล...'
     },
     es: {
       welcome: 'Bienvenido',
@@ -485,7 +1175,7 @@ function App() {
       menu: 'Menú',
       tradingSignals: 'Señales de Trading',
       analytics: 'Analíticas',
-      community: 'Comunidad',
+      community: 'https://t.me/+nDqBvIeQwL8yZjU6',
       settings: 'Configuración',
       premium: 'ML Premium',
       selectMarket: 'Seleccionar Mercado',
@@ -498,7 +1188,220 @@ function App() {
       admin: 'Panel Admin',
       buy: 'Comprar',
       monthly: 'Mensual',
-      lifetime: 'De por vida'
+      lifetime: 'De por vida',
+      welcomeTo: 'Bienvenido a',
+      premiumSignals: 'Señales premium para trading profesional',
+      accurateSignals: 'Señales precisas',
+      successfulTrades: '87% de trades exitosos',
+      instantNotifications: 'Notificaciones instantáneas',
+      realTimeSignals: 'Recibe señales en tiempo real',
+      premiumQuality: 'Calidad premium',
+      professionalAnalysis: 'Análisis profesional del mercado',
+      whatSignals: '¿Qué señales quieres recibir?',
+      forexSchedule: 'Horario del mercado Forex',
+      catalogPrivate: 'CATÁLOGO DE MODELOS ML PRIVADOS',
+      onlyForInsiders: 'Solo para iniciados. Acceso por invitación.',
+      consciousRisk: 'Cada entrada es un riesgo consciente.',
+      activeModel: 'ACTIVO',
+      model: 'MODELO:',
+      modelReady: 'Modelo entrenado y listo para trabajar',
+      // Новые переводы
+      comingSoon: 'PRÓXIMAMENTE',
+      comingSoonDescription: 'Próximamente disponible',
+      chatWithTraders: 'Chatear con otros traders',
+      manageParameters: 'Gestionar parámetros',
+      manageAppSettings: 'Gestionar configuración de la app',
+      mlModel: 'Modelo ML',
+      statistics: 'Estadísticas',
+      viewDetails: 'Ver estadísticas detalladas',
+      notifications: 'Notificaciones',
+      setupPushNotifications: 'Configurar notificaciones push',
+      // Уведомления - детали
+      newSignals: 'Nuevas Señales',
+      newSignalsDescription: 'Notificaciones sobre nuevas señales',
+      signalResults: 'Resultados de Señales',
+      signalResultsDescription: 'Notificaciones sobre cierre de trades',
+      dailySummary: 'Resumen Diario',
+      dailySummaryDescription: 'Resumen del día a las 21:00',
+      systemNotifications: 'Notificaciones del Sistema',
+      marketNews: 'Noticias del Mercado',
+      marketNewsDescription: 'Eventos importantes del mercado',
+      systemUpdates: 'Actualizaciones del Sistema',
+      systemUpdatesDescription: 'Nuevas funciones y correcciones',
+      soundAndVibration: 'Sonido y Vibración',
+      soundNotification: 'Sonido',
+      soundNotificationsDescription: 'Notificaciones de sonido',
+      vibration: 'Vibración',
+      vibrationDescription: 'Señal de vibración para notificaciones',
+      emailNotifications: 'Notificaciones por Email',
+      emailNotificationsDescription: 'Duplicar por email',
+      smartNotifications: 'Notificaciones Inteligentes',
+      smartNotificationsDescription: 'Recibe notificaciones oportunas sobre eventos importantes. Puedes configurar cada tipo por separado.',
+      // Новые ключи для главного меню
+      chooseAction: 'Elige una acción',
+      getTradingSignals: 'Obtén señales de trading',
+      aiSignalAnalysis: 'Análisis de señales con AI',
+      // Сигналы
+      direction: 'Dirección',
+      expiration: 'Expiración',
+      confidence: 'Confianza',
+      clickToActivate: 'Haz clic para activar',
+      signalReady: 'Señal lista',
+      activateSignalForTrading: 'Activa la señal para trading',
+      // Подтверждения
+      confirmDeleteUser: '¿Estás seguro de que quieres eliminar al usuario',
+      actionCannotBeUndone: 'Esta acción no se puede deshacer',
+      // Аналитика
+      signalType: 'Tipo de señal',
+      result: 'Resultado',
+      entryPrice: 'Precio de entrada',
+      runAIAnalysis: 'Ejecutar análisis AI',
+      analyzingTrade: 'Analizando trade...',
+      gptProcessingData: 'GPT-4o mini procesando datos',
+      // Админ-панель
+      totalUsers: 'Total de usuarios',
+      online: 'En línea',
+      noAccessRequests: 'Sin solicitudes de acceso',
+      newRequestsWillAppearHere: 'Las nuevas solicitudes aparecerán aquí',
+      detailedInformation: 'Información detallada',
+      tradingDays: 'Días de trading',
+      // Генерация сигналов
+      connectingToMarket: 'Conectando al mercado...',
+      analyzingTechnicalIndicators: 'Analizando indicadores técnicos...',
+      evaluatingNewsBackground: 'Evaluando contexto de noticias...',
+      calculatingOptimalExpiration: 'Calculando expiración óptima...',
+      applyingMLModels: 'Aplicando modelos ML...',
+      formingTop3Signals: 'Formando señales TOP-3...',
+      analyzingPair: 'Analizando par {pair}...',
+      calculatingTechnicalIndicators: 'Calculando indicadores técnicos...',
+      applyingMLModel: 'Aplicando modelo ML...',
+      determiningEntryPoint: 'Determinando punto de entrada...',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      shadowStackDesc: 'No falla, no se retrasa, no miente. Solo hace el trabajo sucio.',
+      shadowStackAlgo: 'Ensemble (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      shadowStackStyle: 'Mediano plazo, intradía',
+      forestNecromancer: 'FOREST NECROMANCER',
+      forestNecromancerDesc: 'Parece un nerd, actúa como un chamán del mercado.',
+      forestNecromancerAlgo: 'RandomForest - Invocado del bosque de decisiones',
+      forestNecromancerStyle: 'Informador con visualización de zonas de impulso',
+      grayCardinal: 'GRAY CARDINAL',
+      grayCardinalDesc: 'No lo ves, pero conoce tu entrada antes que tú.',
+      grayCardinalAlgo: 'XGBoost - No en el radar, pero todo está bajo control',
+      grayCardinalStyle: 'Señales en timeframes menores, con filtros adicionales',
+      logisticSpy: 'LOGISTIC SPY',
+      logisticSpyDesc: 'Vieja escuela, pero conoce todos los movimientos.',
+      logisticSpyAlgo: 'LogisticRegression - Un clásico en el mundo ML',
+      logisticSpyStyle: 'Conservador, probado por el tiempo',
+      sniper80x: 'SNIPER 80X',
+      sniper80xDesc: 'Lo lanzas — y el mercado se queda en silencio. Una entrada — una baja.',
+      sniper80xAlgo: 'Modelo final - Leyenda entre los suyos',
+      sniper80xStyle: 'Entrada precisa, posicional, a veces scalping',
+      sniper80xWarning: 'Solo por comando. El auto no se activa.',
+      // Статусы
+      activeStatus: 'ACTIVO',
+      inactive: 'INACTIVO',
+      available: 'DISPONIBLE',
+      blocked: 'BLOQUEADO',
+      success: 'Éxito',
+      failure: 'Fracaso',
+      // Действия
+      buyAction: 'Comprar',
+      selectAction: 'Seleccionar',
+      approve: 'Aprobar',
+      delete: 'Eliminar',
+      save: 'Guardar',
+      cancel: 'Cancelar',
+      apply: 'Aplicar',
+      update: 'Actualizar',
+      // Генерация сигналов
+      loadingMarkets: 'Cargando mercados...',
+      analyzingTrends: 'Analizando tendencias...',
+      applyingML: 'Aplicando modelos ML...',
+      calculatingEntry: 'Calculando puntos de entrada...',
+      assessingRisks: 'Evaluando riesgos...',
+      finalCheck: 'Verificación final...',
+      // Админ-панель
+      activeUsers: 'Usuarios activos',
+      totalSignals: 'Total de señales',
+      successful: 'Exitosas',
+      failed: 'Fallidas',
+      topUsers: 'Top usuarios',
+      accessRequests: 'Solicitudes de acceso',
+      subscriptionHistory: 'Historial de cambios de suscripción',
+      // Статистика
+      myStatistics: 'Mis estadísticas',
+      winRate: 'Tasa de éxito',
+      currentStreak: 'Racha actual',
+      bestStreak: 'Mejor racha',
+      averageProfit: 'Beneficio promedio',
+      signalsPerDay: 'Señales por día',
+      bestPair: 'Mejor par',
+      worstPair: 'Peor par',
+      // Подписки
+      monthlySubscription: 'Suscripción mensual',
+      lifetimePurchase: 'Compra de por vida',
+      autoRenewal: 'Renovación automática',
+      noTimeLimit: 'Sin límite de tiempo',
+      selectSubscriptionType: 'Selecciona tipo de suscripción:',
+      // Уведомления
+      soundNotification: 'Sonido',
+      vibration: 'Vibración',
+      pushNotification: 'Push',
+      enabled: 'Habilitado',
+      disabled: 'Deshabilitado',
+      // Аналитика
+      aiAnalytics: 'Analítica AI',
+      successfulTradesHistory: 'Historial de trades exitosos',
+      analyzeSignal: 'Analizar señal',
+      analyzingInProgress: 'Analizando...',
+      cancelAnalysis: 'Cancelar análisis',
+      // Системные сообщения
+      userAdded: 'Usuario agregado al sistema',
+      errorOccurred: 'Ocurrió un error',
+      loadingData: 'Cargando datos...',
+      // Модальные окна
+      tradeActivated: 'TRADE ACTIVADO',
+      timeExpired: '⏰ ¡Tiempo agotado!',
+      leaveFeedback: 'Deja feedback sobre el resultado del trade',
+      pair: 'Par',
+      direction: 'Dirección',
+      resultButtonsActive: 'Los botones de resultado están activos',
+      indicateTradeResult: 'Después del tiempo agotado indica el resultado del trading',
+      successfulTrade: 'Trade exitoso',
+      losingTrade: 'Trade perdedor',
+      leaveFeedbackToUnlock: '⚠️ Deja feedback para desbloquear la navegación',
+      navigationLocked: 'Navegación bloqueada',
+      waitForExpiration: 'Espera la expiración de la señal y deja feedback',
+      timeRemaining: 'Tiempo restante hasta expiración',
+      noSuitableEntry: '⚠️ No hay punto de entrada adecuado',
+      marketConditionsNotOptimal: 'Las condiciones actuales del mercado no son óptimas para abrir posición',
+      analysisCompleted: 'Análisis completado',
+      recommendations: 'Recomendaciones',
+      tryAnotherPair: 'Prueba otro par',
+      selectAnotherPairDescription: 'Selecciona otro par de divisas con condiciones más favorables',
+      waitForOptimalConditions: 'Espera condiciones óptimas',
+      tryAgainWhen: 'Intenta de nuevo en {seconds} segundos cuando el mercado se estabilice',
+      returnToPairSelection: 'Volver a la selección de par',
+      patienceIsKey: '💡 La paciencia es clave para el trading exitoso',
+      warningAttention: '⚠️ ¡ATENCIÓN!',
+      systemBypassDetected: 'Se detectó intento de bypass del sistema',
+      activeSignalRequiresCompletion: 'Tienes una señal activa que requiere finalización. Recargar la página no ayudará a evitar el bloqueo de navegación.',
+      activeSignal: 'Señal activa',
+      feedbackRequired: '⏰ ¡Feedback requerido!',
+      returnToOpenTrade: 'Volver al trade abierto',
+      bypassProtectionActive: 'Sistema de protección contra bypass de bloqueo de navegación activado',
+      waitForActiveSignal: '⚠️ ¡Espera a que se complete la señal activa y deja feedback antes de continuar!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ ¡Suscripción actualizada para {name}! El usuario tendrá acceso a los modelos ML seleccionados.',
+      subscriptionUpdateError: '❌ Error al actualizar suscripción para {name}',
+      subscriptionDisabled: '✅ ¡Suscripción deshabilitada para {name}!',
+      subscriptionDisableError: '❌ Error al deshabilitar suscripción para {name}',
+      confirmDeleteUser: '¿Estás seguro de que quieres eliminar al usuario {name}? Esta acción no se puede deshacer.',
+      userDeleted: '✅ Usuario {name} eliminado del sistema',
+      userDeleteError: '❌ Error al eliminar usuario {name}',
+      accessRequestApproved: '✅ Solicitud de acceso aprobada para {name}',
+      accessRequestError: '❌ Error al aprobar solicitud para {name}'
     },
     fr: {
       welcome: 'Bienvenue',
@@ -508,7 +1411,7 @@ function App() {
       menu: 'Menu',
       tradingSignals: 'Signaux de trading',
       analytics: 'Analytique',
-      community: 'Communauté',
+      community: 'https://t.me/+nDqBvIeQwL8yZjU6',
       settings: 'Paramètres',
       premium: 'ML Premium',
       selectMarket: 'Sélectionner le marché',
@@ -518,10 +1421,223 @@ function App() {
       active: 'Actif',
       history: 'Historique',
       back: 'Retour',
-      admin: 'Panneau Admin',
+      future: 'Admin Panel',
       buy: 'Acheter',
       monthly: 'Mensuel',
-      lifetime: 'À vie'
+      lifetime: 'À vie',
+      welcomeTo: 'Bienvenue dans',
+      premiumSignals: 'Signaux premium pour trading professionnel',
+      accurateSignals: 'Signaux précis',
+      successfulTrades: '87% de trades réussis',
+      instantNotifications: 'Notifications instantanées',
+      realTimeSignals: 'Recevez des signaux en temps réel',
+      premiumQuality: 'Qualité premium',
+      professionalAnalysis: 'Analyse professionnelle du marché',
+      whatSignals: 'Quels signaux voulez-vous recevoir ?',
+      forexSchedule: 'Horaire du marché Forex',
+      catalogPrivate: 'CATALOGUE DE MODÈLES ML PRIVÉS',
+      onlyForInsiders: 'Seulement pour les initiés. Accès par invitation.',
+      consciousRisk: 'Chaque entrée est un risque conscient.',
+      activeModel: 'ACTIF',
+      model: 'MODÈLE:',
+      modelReady: 'Modèle entraîné et prêt à fonctionner',
+      // Новые переводы
+      comingSoon: 'BIENTÔT',
+      comingSoonDescription: 'Bientôt disponible',
+      chatWithTraders: 'Discuter avec d\'autres traders',
+      manageParameters: 'Gérer les paramètres',
+      manageAppSettings: 'Gérer les paramètres de l\'app',
+      mlModel: 'Modèle ML',
+      statistics: 'Statistiques',
+      viewDetails: 'Voir les statistiques détaillées',
+      notifications: 'Notifications',
+      setupPushNotifications: 'Configurer les notifications push',
+      // Уведомления - детали
+      newSignals: 'Nouveaux Signaux',
+      newSignalsDescription: 'Notifications sur de nouveaux signaux',
+      signalResults: 'Résultats des Signaux',
+      signalResultsDescription: 'Notifications sur la fermeture des trades',
+      dailySummary: 'Résumé Quotidien',
+      dailySummaryDescription: 'Résumé de la journée à 21h00',
+      systemNotifications: 'Notifications Système',
+      marketNews: 'Actualités du Marché',
+      marketNewsDescription: 'Événements importants du marché',
+      systemUpdates: 'Mises à Jour Système',
+      systemUpdatesDescription: 'Nouvelles fonctionnalités et corrections',
+      soundAndVibration: 'Son et Vibration',
+      soundNotification: 'Son',
+      soundNotificationsDescription: 'Notifications sonores',
+      vibration: 'Vibration',
+      vibrationDescription: 'Signal de vibration pour les notifications',
+      emailNotifications: 'Notifications Email',
+      emailNotificationsDescription: 'Dupliquer par email',
+      smartNotifications: 'Notifications Intelligentes',
+      smartNotificationsDescription: 'Recevez des notifications opportunes sur les événements importants. Vous pouvez configurer chaque type séparément.',
+      // Новые ключи для главного меню
+      chooseAction: 'Choisissez une action',
+      getTradingSignals: 'Obtenez des signaux de trading',
+      aiSignalAnalysis: 'Analyse de signaux avec IA',
+      // Сигналы
+      direction: 'Direction',
+      expiration: 'Expiration',
+      confidence: 'Confiance',
+      clickToActivate: 'Cliquez pour activer',
+      signalReady: 'Signal prêt',
+      activateSignalForTrading: 'Activez le signal pour le trading',
+      // Подтверждения
+      confirmDeleteUser: 'Êtes-vous sûr de vouloir supprimer l\'utilisateur',
+      actionCannotBeUndone: 'Cette action ne peut pas être annulée',
+      // Аналитика
+      signalType: 'Type de signal',
+      result: 'Résultat',
+      entryPrice: 'Prix d\'entrée',
+      runAIAnalysis: 'Lancer l\'analyse IA',
+      analyzingTrade: 'Analyse du trade...',
+      gptProcessingData: 'GPT-4o mini traite les données',
+      // Админ-панель
+      totalUsers: 'Total des utilisateurs',
+      online: 'En ligne',
+      noAccessRequests: 'Aucune demande d\'accès',
+      newRequestsWillAppearHere: 'Les nouvelles demandes apparaîtront ici',
+      detailedInformation: 'Informations détaillées',
+      tradingDays: 'Jours de trading',
+      // Генерация сигналов
+      connectingToMarket: 'Connexion au marché...',
+      analyzingTechnicalIndicators: 'Analyse des indicateurs techniques...',
+      evaluatingNewsBackground: 'Évaluation du contexte des nouvelles...',
+      calculatingOptimalExpiration: 'Calcul de l\'expiration optimale...',
+      applyingMLModels: 'Application des modèles ML...',
+      formingTop3Signals: 'Formation des signaux TOP-3...',
+      analyzingPair: 'Analyse de la paire {pair}...',
+      calculatingTechnicalIndicators: 'Calcul des indicateurs techniques...',
+      applyingMLModel: 'Application du modèle ML...',
+      determiningEntryPoint: 'Détermination du point d\'entrée...',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      shadowStackDesc: 'Ne rate pas, ne lag pas, ne ment pas. Fait juste le sale boulot.',
+      shadowStackAlgo: 'Ensemble (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      shadowStackStyle: 'Moyen terme, intraday',
+      forestNecromancer: 'FOREST NECROMANCER',
+      forestNecromancerDesc: 'A l\'air d\'un geek, agit comme un chamane du marché.',
+      forestNecromancerAlgo: 'RandomForest - Invoqué de la forêt des décisions',
+      forestNecromancerStyle: 'Informateur avec visualisation des zones d\'impulsion',
+      grayCardinal: 'GRAY CARDINAL',
+      grayCardinalDesc: 'Vous ne le voyez pas, mais il connaît votre entrée avant vous.',
+      grayCardinalAlgo: 'XGBoost - Pas sur le radar, mais tout est sous contrôle',
+      grayCardinalStyle: 'Signaux sur des timeframes plus courts, avec des filtres supplémentaires',
+      logisticSpy: 'LOGISTIC SPY',
+      logisticSpyDesc: 'Vieille école, mais connaît tous les mouvements.',
+      logisticSpyAlgo: 'LogisticRegression - Un classique dans le monde ML',
+      logisticSpyStyle: 'Conservateur, éprouvé par le temps',
+      sniper80x: 'SNIPER 80X',
+      sniper80xDesc: 'Vous le lancez — et le marché se tait. Une entrée — une élimination.',
+      sniper80xAlgo: 'Modèle final - Légende parmi les siens',
+      sniper80xStyle: 'Entrée précise, positionnel, parfois scalping',
+      sniper80xWarning: 'Seulement sur commande. L\'auto ne s\'active pas.',
+      // Статусы
+      activeStatus: 'ACTIF',
+      inactive: 'INACTIF',
+      available: 'DISPONIBLE',
+      blocked: 'BLOQUÉ',
+      success: 'Succès',
+      failure: 'Échec',
+      // Действия
+      buyAction: 'Acheter',
+      selectAction: 'Sélectionner',
+      approve: 'Approuver',
+      delete: 'Supprimer',
+      save: 'Sauvegarder',
+      cancel: 'Annuler',
+      apply: 'Appliquer',
+      update: 'Mettre à jour',
+      // Генерация сигналов
+      loadingMarkets: 'Chargement des marchés...',
+      analyzingTrends: 'Analyse des tendances...',
+      applyingML: 'Application des modèles ML...',
+      calculatingEntry: 'Calcul des points d\'entrée...',
+      assessingRisks: 'Évaluation des risques...',
+      finalCheck: 'Vérification finale...',
+      // Админ-панель
+      activeUsers: 'Utilisateurs actifs',
+      totalSignals: 'Total des signaux',
+      successful: 'Réussis',
+      failed: 'Échoués',
+      topUsers: 'Top utilisateurs',
+      accessRequests: 'Demandes d\'accès',
+      subscriptionHistory: 'Historique des changements d\'abonnement',
+      // Статистика
+      myStatistics: 'Mes statistiques',
+      winRate: 'Taux de réussite',
+      currentStreak: 'Série actuelle',
+      bestStreak: 'Meilleure série',
+      averageProfit: 'Bénéfice moyen',
+      signalsPerDay: 'Signaux par jour',
+      bestPair: 'Meilleure paire',
+      worstPair: 'Pire paire',
+      // Подписки
+      monthlySubscription: 'Abonnement mensuel',
+      lifetimePurchase: 'Achat à vie',
+      autoRenewal: 'Renouvellement automatique',
+      noTimeLimit: 'Sans limite de temps',
+      selectSubscriptionType: 'Sélectionner le type d\'abonnement:',
+      // Уведомления
+      soundNotification: 'Son',
+      vibration: 'Vibration',
+      pushNotification: 'Push',
+      enabled: 'Activé',
+      disabled: 'Désactivé',
+      // Аналитика
+      aiAnalytics: 'Analytique IA',
+      successfulTradesHistory: 'Historique des trades réussis',
+      analyzeSignal: 'Analyser le signal',
+      analyzingInProgress: 'Analyse en cours...',
+      cancelAnalysis: 'Annuler l\'analyse',
+      // Системные сообщения
+      userAdded: 'Utilisateur ajouté au système',
+      errorOccurred: 'Une erreur s\'est produite',
+      loadingData: 'Chargement des données...',
+      // Модальные окна
+      tradeActivated: 'TRADE ACTIVÉ',
+      timeExpired: '⏰ Temps écoulé !',
+      leaveFeedback: 'Laissez un retour sur le résultat du trade',
+      pair: 'Paire',
+      direction: 'Direction',
+      resultButtonsActive: 'Les boutons de résultat sont actifs',
+      indicateTradeResult: 'Après l\'expiration du temps, indiquez le résultat du trading',
+      successfulTrade: 'Trade réussi',
+      losingTrade: 'Trade perdant',
+      leaveFeedbackToUnlock: '⚠️ Laissez un retour pour débloquer la navigation',
+      navigationLocked: 'Navigation verrouillée',
+      waitForExpiration: 'Attendez l\'expiration du signal et laissez un retour',
+      timeRemaining: 'Temps restant jusqu\'à expiration',
+      noSuitableEntry: '⚠️ Aucun point d\'entrée approprié',
+      marketConditionsNotOptimal: 'Les conditions actuelles du marché ne sont pas optimales pour ouvrir une position',
+      analysisCompleted: 'Analyse terminée',
+      recommendations: 'Recommandations',
+      tryAnotherPair: 'Essayez une autre paire',
+      selectAnotherPairDescription: 'Sélectionnez une autre paire de devises avec des conditions plus favorables',
+      waitForOptimalConditions: 'Attendez des conditions optimales',
+      tryAgainWhen: 'Réessayez dans {seconds} secondes quand le marché se stabilisera',
+      returnToPairSelection: 'Retour à la sélection de paire',
+      patienceIsKey: '💡 La patience est la clé du trading réussi',
+      warningAttention: '⚠️ ATTENTION !',
+      systemBypassDetected: 'Tentative de contournement du système détectée',
+      activeSignalRequiresCompletion: 'Vous avez un signal actif qui nécessite une finalisation. Recharger la page n\'aidera pas à contourner le verrouillage de navigation.',
+      activeSignal: 'Signal actif',
+      feedbackRequired: '⏰ Retour requis !',
+      returnToOpenTrade: 'Retour au trade ouvert',
+      bypassProtectionActive: 'Système de protection contre le contournement du verrouillage de navigation activé',
+      waitForActiveSignal: '⚠️ Attendez la finalisation du signal actif et laissez un retour avant de continuer !',
+      // Alert сообщения
+      subscriptionUpdated: '✅ Abonnement mis à jour pour {name} ! L\'utilisateur aura accès aux modèles ML sélectionnés.',
+      subscriptionUpdateError: '❌ Erreur lors de la mise à jour de l\'abonnement pour {name}',
+      subscriptionDisabled: '✅ Abonnement désactivé pour {name} !',
+      subscriptionDisableError: '❌ Erreur lors de la désactivation de l\'abonnement pour {name}',
+      confirmDeleteUser: 'Êtes-vous sûr de vouloir supprimer l\'utilisateur {name} ? Cette action ne peut pas être annulée.',
+      userDeleted: '✅ Utilisateur {name} supprimé du système',
+      userDeleteError: '❌ Erreur lors de la suppression de l\'utilisateur {name}',
+      accessRequestApproved: '✅ Demande d\'accès approuvée pour {name}',
+      accessRequestError: '❌ Erreur lors de l\'approbation de la demande pour {name}'
     },
     de: {
       welcome: 'Willkommen',
@@ -531,7 +1647,7 @@ function App() {
       menu: 'Menü',
       tradingSignals: 'Handelssignale',
       analytics: 'Analytik',
-      community: 'Gemeinschaft',
+      community: 'https://t.me/+nDqBvIeQwL8yZjU6',
       settings: 'Einstellungen',
       premium: 'Premium ML',
       selectMarket: 'Markt wählen',
@@ -544,7 +1660,220 @@ function App() {
       admin: 'Admin-Panel',
       buy: 'Kaufen',
       monthly: 'Monatlich',
-      lifetime: 'Lebenslang'
+      lifetime: 'Lebenslang',
+      welcomeTo: 'Willkommen bei',
+      premiumSignals: 'Premium-Signale für professionelles Trading',
+      accurateSignals: 'Präzise Signale',
+      successfulTrades: '87% erfolgreiche Trades',
+      instantNotifications: 'Sofortige Benachrichtigungen',
+      realTimeSignals: 'Erhalten Sie Signale in Echtzeit',
+      premiumQuality: 'Premium-Qualität',
+      professionalAnalysis: 'Professionelle Marktanalyse',
+      whatSignals: 'Welche Signale möchten Sie erhalten?',
+      forexSchedule: 'Forex-Marktzeiten',
+      catalogPrivate: 'PRIVATE ML-MODELLE KATALOG',
+      onlyForInsiders: 'Nur für Eingeweihte. Zugang auf Einladung.',
+      consciousRisk: 'Jeder Einstieg ist ein bewusstes Risiko.',
+      activeModel: 'AKTIV',
+      model: 'MODELL:',
+      modelReady: 'Modell trainiert und einsatzbereit',
+      // Новые переводы
+      comingSoon: 'BALD',
+      comingSoonDescription: 'Bald verfügbar',
+      chatWithTraders: 'Mit anderen Tradern chatten',
+      manageParameters: 'Parameter verwalten',
+      manageAppSettings: 'App-Einstellungen verwalten',
+      mlModel: 'ML-Modell',
+      statistics: 'Statistiken',
+      viewDetails: 'Detaillierte Statistiken anzeigen',
+      notifications: 'Benachrichtigungen',
+      setupPushNotifications: 'Push-Benachrichtigungen einrichten',
+      // Уведомления - детали
+      newSignals: 'Neue Signale',
+      newSignalsDescription: 'Benachrichtigungen über neue Signale',
+      signalResults: 'Signal-Ergebnisse',
+      signalResultsDescription: 'Benachrichtigungen über Trade-Schließungen',
+      dailySummary: 'Tägliche Zusammenfassung',
+      dailySummaryDescription: 'Tageszusammenfassung um 21:00',
+      systemNotifications: 'System-Benachrichtigungen',
+      marketNews: 'Markt-Nachrichten',
+      marketNewsDescription: 'Wichtige Marktereignisse',
+      systemUpdates: 'System-Updates',
+      systemUpdatesDescription: 'Neue Funktionen und Korrekturen',
+      soundAndVibration: 'Ton und Vibration',
+      soundNotification: 'Ton',
+      soundNotificationsDescription: 'Tonbenachrichtigungen',
+      vibration: 'Vibration',
+      vibrationDescription: 'Vibrationssignal für Benachrichtigungen',
+      emailNotifications: 'E-Mail-Benachrichtigungen',
+      emailNotificationsDescription: 'Per E-Mail duplizieren',
+      smartNotifications: 'Intelligente Benachrichtigungen',
+      smartNotificationsDescription: 'Erhalten Sie rechtzeitige Benachrichtigungen über wichtige Ereignisse. Sie können jeden Typ separat konfigurieren.',
+      // Новые ключи для главного меню
+      chooseAction: 'Wählen Sie eine Aktion',
+      getTradingSignals: 'Erhalten Sie Trading-Signale',
+      aiSignalAnalysis: 'KI-Signalanalyse',
+      // Сигналы
+      direction: 'Richtung',
+      expiration: 'Ablauf',
+      confidence: 'Vertrauen',
+      clickToActivate: 'Klicken Sie zum Aktivieren',
+      signalReady: 'Signal bereit',
+      activateSignalForTrading: 'Signal für Trading aktivieren',
+      // Подтверждения
+      confirmDeleteUser: 'Sind Sie sicher, dass Sie den Benutzer löschen möchten',
+      actionCannotBeUndone: 'Diese Aktion kann nicht rückgängig gemacht werden',
+      // Аналитика
+      signalType: 'Signaltyp',
+      result: 'Ergebnis',
+      entryPrice: 'Einstiegspreis',
+      runAIAnalysis: 'KI-Analyse starten',
+      analyzingTrade: 'Analysiere Trade...',
+      gptProcessingData: 'GPT-4o mini verarbeitet Daten',
+      // Админ-панель
+      totalUsers: 'Gesamte Benutzer',
+      online: 'Online',
+      noAccessRequests: 'Keine Zugriffsanfragen',
+      newRequestsWillAppearHere: 'Neue Anfragen werden hier erscheinen',
+      detailedInformation: 'Detaillierte Informationen',
+      tradingDays: 'Trading-Tage',
+      // Генерация сигналов
+      connectingToMarket: 'Verbindung zum Markt...',
+      analyzingTechnicalIndicators: 'Technische Indikatoren analysieren...',
+      evaluatingNewsBackground: 'Nachrichtenkontext bewerten...',
+      calculatingOptimalExpiration: 'Optimale Ablaufzeit berechnen...',
+      applyingMLModels: 'ML-Modelle anwenden...',
+      formingTop3Signals: 'TOP-3 Signale bilden...',
+      analyzingPair: 'Paar {pair} analysieren...',
+      calculatingTechnicalIndicators: 'Technische Indikatoren berechnen...',
+      applyingMLModel: 'ML-Modell anwenden...',
+      determiningEntryPoint: 'Einstiegspunkt bestimmen...',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      shadowStackDesc: 'Verfehlt nicht, laggt nicht, lügt nicht. Macht nur die schmutzige Arbeit.',
+      shadowStackAlgo: 'Ensemble (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      shadowStackStyle: 'Mittelfristig, Intraday',
+      forestNecromancer: 'FOREST NECROMANCER',
+      forestNecromancerDesc: 'Sieht aus wie ein Nerd, handelt wie ein Marktschamane.',
+      forestNecromancerAlgo: 'RandomForest - Aus dem Wald der Entscheidungen beschworen',
+      forestNecromancerStyle: 'Informant mit Impulszonen-Visualisierung',
+      grayCardinal: 'GRAY CARDINAL',
+      grayCardinalDesc: 'Sie sehen ihn nicht, aber er kennt Ihren Einstieg vor Ihnen.',
+      grayCardinalAlgo: 'XGBoost - Nicht auf dem Radar, aber alles unter Kontrolle',
+      grayCardinalStyle: 'Signale auf kleineren Zeitrahmen, mit zusätzlichen Filtern',
+      logisticSpy: 'LOGISTIC SPY',
+      logisticSpyDesc: 'Alte Schule, aber kennt alle Züge.',
+      logisticSpyAlgo: 'LogisticRegression - Ein Klassiker in der ML-Welt',
+      logisticSpyStyle: 'Konservativ, zeitgetestet',
+      sniper80x: 'SNIPER 80X',
+      sniper80xDesc: 'Sie starten es — und der Markt verstummt. Ein Einstieg — eine Eliminierung.',
+      sniper80xAlgo: 'Finales Modell - Legende unter den Seinen',
+      sniper80xStyle: 'Präziser Einstieg, positionell, manchmal Scalping',
+      sniper80xWarning: 'Nur auf Befehl. Auto aktiviert sich nicht.',
+      // Статусы
+      activeStatus: 'AKTIV',
+      inactive: 'INAKTIV',
+      available: 'VERFÜGBAR',
+      blocked: 'BLOCKIERT',
+      success: 'Erfolg',
+      failure: 'Fehler',
+      // Действия
+      buyAction: 'Kaufen',
+      selectAction: 'Auswählen',
+      approve: 'Genehmigen',
+      delete: 'Löschen',
+      save: 'Speichern',
+      cancel: 'Abbrechen',
+      apply: 'Anwenden',
+      update: 'Aktualisieren',
+      // Генерация сигналов
+      loadingMarkets: 'Märkte laden...',
+      analyzingTrends: 'Trends analysieren...',
+      applyingML: 'ML-Modelle anwenden...',
+      calculatingEntry: 'Einstiegspunkte berechnen...',
+      assessingRisks: 'Risiken bewerten...',
+      finalCheck: 'Finale Überprüfung...',
+      // Админ-панель
+      activeUsers: 'Aktive Benutzer',
+      totalSignals: 'Gesamt Signale',
+      successful: 'Erfolgreich',
+      failed: 'Fehlgeschlagen',
+      topUsers: 'Top Benutzer',
+      accessRequests: 'Zugriffsanfragen',
+      subscriptionHistory: 'Abonnement-Änderungsverlauf',
+      // Статистика
+      myStatistics: 'Meine Statistiken',
+      winRate: 'Gewinnrate',
+      currentStreak: 'Aktuelle Serie',
+      bestStreak: 'Beste Serie',
+      averageProfit: 'Durchschnittlicher Gewinn',
+      signalsPerDay: 'Signale pro Tag',
+      bestPair: 'Beste Paar',
+      worstPair: 'Schlechteste Paar',
+      // Подписки
+      monthlySubscription: 'Monatliches Abonnement',
+      lifetimePurchase: 'Lebenslanger Kauf',
+      autoRenewal: 'Automatische Verlängerung',
+      noTimeLimit: 'Keine Zeitbegrenzung',
+      selectSubscriptionType: 'Abonnementtyp auswählen:',
+      // Уведомления
+      soundNotification: 'Ton',
+      vibration: 'Vibration',
+      pushNotification: 'Push',
+      enabled: 'Aktiviert',
+      disabled: 'Deaktiviert',
+      // Аналитика
+      aiAnalytics: 'KI-Analytik',
+      successfulTradesHistory: 'Erfolgreiche Trades Historie',
+      analyzeSignal: 'Signal analysieren',
+      analyzingInProgress: 'Analysiere...',
+      cancelAnalysis: 'Analyse abbrechen',
+      // Системные сообщения
+      userAdded: 'Benutzer zum System hinzugefügt',
+      errorOccurred: 'Ein Fehler ist aufgetreten',
+      loadingData: 'Daten laden...',
+      // Модальные окна
+      tradeActivated: 'TRADE AKTIVIERT',
+      timeExpired: '⏰ Zeit abgelaufen!',
+      leaveFeedback: 'Lassen Sie Feedback zum Trade-Ergebnis',
+      pair: 'Paar',
+      direction: 'Richtung',
+      resultButtonsActive: 'Ergebnis-Buttons sind aktiv',
+      indicateTradeResult: 'Nach Ablauf der Zeit geben Sie das Trading-Ergebnis an',
+      successfulTrade: 'Erfolgreicher Trade',
+      losingTrade: 'Verlustreicher Trade',
+      leaveFeedbackToUnlock: '⚠️ Lassen Sie Feedback, um Navigation freizuschalten',
+      navigationLocked: 'Navigation gesperrt',
+      waitForExpiration: 'Warten Sie auf Signal-Ablauf und lassen Sie Feedback',
+      timeRemaining: 'Verbleibende Zeit bis Ablauf',
+      noSuitableEntry: '⚠️ Kein geeigneter Einstiegspunkt',
+      marketConditionsNotOptimal: 'Aktuelle Marktbedingungen sind nicht optimal für Positionseröffnung',
+      analysisCompleted: 'Analyse abgeschlossen',
+      recommendations: 'Empfehlungen',
+      tryAnotherPair: 'Versuchen Sie ein anderes Paar',
+      selectAnotherPairDescription: 'Wählen Sie ein anderes Währungspaar mit günstigeren Bedingungen',
+      waitForOptimalConditions: 'Warten Sie auf optimale Bedingungen',
+      tryAgainWhen: 'Versuchen Sie es in {seconds} Sekunden erneut, wenn der Markt sich stabilisiert',
+      returnToPairSelection: 'Zurück zur Paar-Auswahl',
+      patienceIsKey: '💡 Geduld ist der Schlüssel zum erfolgreichen Trading',
+      warningAttention: '⚠️ ACHTUNG!',
+      systemBypassDetected: 'Systemumgehungsversuch erkannt',
+      activeSignalRequiresCompletion: 'Sie haben ein aktives Signal, das eine Fertigstellung erfordert. Das Neuladen der Seite wird nicht helfen, die Navigationssperre zu umgehen.',
+      activeSignal: 'Aktives Signal',
+      feedbackRequired: '⏰ Feedback erforderlich!',
+      returnToOpenTrade: 'Zurück zum offenen Trade',
+      bypassProtectionActive: 'System zum Schutz vor Navigationssperren-Umgehung aktiviert',
+      waitForActiveSignal: '⚠️ Warten Sie auf die Fertigstellung des aktiven Signals und lassen Sie Feedback vor dem Fortfahren!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ Abonnement für {name} aktualisiert! Der Benutzer erhält Zugang zu den ausgewählten ML-Modellen.',
+      subscriptionUpdateError: '❌ Fehler beim Aktualisieren des Abonnements für {name}',
+      subscriptionDisabled: '✅ Abonnement für {name} deaktiviert!',
+      subscriptionDisableError: '❌ Fehler beim Deaktivieren des Abonnements für {name}',
+      confirmDeleteUser: 'Sind Sie sicher, dass Sie den Benutzer {name} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
+      userDeleted: '✅ Benutzer {name} aus dem System gelöscht',
+      userDeleteError: '❌ Fehler beim Löschen des Benutzers {name}',
+      accessRequestApproved: '✅ Zugriffsanfrage für {name} genehmigt',
+      accessRequestError: '❌ Fehler beim Genehmigen der Anfrage für {name}'
     },
     it: {
       welcome: 'Benvenuto',
@@ -554,7 +1883,7 @@ function App() {
       menu: 'Menu',
       tradingSignals: 'Segnali di trading',
       analytics: 'Analisi',
-      community: 'Comunità',
+      community: 'https://t.me/+nDqBvIeQwL8yZjU6',
       settings: 'Impostazioni',
       premium: 'ML Premium',
       selectMarket: 'Seleziona mercato',
@@ -567,7 +1896,220 @@ function App() {
       admin: 'Pannello Admin',
       buy: 'Acquista',
       monthly: 'Mensile',
-      lifetime: 'A vita'
+      lifetime: 'A vita',
+      welcomeTo: 'Benvenuto in',
+      premiumSignals: 'Segnali premium per trading professionale',
+      accurateSignals: 'Segnali precisi',
+      successfulTrades: '87% di trade riusciti',
+      instantNotifications: 'Notifiche istantanee',
+      realTimeSignals: 'Ricevi segnali in tempo reale',
+      premiumQuality: 'Qualità premium',
+      professionalAnalysis: 'Analisi professionale del mercato',
+      whatSignals: 'Quali segnali vuoi ricevere?',
+      forexSchedule: 'Orario del mercato Forex',
+      catalogPrivate: 'CATALOGO MODELLI ML PRIVATI',
+      onlyForInsiders: 'Solo per iniziati. Accesso su invito.',
+      consciousRisk: 'Ogni entrata è un rischio consapevole.',
+      activeModel: 'ATTIVO',
+      model: 'MODELLO:',
+      modelReady: 'Modello addestrato e pronto all\'uso',
+      // Новые переводы
+      comingSoon: 'PROSSIMAMENTE',
+      comingSoonDescription: 'Prossimamente disponibile',
+      chatWithTraders: 'Chatta con altri trader',
+      manageParameters: 'Gestisci parametri',
+      manageAppSettings: 'Gestisci impostazioni app',
+      mlModel: 'Modello ML',
+      statistics: 'Statistiche',
+      viewDetails: 'Visualizza statistiche dettagliate',
+      notifications: 'Notifiche',
+      setupPushNotifications: 'Configura notifiche push',
+      // Уведомления - детали
+      newSignals: 'Nuovi Segnali',
+      newSignalsDescription: 'Notifiche sui nuovi segnali',
+      signalResults: 'Risultati Segnali',
+      signalResultsDescription: 'Notifiche sulla chiusura dei trade',
+      dailySummary: 'Riassunto Giornaliero',
+      dailySummaryDescription: 'Riassunto della giornata alle 21:00',
+      systemNotifications: 'Notifiche Sistema',
+      marketNews: 'Notizie di Mercato',
+      marketNewsDescription: 'Eventi importanti del mercato',
+      systemUpdates: 'Aggiornamenti Sistema',
+      systemUpdatesDescription: 'Nuove funzionalità e correzioni',
+      soundAndVibration: 'Suono e Vibrazione',
+      soundNotification: 'Suono',
+      soundNotificationsDescription: 'Notifiche sonore',
+      vibration: 'Vibrazione',
+      vibrationDescription: 'Segnale di vibrazione per notifiche',
+      emailNotifications: 'Notifiche Email',
+      emailNotificationsDescription: 'Duplica via email',
+      smartNotifications: 'Notifiche Intelligenti',
+      smartNotificationsDescription: 'Ricevi notifiche tempestive su eventi importanti. Puoi configurare ogni tipo separatamente.',
+      // Новые ключи для главного меню
+      chooseAction: 'Scegli un\'azione',
+      getTradingSignals: 'Ottieni segnali di trading',
+      aiSignalAnalysis: 'Analisi segnali con AI',
+      // Сигналы
+      direction: 'Direzione',
+      expiration: 'Scadenza',
+      confidence: 'Fiducia',
+      clickToActivate: 'Clicca per attivare',
+      signalReady: 'Segnale pronto',
+      activateSignalForTrading: 'Attiva il segnale per il trading',
+      // Подтверждения
+      confirmDeleteUser: 'Sei sicuro di voler eliminare l\'utente',
+      actionCannotBeUndone: 'Questa azione non può essere annullata',
+      // Аналитика
+      signalType: 'Tipo di segnale',
+      result: 'Risultato',
+      entryPrice: 'Prezzo di entrata',
+      runAIAnalysis: 'Avvia analisi AI',
+      analyzingTrade: 'Analizzando trade...',
+      gptProcessingData: 'GPT-4o mini sta elaborando i dati',
+      // Админ-панель
+      totalUsers: 'Totale utenti',
+      online: 'Online',
+      noAccessRequests: 'Nessuna richiesta di accesso',
+      newRequestsWillAppearHere: 'Le nuove richieste appariranno qui',
+      detailedInformation: 'Informazioni dettagliate',
+      tradingDays: 'Giorni di trading',
+      // Генерация сигналов
+      connectingToMarket: 'Connessione al mercato...',
+      analyzingTechnicalIndicators: 'Analisi degli indicatori tecnici...',
+      evaluatingNewsBackground: 'Valutazione del contesto delle notizie...',
+      calculatingOptimalExpiration: 'Calcolo della scadenza ottimale...',
+      applyingMLModels: 'Applicazione modelli ML...',
+      formingTop3Signals: 'Formazione segnali TOP-3...',
+      analyzingPair: 'Analisi della coppia {pair}...',
+      calculatingTechnicalIndicators: 'Calcolo degli indicatori tecnici...',
+      applyingMLModel: 'Applicazione modello ML...',
+      determiningEntryPoint: 'Determinazione del punto di entrata...',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      shadowStackDesc: 'Non sbaglia, non lagga, non mente. Fa solo il lavoro sporco.',
+      shadowStackAlgo: 'Ensemble (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      shadowStackStyle: 'Medio termine, intragiorno',
+      forestNecromancer: 'FOREST NECROMANCER',
+      forestNecromancerDesc: 'Sembra un nerd, agisce come uno sciamano del mercato.',
+      forestNecromancerAlgo: 'RandomForest - Evocato dalla foresta delle decisioni',
+      forestNecromancerStyle: 'Informatore con visualizzazione delle zone di impulso',
+      grayCardinal: 'GRAY CARDINAL',
+      grayCardinalDesc: 'Non lo vedi, ma conosce la tua entrata prima di te.',
+      grayCardinalAlgo: 'XGBoost - Non nel radar, ma tutto sotto controllo',
+      grayCardinalStyle: 'Segnali su timeframes più bassi, con filtri aggiuntivi',
+      logisticSpy: 'LOGISTIC SPY',
+      logisticSpyDesc: 'Vecchia scuola, ma conosce tutte le mosse.',
+      logisticSpyAlgo: 'LogisticRegression - Un classico nel mondo ML',
+      logisticSpyStyle: 'Conservatore, testato nel tempo',
+      sniper80x: 'SNIPER 80X',
+      sniper80xDesc: 'Lo lanci — e il mercato tace. Un\'entrata — un\'eliminazione.',
+      sniper80xAlgo: 'Modello finale - Leggenda tra i suoi',
+      sniper80xStyle: 'Entrata precisa, posizionale, a volte scalping',
+      sniper80xWarning: 'Solo su comando. L\'auto non si attiva.',
+      // Статусы
+      activeStatus: 'ATTIVO',
+      inactive: 'INATTIVO',
+      available: 'DISPONIBILE',
+      blocked: 'BLOCCATO',
+      success: 'Successo',
+      failure: 'Fallimento',
+      // Действия
+      buyAction: 'Acquista',
+      selectAction: 'Seleziona',
+      approve: 'Approva',
+      delete: 'Elimina',
+      save: 'Salva',
+      cancel: 'Annulla',
+      apply: 'Applica',
+      update: 'Aggiorna',
+      // Генерация сигналов
+      loadingMarkets: 'Caricamento mercati...',
+      analyzingTrends: 'Analisi delle tendenze...',
+      applyingML: 'Applicazione modelli ML...',
+      calculatingEntry: 'Calcolo punti di entrata...',
+      assessingRisks: 'Valutazione rischi...',
+      finalCheck: 'Controllo finale...',
+      // Админ-панель
+      activeUsers: 'Utenti attivi',
+      totalSignals: 'Totale segnali',
+      successful: 'Riusciti',
+      failed: 'Falliti',
+      topUsers: 'Top utenti',
+      accessRequests: 'Richieste di accesso',
+      subscriptionHistory: 'Cronologia modifiche abbonamento',
+      // Статистика
+      myStatistics: 'Le mie statistiche',
+      winRate: 'Tasso di successo',
+      currentStreak: 'Serie attuale',
+      bestStreak: 'Migliore serie',
+      averageProfit: 'Profitto medio',
+      signalsPerDay: 'Segnali al giorno',
+      bestPair: 'Migliore coppia',
+      worstPair: 'Peggiore coppia',
+      // Подписки
+      monthlySubscription: 'Abbonamento mensile',
+      lifetimePurchase: 'Acquisto a vita',
+      autoRenewal: 'Rinnovo automatico',
+      noTimeLimit: 'Nessun limite di tempo',
+      selectSubscriptionType: 'Seleziona tipo di abbonamento:',
+      // Уведомления
+      soundNotification: 'Suono',
+      vibration: 'Vibrazione',
+      pushNotification: 'Push',
+      enabled: 'Abilitato',
+      disabled: 'Disabilitato',
+      // Аналитика
+      aiAnalytics: 'Analisi AI',
+      successfulTradesHistory: 'Cronologia trade riusciti',
+      analyzeSignal: 'Analizza segnale',
+      analyzingInProgress: 'Analisi in corso...',
+      cancelAnalysis: 'Annulla analisi',
+      // Системные сообщения
+      userAdded: 'Utente aggiunto al sistema',
+      errorOccurred: 'Si è verificato un errore',
+      loadingData: 'Caricamento dati...',
+      // Модальные окна
+      tradeActivated: 'TRADE ATTIVATO',
+      timeExpired: '⏰ Tempo scaduto!',
+      leaveFeedback: 'Lascia feedback sul risultato del trade',
+      pair: 'Coppia',
+      direction: 'Direzione',
+      resultButtonsActive: 'I pulsanti del risultato sono attivi',
+      indicateTradeResult: 'Dopo la scadenza del tempo indica il risultato del trading',
+      successfulTrade: 'Trade riuscito',
+      losingTrade: 'Trade perdente',
+      leaveFeedbackToUnlock: '⚠️ Lascia feedback per sbloccare la navigazione',
+      navigationLocked: 'Navigazione bloccata',
+      waitForExpiration: 'Aspetta la scadenza del segnale e lascia feedback',
+      timeRemaining: 'Tempo rimanente fino alla scadenza',
+      noSuitableEntry: '⚠️ Nessun punto di entrata adatto',
+      marketConditionsNotOptimal: 'Le condizioni attuali del mercato non sono ottimali per aprire una posizione',
+      analysisCompleted: 'Analisi completata',
+      recommendations: 'Raccomandazioni',
+      tryAnotherPair: 'Prova un\'altra coppia',
+      selectAnotherPairDescription: 'Seleziona un\'altra coppia di valute con condizioni più favorevoli',
+      waitForOptimalConditions: 'Aspetta condizioni ottimali',
+      tryAgainWhen: 'Riprova tra {seconds} secondi quando il mercato si stabilizzerà',
+      returnToPairSelection: 'Torna alla selezione della coppia',
+      patienceIsKey: '💡 La pazienza è la chiave per il trading di successo',
+      warningAttention: '⚠️ ATTENZIONE!',
+      systemBypassDetected: 'Tentativo di bypass del sistema rilevato',
+      activeSignalRequiresCompletion: 'Hai un segnale attivo che richiede completamento. Ricaricare la pagina non aiuterà a bypassare il blocco della navigazione.',
+      activeSignal: 'Segnale attivo',
+      feedbackRequired: '⏰ Feedback richiesto!',
+      returnToOpenTrade: 'Torna al trade aperto',
+      bypassProtectionActive: 'Sistema di protezione contro il bypass del blocco di navigazione attivato',
+      waitForActiveSignal: '⚠️ Aspetta il completamento del segnale attivo e lascia feedback prima di continuare!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ Abbonamento aggiornato per {name}! L\'utente avrà accesso ai modelli ML selezionati.',
+      subscriptionUpdateError: '❌ Errore nell\'aggiornamento dell\'abbonamento per {name}',
+      subscriptionDisabled: '✅ Abbonamento disabilitato per {name}!',
+      subscriptionDisableError: '❌ Errore nella disabilitazione dell\'abbonamento per {name}',
+      confirmDeleteUser: 'Sei sicuro di voler eliminare l\'utente {name}? Questa azione non può essere annullata.',
+      userDeleted: '✅ Utente {name} eliminato dal sistema',
+      userDeleteError: '❌ Errore nell\'eliminazione dell\'utente {name}',
+      accessRequestApproved: '✅ Richiesta di accesso approvata per {name}',
+      accessRequestError: '❌ Errore nell\'approvazione della richiesta per {name}'
     },
     pt: {
       welcome: 'Bem-vindo',
@@ -577,7 +2119,7 @@ function App() {
       menu: 'Menu',
       tradingSignals: 'Sinais de trading',
       analytics: 'Análises',
-      community: 'Comunidade',
+      community: 'https://t.me/+nDqBvIeQwL8yZjU6',
       settings: 'Configurações',
       premium: 'ML Premium',
       selectMarket: 'Selecionar mercado',
@@ -590,7 +2132,220 @@ function App() {
       admin: 'Painel Admin',
       buy: 'Comprar',
       monthly: 'Mensal',
-      lifetime: 'Vitalício'
+      lifetime: 'Vitalício',
+      welcomeTo: 'Bem-vindo ao',
+      premiumSignals: 'Sinais premium para trading profissional',
+      accurateSignals: 'Sinais precisos',
+      successfulTrades: '87% de trades bem-sucedidos',
+      instantNotifications: 'Notificações instantâneas',
+      realTimeSignals: 'Receba sinais em tempo real',
+      premiumQuality: 'Qualidade premium',
+      professionalAnalysis: 'Análise profissional do mercado',
+      whatSignals: 'Quais sinais você quer receber?',
+      forexSchedule: 'Horário do mercado Forex',
+      catalogPrivate: 'CATÁLOGO DE MODELOS ML PRIVADOS',
+      onlyForInsiders: 'Apenas para iniciados. Acesso por convite.',
+      consciousRisk: 'Cada entrada é um risco consciente.',
+      activeModel: 'ATIVO',
+      model: 'MODELO:',
+      modelReady: 'Modelo treinado e pronto para uso',
+      // Новые переводы
+      comingSoon: 'EM BREVE',
+      comingSoonDescription: 'Em breve disponível',
+      chatWithTraders: 'Conversar com outros traders',
+      manageParameters: 'Gerenciar parâmetros',
+      manageAppSettings: 'Gerenciar configurações do app',
+      mlModel: 'Modelo ML',
+      statistics: 'Estatísticas',
+      viewDetails: 'Ver estatísticas detalhadas',
+      notifications: 'Notificações',
+      setupPushNotifications: 'Configurar notificações push',
+      // Уведомления - детали
+      newSignals: 'Novos Sinais',
+      newSignalsDescription: 'Notificações sobre novos sinais',
+      signalResults: 'Resultados dos Sinais',
+      signalResultsDescription: 'Notificações sobre fechamento de trades',
+      dailySummary: 'Resumo Diário',
+      dailySummaryDescription: 'Resumo do dia às 21:00',
+      systemNotifications: 'Notificações do Sistema',
+      marketNews: 'Notícias do Mercado',
+      marketNewsDescription: 'Eventos importantes do mercado',
+      systemUpdates: 'Atualizações do Sistema',
+      systemUpdatesDescription: 'Novos recursos e correções',
+      soundAndVibration: 'Som e Vibração',
+      soundNotification: 'Som',
+      soundNotificationsDescription: 'Notificações sonoras',
+      vibration: 'Vibração',
+      vibrationDescription: 'Sinal de vibração para notificações',
+      emailNotifications: 'Notificações por Email',
+      emailNotificationsDescription: 'Duplicar por email',
+      smartNotifications: 'Notificações Inteligentes',
+      smartNotificationsDescription: 'Receba notificações oportunas sobre eventos importantes. Você pode configurar cada tipo separadamente.',
+      // Новые ключи для главного меню
+      chooseAction: 'Escolha uma ação',
+      getTradingSignals: 'Obtenha sinais de trading',
+      aiSignalAnalysis: 'Análise de sinais com IA',
+      // Сигналы
+      direction: 'Direção',
+      expiration: 'Expiração',
+      confidence: 'Confiança',
+      clickToActivate: 'Clique para ativar',
+      signalReady: 'Sinal pronto',
+      activateSignalForTrading: 'Ative o sinal para trading',
+      // Подтверждения
+      confirmDeleteUser: 'Tem certeza de que deseja excluir o usuário',
+      actionCannotBeUndone: 'Esta ação não pode ser desfeita',
+      // Аналитика
+      signalType: 'Tipo de sinal',
+      result: 'Resultado',
+      entryPrice: 'Preço de entrada',
+      runAIAnalysis: 'Executar análise IA',
+      analyzingTrade: 'Analisando trade...',
+      gptProcessingData: 'GPT-4o mini processando dados',
+      // Админ-панель
+      totalUsers: 'Total de usuários',
+      online: 'Online',
+      noAccessRequests: 'Nenhuma solicitação de acesso',
+      newRequestsWillAppearHere: 'Novas solicitações aparecerão aqui',
+      detailedInformation: 'Informações detalhadas',
+      tradingDays: 'Dias de trading',
+      // Генерация сигналов
+      connectingToMarket: 'Conectando ao mercado...',
+      analyzingTechnicalIndicators: 'Analisando indicadores técnicos...',
+      evaluatingNewsBackground: 'Avaliando contexto das notícias...',
+      calculatingOptimalExpiration: 'Calculando expiração ótima...',
+      applyingMLModels: 'Aplicando modelos ML...',
+      formingTop3Signals: 'Formando sinais TOP-3...',
+      analyzingPair: 'Analisando par {pair}...',
+      calculatingTechnicalIndicators: 'Calculando indicadores técnicos...',
+      applyingMLModel: 'Aplicando modelo ML...',
+      determiningEntryPoint: 'Determinando ponto de entrada...',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      shadowStackDesc: 'Não erra, não trava, não mente. Apenas faz o trabalho sujo.',
+      shadowStackAlgo: 'Ensemble (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      shadowStackStyle: 'Médio prazo, intradiário',
+      forestNecromancer: 'FOREST NECROMANCER',
+      forestNecromancerDesc: 'Parece um nerd, age como um xamã do mercado.',
+      forestNecromancerAlgo: 'RandomForest - Evocado da floresta das decisões',
+      forestNecromancerStyle: 'Informante com visualização de zonas de impulso',
+      grayCardinal: 'GRAY CARDINAL',
+      grayCardinalDesc: 'Você não o vê, mas ele conhece sua entrada antes de você.',
+      grayCardinalAlgo: 'XGBoost - Não no radar, mas tudo sob controle',
+      grayCardinalStyle: 'Sinais em timeframes menores, com filtros adicionais',
+      logisticSpy: 'LOGISTIC SPY',
+      logisticSpyDesc: 'Velha escola, mas conhece todos os movimentos.',
+      logisticSpyAlgo: 'LogisticRegression - Um clássico no mundo ML',
+      logisticSpyStyle: 'Conservador, testado pelo tempo',
+      sniper80x: 'SNIPER 80X',
+      sniper80xDesc: 'Você o lança — e o mercado se cala. Uma entrada — uma eliminação.',
+      sniper80xAlgo: 'Modelo final - Lenda entre os seus',
+      sniper80xStyle: 'Entrada precisa, posicional, às vezes scalping',
+      sniper80xWarning: 'Apenas por comando. O auto não se ativa.',
+      // Статусы
+      activeStatus: 'ATIVO',
+      inactive: 'INATIVO',
+      available: 'DISPONÍVEL',
+      blocked: 'BLOQUEADO',
+      success: 'Sucesso',
+      failure: 'Falha',
+      // Действия
+      buyAction: 'Comprar',
+      selectAction: 'Selecionar',
+      approve: 'Aprovar',
+      delete: 'Excluir',
+      save: 'Salvar',
+      cancel: 'Cancelar',
+      apply: 'Aplicar',
+      update: 'Atualizar',
+      // Генерация сигналов
+      loadingMarkets: 'Carregando mercados...',
+      analyzingTrends: 'Analisando tendências...',
+      applyingML: 'Aplicando modelos ML...',
+      calculatingEntry: 'Calculando pontos de entrada...',
+      assessingRisks: 'Avaliando riscos...',
+      finalCheck: 'Verificação final...',
+      // Админ-панель
+      activeUsers: 'Usuários ativos',
+      totalSignals: 'Total de sinais',
+      successful: 'Bem-sucedidos',
+      failed: 'Falharam',
+      topUsers: 'Top usuários',
+      accessRequests: 'Solicitações de acesso',
+      subscriptionHistory: 'Histórico de mudanças de assinatura',
+      // Статистика
+      myStatistics: 'Minhas estatísticas',
+      winRate: 'Taxa de vitória',
+      currentStreak: 'Sequência atual',
+      bestStreak: 'Melhor sequência',
+      averageProfit: 'Lucro médio',
+      signalsPerDay: 'Sinais por dia',
+      bestPair: 'Melhor par',
+      worstPair: 'Pior par',
+      // Подписки
+      monthlySubscription: 'Assinatura mensal',
+      lifetimePurchase: 'Compra vitalícia',
+      autoRenewal: 'Renovação automática',
+      noTimeLimit: 'Sem limite de tempo',
+      selectSubscriptionType: 'Selecionar tipo de assinatura:',
+      // Уведомления
+      soundNotification: 'Som',
+      vibration: 'Vibração',
+      pushNotification: 'Push',
+      enabled: 'Habilitado',
+      disabled: 'Desabilitado',
+      // Аналитика
+      aiAnalytics: 'Análise IA',
+      successfulTradesHistory: 'Histórico de trades bem-sucedidos',
+      analyzeSignal: 'Analisar sinal',
+      analyzingInProgress: 'Analisando...',
+      cancelAnalysis: 'Cancelar análise',
+      // Системные сообщения
+      userAdded: 'Usuário adicionado ao sistema',
+      errorOccurred: 'Ocorreu um erro',
+      loadingData: 'Carregando dados...',
+      // Модальные окна
+      tradeActivated: 'TRADE ATIVADO',
+      timeExpired: '⏰ Tempo esgotado!',
+      leaveFeedback: 'Deixe feedback sobre o resultado do trade',
+      pair: 'Par',
+      direction: 'Direção',
+      resultButtonsActive: 'Os botões de resultado estão ativos',
+      indicateTradeResult: 'Após o tempo esgotado, indique o resultado do trading',
+      successfulTrade: 'Trade bem-sucedido',
+      losingTrade: 'Trade perdente',
+      leaveFeedbackToUnlock: '⚠️ Deixe feedback para desbloquear a navegação',
+      navigationLocked: 'Navegação bloqueada',
+      waitForExpiration: 'Aguarde a expiração do sinal e deixe feedback',
+      timeRemaining: 'Tempo restante até a expiração',
+      noSuitableEntry: '⚠️ Nenhum ponto de entrada adequado',
+      marketConditionsNotOptimal: 'As condições atuais do mercado não são ótimas para abrir uma posição',
+      analysisCompleted: 'Análise concluída',
+      recommendations: 'Recomendações',
+      tryAnotherPair: 'Tente outro par',
+      selectAnotherPairDescription: 'Selecione outro par de moedas com condições mais favoráveis',
+      waitForOptimalConditions: 'Aguarde condições ótimas',
+      tryAgainWhen: 'Tente novamente em {seconds} segundos quando o mercado se estabilizar',
+      returnToPairSelection: 'Voltar à seleção de par',
+      patienceIsKey: '💡 A paciência é a chave para o trading bem-sucedido',
+      warningAttention: '⚠️ ATENÇÃO!',
+      systemBypassDetected: 'Tentativa de bypass do sistema detectada',
+      activeSignalRequiresCompletion: 'Você tem um sinal ativo que requer finalização. Recarregar a página não ajudará a contornar o bloqueio de navegação.',
+      activeSignal: 'Sinal ativo',
+      feedbackRequired: '⏰ Feedback necessário!',
+      returnToOpenTrade: 'Voltar ao trade aberto',
+      bypassProtectionActive: 'Sistema de proteção contra bypass do bloqueio de navegação ativado',
+      waitForActiveSignal: '⚠️ Aguarde a finalização do sinal ativo e deixe feedback antes de continuar!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ Assinatura atualizada para {name}! O usuário terá acesso aos modelos ML selecionados.',
+      subscriptionUpdateError: '❌ Erro ao atualizar assinatura para {name}',
+      subscriptionDisabled: '✅ Assinatura desabilitada para {name}!',
+      subscriptionDisableError: '❌ Erro ao desabilitar assinatura para {name}',
+      confirmDeleteUser: 'Tem certeza de que deseja excluir o usuário {name}? Esta ação não pode ser desfeita.',
+      userDeleted: '✅ Usuário {name} excluído do sistema',
+      userDeleteError: '❌ Erro ao excluir usuário {name}',
+      accessRequestApproved: '✅ Solicitação de acesso aprovada para {name}',
+      accessRequestError: '❌ Erro ao aprovar solicitação para {name}'
     },
     zh: {
       welcome: '欢迎',
@@ -600,7 +2355,7 @@ function App() {
       menu: '菜单',
       tradingSignals: '交易信号',
       analytics: '分析',
-      community: '社区',
+      community: 'https://t.me/+nDqBvIeQwL8yZjU6',
       settings: '设置',
       premium: '高级 ML',
       selectMarket: '选择市场',
@@ -613,7 +2368,220 @@ function App() {
       admin: '管理面板',
       buy: '购买',
       monthly: '每月',
-      lifetime: '终身'
+      lifetime: '终身',
+      welcomeTo: '欢迎来到',
+      premiumSignals: '专业交易的高级信号',
+      accurateSignals: '精准信号',
+      successfulTrades: '87%成功交易',
+      instantNotifications: '即时通知',
+      realTimeSignals: '实时接收信号',
+      premiumQuality: '高级品质',
+      professionalAnalysis: '专业市场分析',
+      whatSignals: '您想接收什么信号？',
+      forexSchedule: '外汇市场时间表',
+      catalogPrivate: '私人ML模型目录',
+      onlyForInsiders: '仅限内部人员。邀请制访问。',
+      consciousRisk: '每次入场都是有意识的风险。',
+      activeModel: '活跃',
+      model: '模型:',
+      modelReady: '模型已训练并准备就绪',
+      // Новые переводы
+      comingSoon: '即将推出',
+      comingSoonDescription: '即将推出',
+      chatWithTraders: '与其他交易者聊天',
+      manageParameters: '管理参数',
+      manageAppSettings: '管理应用设置',
+      mlModel: 'ML模型',
+      statistics: '统计',
+      viewDetails: '查看详细统计',
+      notifications: '通知',
+      setupPushNotifications: '设置推送通知',
+      // Уведомления - детали
+      newSignals: '新信号',
+      newSignalsDescription: '新信号通知',
+      signalResults: '信号结果',
+      signalResultsDescription: '交易关闭通知',
+      dailySummary: '每日摘要',
+      dailySummaryDescription: '每日21:00摘要',
+      systemNotifications: '系统通知',
+      marketNews: '市场新闻',
+      marketNewsDescription: '重要市场事件',
+      systemUpdates: '系统更新',
+      systemUpdatesDescription: '新功能和修复',
+      soundAndVibration: '声音和振动',
+      soundNotification: '声音',
+      soundNotificationsDescription: '声音通知',
+      vibration: '振动',
+      vibrationDescription: '通知振动信号',
+      emailNotifications: '邮件通知',
+      emailNotificationsDescription: '邮件复制',
+      smartNotifications: '智能通知',
+      smartNotificationsDescription: '及时接收重要事件通知。您可以单独配置每种类型。',
+      // Новые ключи для главного меню
+      chooseAction: '选择操作',
+      getTradingSignals: '获取交易信号',
+      aiSignalAnalysis: 'AI信号分析',
+      // Сигналы
+      direction: '方向',
+      expiration: '到期',
+      confidence: '信心',
+      clickToActivate: '点击激活',
+      signalReady: '信号就绪',
+      activateSignalForTrading: '激活交易信号',
+      // Подтверждения
+      confirmDeleteUser: '您确定要删除用户',
+      actionCannotBeUndone: '此操作无法撤销',
+      // Аналитика
+      signalType: '信号类型',
+      result: '结果',
+      entryPrice: '入场价格',
+      runAIAnalysis: '运行AI分析',
+      analyzingTrade: '分析交易中...',
+      gptProcessingData: 'GPT-4o mini正在处理数据',
+      // Админ-панель
+      totalUsers: '总用户数',
+      online: '在线',
+      noAccessRequests: '无访问请求',
+      newRequestsWillAppearHere: '新请求将在此处显示',
+      detailedInformation: '详细信息',
+      tradingDays: '交易天数',
+      // Генерация сигналов
+      connectingToMarket: '连接市场...',
+      analyzingTechnicalIndicators: '分析技术指标...',
+      evaluatingNewsBackground: '评估新闻背景...',
+      calculatingOptimalExpiration: '计算最佳到期时间...',
+      applyingMLModels: '应用ML模型...',
+      formingTop3Signals: '形成前3信号...',
+      analyzingPair: '分析货币对 {pair}...',
+      calculatingTechnicalIndicators: '计算技术指标...',
+      applyingMLModel: '应用ML模型...',
+      determiningEntryPoint: '确定入场点...',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      shadowStackDesc: '不失误，不延迟，不说谎。只做脏活。',
+      shadowStackAlgo: '集成 (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      shadowStackStyle: '中期，日内',
+      forestNecromancer: 'FOREST NECROMANCER',
+      forestNecromancerDesc: '看起来像书呆子，行动像市场萨满。',
+      forestNecromancerAlgo: 'RandomForest - 从决策森林召唤',
+      forestNecromancerStyle: '信息员，带脉冲区域可视化',
+      grayCardinal: 'GRAY CARDINAL',
+      grayCardinalDesc: '你看不到他，但他比你先知道你的入场。',
+      grayCardinalAlgo: 'XGBoost - 不在雷达上，但一切都在控制之下',
+      grayCardinalStyle: '较低时间框架的信号，带额外过滤器',
+      logisticSpy: 'LOGISTIC SPY',
+      logisticSpyDesc: '老派，但知道所有动作。',
+      logisticSpyAlgo: 'LogisticRegression - ML世界的经典',
+      logisticSpyStyle: '保守，经时间验证',
+      sniper80x: 'SNIPER 80X',
+      sniper80xDesc: '你启动它——市场就安静了。一次入场——一次击杀。',
+      sniper80xAlgo: '最终模型 - 自己人中的传奇',
+      sniper80xStyle: '精准入场，位置性，有时剥头皮',
+      sniper80xWarning: '仅按命令。自动不激活。',
+      // Статусы
+      activeStatus: '活跃',
+      inactive: '非活跃',
+      available: '可用',
+      blocked: '已阻止',
+      success: '成功',
+      failure: '失败',
+      // Действия
+      buyAction: '购买',
+      selectAction: '选择',
+      approve: '批准',
+      delete: '删除',
+      save: '保存',
+      cancel: '取消',
+      apply: '应用',
+      update: '更新',
+      // Генерация сигналов
+      loadingMarkets: '加载市场...',
+      analyzingTrends: '分析趋势...',
+      applyingML: '应用ML模型...',
+      calculatingEntry: '计算入场点...',
+      assessingRisks: '评估风险...',
+      finalCheck: '最终检查...',
+      // Админ-панель
+      activeUsers: '活跃用户',
+      totalSignals: '总信号',
+      successful: '成功',
+      failed: '失败',
+      topUsers: '顶级用户',
+      accessRequests: '访问请求',
+      subscriptionHistory: '订阅更改历史',
+      // Статистика
+      myStatistics: '我的统计',
+      winRate: '胜率',
+      currentStreak: '当前连胜',
+      bestStreak: '最佳连胜',
+      averageProfit: '平均利润',
+      signalsPerDay: '每日信号',
+      bestPair: '最佳货币对',
+      worstPair: '最差货币对',
+      // Подписки
+      monthlySubscription: '月度订阅',
+      lifetimePurchase: '终身购买',
+      autoRenewal: '自动续费',
+      noTimeLimit: '无时间限制',
+      selectSubscriptionType: '选择订阅类型:',
+      // Уведомления
+      soundNotification: '声音',
+      vibration: '振动',
+      pushNotification: '推送',
+      enabled: '已启用',
+      disabled: '已禁用',
+      // Аналитика
+      aiAnalytics: 'AI分析',
+      successfulTradesHistory: '成功交易历史',
+      analyzeSignal: '分析信号',
+      analyzingInProgress: '分析中...',
+      cancelAnalysis: '取消分析',
+      // Системные сообщения
+      userAdded: '用户已添加到系统',
+      errorOccurred: '发生错误',
+      loadingData: '加载数据...',
+      // Модальные окна
+      tradeActivated: '交易已激活',
+      timeExpired: '⏰ 时间已到！',
+      leaveFeedback: '请对交易结果留下反馈',
+      pair: '货币对',
+      direction: '方向',
+      resultButtonsActive: '结果按钮已激活',
+      indicateTradeResult: '时间到期后请指明交易结果',
+      successfulTrade: '成功交易',
+      losingTrade: '亏损交易',
+      leaveFeedbackToUnlock: '⚠️ 请留下反馈以解锁导航',
+      navigationLocked: '导航已锁定',
+      waitForExpiration: '请等待信号到期并留下反馈',
+      timeRemaining: '剩余到期时间',
+      noSuitableEntry: '⚠️ 没有合适的入场点',
+      marketConditionsNotOptimal: '当前市场条件不适合开仓',
+      analysisCompleted: '分析完成',
+      recommendations: '建议',
+      tryAnotherPair: '尝试其他货币对',
+      selectAnotherPairDescription: '选择具有更有利条件的其他货币对',
+      waitForOptimalConditions: '等待最佳条件',
+      tryAgainWhen: '当市场稳定时，在{seconds}秒后重试',
+      returnToPairSelection: '返回货币对选择',
+      patienceIsKey: '💡 耐心是成功交易的关键',
+      warningAttention: '⚠️ 注意！',
+      systemBypassDetected: '检测到系统绕过尝试',
+      activeSignalRequiresCompletion: '您有一个活跃信号需要完成。重新加载页面不会帮助绕过导航锁定。',
+      activeSignal: '活跃信号',
+      feedbackRequired: '⏰ 需要反馈！',
+      returnToOpenTrade: '返回开放交易',
+      bypassProtectionActive: '节点保护系统已激活',
+      waitForActiveSignal: '⚠️ 请等待活跃信号完成并在继续之前留下反馈！',
+      // Alert сообщения
+      subscriptionUpdated: '✅ 用户{name}的订阅已更新！用户将获得所选ML模型的访问权限。',
+      subscriptionUpdateError: '❌ 更新用户{name}订阅时出错',
+      subscriptionDisabled: '✅ 用户{name}的订阅已禁用！',
+      subscriptionDisableError: '❌ 禁用用户{name}订阅时出错',
+      confirmDeleteUser: '您确定要删除用户{name}吗？此操作无法撤销。',
+      userDeleted: '✅ 用户{name}已从系统中删除',
+      userDeleteError: '❌ 删除用户{name}时出错',
+      accessRequestApproved: '✅ 用户{name}的访问请求已批准',
+      accessRequestError: '❌ 批准用户{name}请求时出错'
     },
     ja: {
       welcome: 'ようこそ',
@@ -636,7 +2604,125 @@ function App() {
       admin: '管理パネル',
       buy: '購入',
       monthly: '毎月',
-      lifetime: '生涯'
+      lifetime: '生涯',
+      // Новые переводы
+      comingSoon: '近日公開',
+      comingSoonDescription: '近日公開予定',
+      chatWithTraders: '他のトレーダーとチャット',
+      manageParameters: 'パラメータを管理',
+      manageAppSettings: 'アプリ設定を管理',
+      mlModel: 'MLモデル',
+      statistics: '統計',
+      viewDetails: '詳細統計を表示',
+      notifications: '通知',
+      setupPushNotifications: 'プッシュ通知を設定',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      forestNecromancer: 'FOREST NECROMANCER',
+      grayCardinal: 'GRAY CARDINAL',
+      logisticSpy: 'LOGISTIC SPY',
+      sniper80x: 'SNIPER 80X',
+      // Статусы
+      activeStatus: 'アクティブ',
+      quick: '非アクティブ',
+      available: '利用可能',
+      blocked: 'ブロック済み',
+      success: '成功',
+      failure: '失敗',
+      // Действия
+      buyAction: '購入',
+      selectAction: '選択',
+      approve: '承認',
+      delete: '削除',
+      save: '保存',
+      cancel: 'キャンセル',
+      apply: '適用',
+      update: '更新',
+      // Генерация сигналов
+      loadingMarkets: '市場を読み込み中...',
+      analyzingTrends: 'トレンドを分析中...',
+      applyingML: 'MLモデルを適用中...',
+      calculatingEntry: 'エントリーポイントを計算中...',
+      assessingRisks: 'リスクを評価中...',
+      finalCheck: '最終チェック中...',
+      // Админ-панель
+      activeUsers: 'アクティブユーザー',
+      totalSignals: '総シグナル',
+      successful: '成功',
+      failed: '失敗',
+      topUsers: 'トップユーザー',
+      accessRequests: 'アクセス要求',
+      subscriptionHistory: 'サブスクリプション変更履歴',
+      // Статистика
+      myStatistics: 'マイ統計',
+      winRate: '勝率',
+      currentStreak: '現在の連勝',
+      bestStreak: '最高連勝',
+      averageProfit: '平均利益',
+      // Подписки
+      monthlySubscription: '月額サブスクリプション',
+      lifetimePurchase: '生涯購入',
+      autoRenewal: '自動更新',
+      noTimeLimit: '時間制限なし',
+      selectSubscriptionType: 'サブスクリプションタイプを選択:',
+      // Уведомления
+      soundNotification: '音',
+      vibration: '振動',
+      pushNotification: 'プッシュ',
+      enabled: '有効',
+      disabled: '無効',
+      // Аналитика
+      aiAnalytics: 'AI分析',
+      successfulTradesHistory: '成功取引履歴',
+      analyzeSignal: 'シグナルを分析',
+      analyzingIneligible: '分析中...',
+      cancelAnalysis: '分析をキャンセル',
+      // Системные сообщения
+      userAdded: 'ユーザーがシステムに追加されました',
+      errorOccurred: 'エラーが発生しました',
+      loadingData: 'データを読み込み中...',
+      // Модальные окна
+      tradeActivated: '取引がアクティベートされました',
+      timeExpired: '⏰ 時間切れ！',
+      leaveFeedback: '取引結果についてフィードバックを残してください',
+      pair: 'ペア',
+      direction: '方向',
+      resultButtonsActive: '結果ボタンがアクティブになりました',
+      indicateTradeResult: '時間切れ後に取引結果を指定してください',
+      successfulTrade: '成功取引',
+      losingTrade: '損失取引',
+      leaveFeedbackToUnlock: '⚠️ ナビゲーションをアンロックするためにフィードバックを残してください',
+      navigationLocked: 'ナビゲーションがロックされています',
+      waitForExpiration: 'シグナルの期限を待ち、フィードバックを残してください',
+      timeRemaining: '期限までの残り時間',
+      noSuitableEntry: '⚠️ 適切なエントリーポイントがありません',
+      marketConditionsNotOptimal: '現在の市場条件はポジション開始に最適ではありません',
+      analysisCompleted: '分析完了',
+      recommendations: '推奨事項',
+      tryAnotherPair: '別のペアを試してください',
+      selectAnotherPairDescription: 'より有利な条件を持つ別の通貨ペアを選択してください',
+      waitForOptimalConditions: '最適な条件を待ってください',
+      tryAgainWhen: '市場が安定したら{seconds}秒後に再試行してください',
+      returnToPairSelection: 'ペア選択に戻る',
+      patienceIsKey: '💡 忍耐は成功トレーディングの鍵です',
+      warningAttention: '⚠️ 注意！',
+      systemBypassDetected: 'システムバイパスの試行が検出されました',
+      activeSignalRequiresCompletion: '完了が必要なアクティブシグナルがあります。ページをリロードしてもナビゲーションロックをバイパスできません。',
+      activeSignal: 'アクティブシグナル',
+      feedbackRequired: '⏰ フィードバックが必要です！',
+      returnToOpenTrade: 'オープン取引に戻る',
+      bypassProtectionActive: 'ナビゲーションロックバイパス保護システムがアクティブです',
+      waitForActiveSignal: '⚠️ アクティブシグナルの完了を待ち、続行前にフィードバックを残してください！',
+      // Alert сообщения
+      subscriptionUpdated: '✅ ユーザー{name}のサブスクリプションが更新されました！ユーザーは選択されたMLモデルにアクセスできます。',
+      subscriptionUpdateError: '❌ ユーザー{name}のサブスクリプション更新エラー',
+      subscriptionDisabled: '✅ ユーザー{name}のサブスクリプションが無効になりました！',
+      subscriptionDisableError: '❌ ユーザー{name}のサブスクリプション無効化エラー',
+      confirmDeleteUser: 'ユーザー{name}を削除してもよろしいですか？このアクションは元に戻せません。',
+      userDeleted: '✅ ユーザー{name}がシステムから削除されました',
+      userDeleteError: '❌ ユーザー{name}の削除エラー',
+      accessRequestApproved: '✅ ユーザー{name}のアクセスリクエストが承認されました',
+      accessRequestError: '❌ ユーザー{name}のリクエスト承認エラー'
     },
     ko: {
       welcome: '환영합니다',
@@ -659,7 +2745,125 @@ function App() {
       admin: '관리자 패널',
       buy: '구매',
       monthly: '월간',
-      lifetime: '평생'
+      lifetime: '평생',
+      // Новые переводы
+      comingSoon: '곧 출시',
+      comingSoonDescription: '곧 출시 예정',
+      chatWithTraders: '다른 트레이더와 채팅',
+      manageParameters: '매개변수 관리',
+      manageAppSettings: '앱 설정 관리',
+      mlModel: 'ML 모델',
+      statistics: '통계',
+      viewDetails: '상세 통계 보기',
+      notifications: '알림',
+      setupPushNotifications: '푸시 알림 설정',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      forestNecromancer: 'FOREST NECROMANCER',
+      grayCardinal: 'GRAY CARDINAL',
+      logisticSpy: 'LOGISTIC SPY',
+      sniper80x: 'SNIPER 80X',
+      // Статусы
+      activeStatus: '활성',
+      inactive: '비활성',
+      available: '사용 가능',
+      blocked: '차단됨',
+      success: '성공',
+      failure: '실패',
+      // Действия
+      buyAction: '구매',
+      selectAction: '선택',
+      approve: '승인',
+      delete: '삭제',
+      save: '저장',
+      cancel: '취소',
+      apply: '적용',
+      update: '업데이트',
+      // Генерация сигналов
+      loadingMarkets: '시장 로딩 중...',
+      analyzingTrends: '트렌드 분석 중...',
+      applyingML: 'ML 모델 적용 중...',
+      calculatingEntry: '진입점 계산 중...',
+      assessingRisks: '위험 평가 중...',
+      finalCheck: '최종 확인 중...',
+      // Админ-панель
+      activeUsers: '활성 사용자',
+      totalSignals: '총 신호',
+      successful: '성공',
+      failed: '실패',
+      topUsers: '상위 사용자',
+      accessRequests: '접근 요청',
+      subscriptionHistory: '구독 변경 기록',
+      // Статистика
+      myStatistics: '내 통계',
+      winRate: '승률',
+      currentStreak: '현재 연승',
+      bestStreak: '최고 연승',
+      averageProfit: '평균 수익',
+      // Подписки
+      monthlySubscription: '월간 구독',
+      lifetimePurchase: '평생 구매',
+      autoRenewal: '자동 갱신',
+      noTimeLimit: '시간 제한 없음',
+      selectSubscriptionType: '구독 유형 선택:',
+      // Уведомления
+      soundNotification: '소리',
+      vibration: '진동',
+      pushNotification: '푸시',
+      enabled: '활성화됨',
+      disabled: '비활성화됨',
+      // Аналитика
+      aiAnalytics: 'AI 분석',
+      successfulTradesHistory: '성공한 거래 기록',
+      analyzeSignal: '신호 분석',
+      analyzingIneligible: '분석 중...',
+      cancelAnalysis: '분석 취소',
+      // Системные сообщения
+      userAdded: '사용자가 시스템에 추가되었습니다',
+      errorOccurred: '오류가 발생했습니다',
+      loadingData: '데이터 로딩 중...',
+      // Модальные окна
+      tradeActivated: '거래가 활성화되었습니다',
+      timeExpired: '⏰ 시간 만료!',
+      leaveFeedback: '거래 결과에 대한 피드백을 남겨주세요',
+      pair: '페어',
+      direction: '방향',
+      resultButtonsActive: '결과 버튼이 활성화되었습니다',
+      indicateTradeResult: '시간 만료 후 거래 결과를 지정해주세요',
+      successfulTrade: '성공적인 거래',
+      losingTrade: '손실 거래',
+      leaveFeedbackToUnlock: '⚠️ 네비게이션을 잠금 해제하려면 피드백을 남겨주세요',
+      navigationLocked: '네비게이션이 잠겼습니다',
+      waitForExpiration: '신호 만료를 기다리고 피드백을 남겨주세요',
+      timeRemaining: '만료까지 남은 시간',
+      noSuitableEntry: '⚠️ 적절한 진입점이 없습니다',
+      marketConditionsNotOptimal: '현재 시장 조건은 포지션 개시에 최적이 아닙니다',
+      analysisCompleted: '분석 완료',
+      recommendations: '권장사항',
+      tryAnotherPair: '다른 페어를 시도해보세요',
+      selectAnotherPairDescription: '더 유리한 조건을 가진 다른 통화 페어를 선택하세요',
+      waitForOptimalConditions: '최적의 조건을 기다리세요',
+      tryAgainWhen: '시장이 안정되면 {seconds}초 후에 다시 시도하세요',
+      returnToPairSelection: '페어 선택으로 돌아가기',
+      patienceIsKey: '💡 인내심이 성공적인 거래의 열쇠입니다',
+      warningAttention: '⚠️ 주의!',
+      systemBypassDetected: '시스템 우회 시도가 감지되었습니다',
+      activeSignalRequiresCompletion: '완료가 필요한 활성 신호가 있습니다. 페이지를 새로고침해도 네비게이션 잠금을 우회할 수 없습니다.',
+      activeSignal: '활성 신호',
+      feedbackRequired: '⏰ 피드백이 필요합니다!',
+      returnToOpenTrade: '열린 거래로 돌아가기',
+      bypassProtectionActive: '네비게이션 잠금 우회 보호 시스템이 활성화되었습니다',
+      waitForActiveSignal: '⚠️ 활성 신호 완료를 기다리고 계속하기 전에 피드백을 남겨주세요!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ 사용자 {name}의 구독이 업데이트되었습니다! 사용자는 선택된 ML 모델에 액세스할 수 있습니다.',
+      subscriptionUpdateError: '❌ 사용자 {name} 구독 업데이트 오류',
+      subscriptionDisabled: '✅ 사용자 {name}의 구독이 비활성화되었습니다!',
+      subscriptionDisableError: '❌ 사용자 {name} 구독 비활성화 오류',
+      confirmDeleteUser: '사용자 {name}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      userDeleted: '✅ 사용자 {name}이(가) 시스템에서 삭제되었습니다',
+      userDeleteError: '❌ 사용자 {name} 삭제 오류',
+      accessRequestApproved: '✅ 사용자 {name}의 액세스 요청이 승인되었습니다',
+      accessRequestError: '❌ 사용자 {name} 요청 승인 오류'
     },
     ar: {
       welcome: 'مرحبا',
@@ -682,7 +2886,125 @@ function App() {
       admin: 'لوحة المشرف',
       buy: 'شراء',
       monthly: 'شهري',
-      lifetime: 'مدى الحياة'
+      lifetime: 'مدى الحياة',
+      // Новые переводы
+      comingSoon: 'قريباً',
+      comingSoonDescription: 'قريباً متاح',
+      chatWithTraders: 'دردشة مع المتداولين الآخرين',
+      manageParameters: 'إدارة المعاملات',
+      manageAppSettings: 'إدارة إعدادات التطبيق',
+      mlModel: 'نموذج ML',
+      statistics: 'الإحصائيات',
+      viewDetails: 'عرض الإحصائيات التفصيلية',
+      notifications: 'الإشعارات',
+      setupPushNotifications: 'إعداد الإشعارات الفورية',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      forestNecromancer: 'FOREST NECROMANCER',
+      grayCardinal: 'GRAY CARDINAL',
+      logisticSpy: 'LOGISTIC SPY',
+      sniper80x: 'SNIPER 80X',
+      // Статусы
+      activeStatus: 'نشط',
+      inactive: 'غير نشط',
+      available: 'متاح',
+      blocked: 'محجوب',
+      success: 'نجح',
+      failure: 'فشل',
+      // Действия
+      buyAction: 'شراء',
+      selectAction: 'اختيار',
+      approve: 'موافقة',
+      delete: 'حذف',
+      save: 'حفظ',
+      cancel: 'إلغاء',
+      apply: 'تطبيق',
+      update: 'تحديث',
+      // Генерация сигналов
+      loadingMarkets: 'تحميل الأسواق...',
+      analyzingTrends: 'تحليل الاتجاهات...',
+      applyingML: 'تطبيق نماذج ML...',
+      calculatingEntry: 'حساب نقاط الدخول...',
+      assessingRisks: 'تقييم المخاطر...',
+      finalCheck: 'فحص نهائي...',
+      // Админ-панель
+      activeUsers: 'المستخدمون النشطون',
+      totalSignals: 'إجمالي الإشارات',
+      successful: 'نجح',
+      failed: 'فشل',
+      topUsers: 'أفضل المستخدمين',
+      accessRequests: 'طلبات الوصول',
+      subscriptionHistory: 'تاريخ تغييرات الاشتراك',
+      // Статистика
+      myStatistics: 'إحصائياتي',
+      winRate: 'معدل الفوز',
+      currentStreak: 'السلسلة الحالية',
+      bestStreak: 'أفضل سلسلة',
+      averageProfit: 'متوسط الربح',
+      // Подписки
+      monthlySubscription: 'اشتراك شهري',
+      lifetimePurchase: 'شراء مدى الحياة',
+      autoRenewal: 'تجديد تلقائي',
+      noTimeLimit: 'بدون حد زمني',
+      selectSubscriptionType: 'اختر نوع الاشتراك:',
+      // Уведомления
+      soundNotification: 'صوت',
+      vibration: 'اهتزاز',
+      pushNotification: 'دفع',
+      enabled: 'مفعل',
+      disabled: 'معطل',
+      // Аналитика
+      aiAnalytics: 'تحليل AI',
+      successfulTradesHistory: 'تاريخ الصفقات الناجحة',
+      analyzeSignal: 'تحليل الإشارة',
+      analyzingIneligible: 'جاري التحليل...',
+      cancelAnalysis: 'إلغاء التحليل',
+      // Системные сообщения
+      userAdded: 'تم إضافة المستخدم للنظام',
+      errorOccurred: 'حدث خطأ',
+      loadingData: 'تحميل البيانات...',
+      // Модальные окна
+      tradeActivated: 'تم تفعيل الصفقة',
+      timeExpired: '⏰ انتهى الوقت!',
+      leaveFeedback: 'يرجى ترك تعليق حول نتيجة الصفقة',
+      pair: 'الزوج',
+      direction: 'الاتجاه',
+      resultButtonsActive: 'أصبحت أزرار النتيجة نشطة',
+      indicateTradeResult: 'يرجى تحديد نتيجة التداول بعد انتهاء الوقت',
+      successfulTrade: 'صفقة ناجحة',
+      losingTrade: 'صفقة خاسرة',
+      leaveFeedbackToUnlock: '⚠️ يرجى ترك تعليق لإلغاء قفل التنقل',
+      navigationLocked: 'التنقل مقفل',
+      waitForExpiration: 'انتظر انتهاء الإشارة واترك تعليق',
+      timeRemaining: 'المتبقي حتى الانتهاء',
+      noSuitableEntry: '⚠️ لا توجد نقطة دخول مناسبة',
+      marketConditionsNotOptimal: 'ظروف السوق الحالية ليست مثالية لفتح مركز',
+      analysisCompleted: 'اكتمل التحليل',
+      recommendations: 'التوصيات',
+      tryAnotherPair: 'جرب زوج عملات آخر',
+      selectAnotherPairDescription: 'اختر زوج عملات آخر بظروف أكثر ملاءمة',
+      waitForOptimalConditions: 'انتظر الظروف المثلى',
+      tryAgainWhen: 'حاول مرة أخرى خلال {seconds} ثانية عندما يستقر السوق',
+      returnToPairSelection: 'العودة إلى اختيار الزوج',
+      patienceIsKey: '💡 الصبر هو مفتاح التداول الناجح',
+      warningAttention: '⚠️ انتباه!',
+      systemBypassDetected: 'تم اكتشاف محاولة تجاوز النظام',
+      activeSignalRequiresCompletion: 'لديك إشارة نشطة تتطلب الإكمال. إعادة تحميل الصفحة لن تساعد في تجاوز قفل التنقل.',
+      activeSignal: 'إشارة نشطة',
+      feedbackRequired: '⏰ مطلوب تعليق!',
+      returnToOpenTrade: 'العودة إلى الصفقة المفتوحة',
+      bypassProtectionActive: 'تم تفعيل نظام حماية تجاوز قفل التنقل',
+      waitForActiveSignal: '⚠️ انتظر إكمال الإشارة النشطة واترك تعليق قبل المتابعة!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ تم تحديث الاشتراك للمستخدم {name}! سيحصل المستخدم على وصول لنماذج ML المحددة.',
+      subscriptionUpdateError: '❌ خطأ في تحديث الاشتراك للمستخدم {name}',
+      subscriptionDisabled: '✅ تم إلغاء تفعيل الاشتراك للمستخدم {name}!',
+      subscriptionDisableError: '❌ خطأ في إلغاء تفعيل الاشتراك للمستخدم {name}',
+      confirmDeleteUser: 'هل أنت متأكد من حذف المستخدم {name}؟ لا يمكن التراجع عن هذا الإجراء.',
+      userDeleted: '✅ تم حذف المستخدم {name} من النظام',
+      userDeleteError: '❌ خطأ في حذف المستخدم {name}',
+      accessRequestApproved: '✅ تم الموافقة على طلب الوصول للمستخدم {name}',
+      accessRequestError: '❌ خطأ في الموافقة على طلب المستخدم {name}'
     },
     hi: {
       welcome: 'स्वागत है',
@@ -705,7 +3027,125 @@ function App() {
       admin: 'एडमिन पैनल',
       buy: 'खरीदें',
       monthly: 'मासिक',
-      lifetime: 'आजीवन'
+      lifetime: 'आजीवन',
+      // Новые переводы
+      comingSoon: 'जल्द आ रहा है',
+      comingSoonDescription: 'जल्द उपलब्ध होगा',
+      chatWithTraders: 'अन्य ट्रेडरों के साथ चैट करें',
+      manageParameters: 'पैरामीटर प्रबंधित करें',
+      manageAppSettings: 'ऐप सेटिंग्स प्रबंधित करें',
+      mlModel: 'ML मॉडल',
+      statistics: 'सांख्यिकी',
+      viewDetails: 'विस्तृत सांख्यिकी देखें',
+      notifications: 'सूचनाएं',
+      setupPushNotifications: 'पुश सूचनाएं सेट करें',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      forestNecromancer: 'FOREST NECROMANCER',
+      grayCardinal: 'GRAY CARDINAL',
+      logisticSpy: 'LOGISTIC SPY',
+      sniper80x: 'SNIPER 80X',
+      // Статусы
+      activeStatus: 'सक्रिय',
+      inactive: 'निष्क्रिय',
+      available: 'उपलब्ध',
+      blocked: 'अवरुद्ध',
+      success: 'सफल',
+      failure: 'असफल',
+      // Действия
+      buyAction: 'खरीदें',
+      selectAction: 'चुनें',
+      approve: 'अनुमोदन',
+      delete: 'हटाएं',
+      save: 'सहेजें',
+      cancel: 'रद्द करें',
+      apply: 'लागू करें',
+      update: 'अपडेट करें',
+      // Генерация сигналов
+      loadingMarkets: 'मार्केट लोड हो रहे हैं...',
+      analyzingTrends: 'ट्रेंड्स का विश्लेषण...',
+      applyingML: 'ML मॉडल लागू कर रहे हैं...',
+      calculatingEntry: 'एंट्री पॉइंट्स की गणना...',
+      assessingRisks: 'जोखिमों का आकलन...',
+      finalCheck: 'अंतिम जांच...',
+      // Админ-панель
+      activeUsers: 'सक्रिय उपयोगकर्ता',
+      totalSignals: 'कुल सिग्नल',
+      successful: 'सफल',
+      failed: 'असफल',
+      topUsers: 'शीर्ष उपयोगकर्ता',
+      accessRequests: 'पहुंच अनुरोध',
+      subscriptionHistory: 'सब्सक्रिप्शन परिवर्तन इतिहास',
+      // Статистика
+      myStatistics: 'मेरी सांख्यिकी',
+      winRate: 'जीत दर',
+      currentStreak: 'वर्तमान स्ट्रीक',
+      bestStreak: 'सर्वश्रेष्ठ स्ट्रीक',
+      averageProfit: 'औसत लाभ',
+      // Подписки
+      monthlySubscription: 'मासिक सब्सक्रिप्शन',
+      lifetimePurchase: 'आजीवन खरीद',
+      autoRenewal: 'स्वचालित नवीकरण',
+      noTimeLimit: 'कोई समय सीमा नहीं',
+      selectSubscriptionType: 'सब्सक्रिप्शन प्रकार चुनें:',
+      // Уведомления
+      soundNotification: 'ध्वनि',
+      vibration: 'कंपन',
+      pushNotification: 'पुश',
+      enabled: 'सक्षम',
+      disabled: 'अक्षम',
+      // Аналитика
+      aiAnalytics: 'AI विश्लेषण',
+      successfulTradesHistory: 'सफल ट्रेड इतिहास',
+      analyzeSignal: 'सिग्नल का विश्लेषण',
+      analyzingIneligible: 'विश्लेषण हो रहा है...',
+      cancelAnalysis: 'विश्लेषण रद्द करें',
+      // Системные сообщения
+      userAdded: 'उपयोगकर्ता को सिस्टम में जोड़ा गया',
+      errorOccurred: 'एक त्रुटि हुई',
+      loadingData: 'डेटा लोड हो रहा है...',
+      // Модальные окна
+      tradeActivated: 'ट्रेड सक्रिय हो गया',
+      timeExpired: '⏰ समय समाप्त!',
+      leaveFeedback: 'ट्रेड के परिणाम के बारे में फीडबैक दें',
+      pair: 'पेयर',
+      direction: 'दिशा',
+      resultButtonsActive: 'परिणाम बटन सक्रिय हो गए',
+      indicateTradeResult: 'समय समाप्त होने के बाद ट्रेड का परिणाम बताएं',
+      successfulTrade: 'सफल ट्रेड',
+      losingTrade: 'हानि ट्रेड',
+      leaveFeedbackToUnlock: '⚠️ नेविगेशन अनलॉक करने के लिए फीडबैक दें',
+      navigationLocked: 'नेविगेशन लॉक है',
+      waitForExpiration: 'सिग्नल की समाप्ति का इंतजार करें और फीडबैक दें',
+      timeRemaining: 'समाप्ति तक बचा समय',
+      noSuitableEntry: '⚠️ कोई उपयुक्त एंट्री पॉइंट नहीं',
+      marketConditionsNotOptimal: 'वर्तमान बाजार की स्थिति पोजीशन खोलने के लिए इष्टतम नहीं है',
+      analysisCompleted: 'विश्लेषण पूरा हुआ',
+      recommendations: 'सिफारिशें',
+      tryAnotherPair: 'दूसरा पेयर आजमाएं',
+      selectAnotherPairDescription: 'अधिक अनुकूल स्थितियों वाला दूसरा करेंसी पेयर चुनें',
+      waitForOptimalConditions: 'इष्टतम स्थितियों का इंतजार करें',
+      tryAgainWhen: 'बाजार स्थिर होने पर {seconds} सेकंड बाद फिर से कोशिश करें',
+      returnToPairSelection: 'पेयर चयन पर वापस जाएं',
+      patienceIsKey: '💡 धैर्य सफल ट्रेडिंग की कुंजी है',
+      warningAttention: '⚠️ ध्यान!',
+      systemBypassDetected: 'सिस्टम बाईपास का प्रयास पता चला',
+      activeSignalRequiresCompletion: 'आपके पास एक सक्रिय सिग्नल है जिसे पूरा करना आवश्यक है। पेज रिलोड करने से नेविगेशन लॉक बाईपास नहीं होगा।',
+      activeSignal: 'सक्रिय सिग्नल',
+      feedbackRequired: '⏰ फीडबैक आवश्यक!',
+      returnToOpenTrade: 'खुले ट्रेड पर वापस जाएं',
+      bypassProtectionActive: 'नेविगेशन लॉक बाईपास सुरक्षा प्रणाली सक्रिय है',
+      waitForActiveSignal: '⚠️ सक्रिय सिग्नल के पूरा होने का इंतजार करें और आगे बढ़ने से पहले फीडबैक दें!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ उपयोगकर्ता {name} की सदस्यता अपडेट हो गई! उपयोगकर्ता को चयनित ML मॉडल तक पहुंच मिलेगी।',
+      subscriptionUpdateError: '❌ उपयोगकर्ता {name} की सदस्यता अपडेट में त्रुटि',
+      subscriptionDisabled: '✅ उपयोगकर्ता {name} की सदस्यता निष्क्रिय हो गई!',
+      subscriptionDisableError: '❌ उपयोगकर्ता {name} की सदस्यता निष्क्रिय करने में त्रुटि',
+      confirmDeleteUser: 'क्या आप उपयोगकर्ता {name} को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।',
+      userDeleted: '✅ उपयोगकर्ता {name} को सिस्टम से हटा दिया गया',
+      userDeleteError: '❌ उपयोगकर्ता {name} को हटाने में त्रुटि',
+      accessRequestApproved: '✅ उपयोगकर्ता {name} की पहुंच अनुरोध मंजूर हो गया',
+      accessRequestError: '❌ उपयोगकर्ता {name} के अनुरोध को मंजूर करने में त्रुटि'
     },
     tr: {
       welcome: 'Hoş geldiniz',
@@ -728,7 +3168,125 @@ function App() {
       admin: 'Yönetici Paneli',
       buy: 'Satın al',
       monthly: 'Aylık',
-      lifetime: 'Ömür boyu'
+      lifetime: 'Ömür boyu',
+      // Новые переводы
+      comingSoon: 'YAKINDA',
+      comingSoonDescription: 'Yakında kullanılabilir',
+      chatWithTraders: 'Diğer traderlarla sohbet edin',
+      manageParameters: 'Parametreleri yönet',
+      manageAppSettings: 'Uygulama ayarlarını yönet',
+      mlModel: 'ML Modeli',
+      statistics: 'İstatistikler',
+      viewDetails: 'Detaylı istatistikleri görüntüle',
+      notifications: 'Bildirimler',
+      setupPushNotifications: 'Push bildirimleri ayarla',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      forestNecromancer: 'FOREST NECROMANCER',
+      grayCardinal: 'GRAY CARDINAL',
+      logisticSpy: 'LOGISTIC SPY',
+      sniper80x: 'SNIPER 80X',
+      // Статусы
+      activeStatus: 'AKTİF',
+      inactive: 'PASİF',
+      available: 'MEVCUT',
+      blocked: 'BLOKLANMIŞ',
+      success: 'Başarılı',
+      failure: 'Başarısız',
+      // Действия
+      buyAction: 'Satın Al',
+      selectAction: 'Seç',
+      approve: 'Onayla',
+      delete: 'Sil',
+      save: 'Kaydet',
+      cancel: 'İptal',
+      apply: 'Uygula',
+      update: 'Güncelle',
+      // Генерация сигналов
+      loadingMarkets: 'Piyasalar yükleniyor...',
+      analyzingTrends: 'Trendler analiz ediliyor...',
+      applyingML: 'ML modelleri uygulanıyor...',
+      calculatingEntry: 'Giriş noktaları hesaplanıyor...',
+      assessingRisks: 'Riskler değerlendiriliyor...',
+      finalCheck: 'Son kontrol...',
+      // Админ-панель
+      activeUsers: 'Aktif kullanıcılar',
+      totalSignals: 'Toplam sinyal',
+      successful: 'Başarılı',
+      failed: 'Başarısız',
+      topUsers: 'En iyi kullanıcılar',
+      accessRequests: 'Erişim istekleri',
+      subscriptionHistory: 'Abonelik değişiklik geçmişi',
+      // Статистика
+      myStatistics: 'İstatistiklerim',
+      winRate: 'Kazanma oranı',
+      currentStreak: 'Mevcut seri',
+      bestStreak: 'En iyi seri',
+      averageProfit: 'Ortalama kar',
+      // Подписки
+      monthlySubscription: 'Aylık abonelik',
+      lifetimePurchase: 'Yaşam boyu satın alma',
+      autoRenewal: 'Otomatik yenileme',
+      noTimeLimit: 'Zaman sınırı yok',
+      selectSubscriptionType: 'Abonelik türünü seç:',
+      // Уведомления
+      soundNotification: 'Ses',
+      vibration: 'Titreşim',
+      pushNotification: 'Push',
+      enabled: 'Etkin',
+      disabled: 'Devre dışı',
+      // Аналитика
+      aiAnalytics: 'AI Analitiği',
+      successfulTradesHistory: 'Başarılı işlemler geçmişi',
+      analyzeSignal: 'Sinyali analiz et',
+      analyzingIneligible: 'Analiz ediliyor...',
+      cancelAnalysis: 'Analizi iptal et',
+      // Системные сообщения
+      userAdded: 'Kullanıcı sisteme eklendi',
+      errorOccurred: 'Bir hata oluştu',
+      loadingData: 'Veri yükleniyor...',
+      // Модальные окна
+      tradeActivated: 'İşlem etkinleştirildi',
+      timeExpired: '⏰ Süre doldu!',
+      leaveFeedback: 'Lütfen işlem sonucu hakkında geri bildirim bırakın',
+      pair: 'Çift',
+      direction: 'Yön',
+      resultButtonsActive: 'Sonuç butonları aktif hale geldi',
+      indicateTradeResult: 'Lütfen süre dolduktan sonra işlem sonucunu belirtin',
+      successfulTrade: 'Başarılı işlem',
+      losingTrade: 'Kayıplı işlem',
+      leaveFeedbackToUnlock: '⚠️ Navigasyonu kilidini açmak için lütfen geri bildirim bırakın',
+      navigationLocked: 'Navigasyon kilitli',
+      waitForExpiration: 'Lütfen sinyal süresinin dolmasını bekleyin ve geri bildirim bırakın',
+      timeRemaining: 'Süre dolmasına kalan süre',
+      noSuitableEntry: '⚠️ Uygun giriş noktası yok',
+      marketConditionsNotOptimal: 'Mevcut piyasa koşulları pozisyon açmak için optimal değil',
+      analysisCompleted: 'Analiz tamamlandı',
+      recommendations: 'Öneriler',
+      tryAnotherPair: 'Başka bir çift deneyin',
+      selectAnotherPairDescription: 'Daha elverişli koşullara sahip başka bir döviz çifti seçin',
+      waitForOptimalConditions: 'Optimal koşulları bekleyin',
+      tryAgainWhen: 'Piyasa stabilize olduğunda {seconds} saniye sonra tekrar deneyin',
+      returnToPairSelection: 'Çift seçimine geri dön',
+      patienceIsKey: '💡 Sabır başarılı tradingin anahtarıdır',
+      warningAttention: '⚠️ Dikkat!',
+      systemBypassDetected: 'Sistem bypass girişimi tespit edildi',
+      activeSignalRequiresCompletion: 'Tamamlanması gereken aktif bir sinyaliniz var. Sayfa yenilemek navigasyon kilidini bypass etmeyecek.',
+      activeSignal: 'Aktif sinyal',
+      feedbackRequired: '⏰ Geri bildirim gerekli!',
+      returnToOpenTrade: 'Açık işleme geri dön',
+      bypassProtectionActive: 'Navigasyon kilidi bypass koruma sistemi aktif',
+      waitForActiveSignal: '⚠️ Lütfen aktif sinyalin tamamlanmasını bekleyin ve devam etmeden önce geri bildirim bırakın!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ {name} kullanıcısının aboneliği güncellendi! Kullanıcı seçilen ML modellerine erişim alacak.',
+      subscriptionUpdateError: '❌ {name} kullanıcısının abonelik güncelleme hatası',
+      subscriptionDisabled: '✅ {name} kullanıcısının aboneliği devre dışı bırakıldı!',
+      subscriptionDisableError: '❌ {name} kullanıcısının abonelik devre dışı bırakma hatası',
+      confirmDeleteUser: '{name} kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      userDeleted: '✅ {name} kullanıcısı sistemden silindi',
+      userDeleteError: '❌ {name} kullanıcısını silme hatası',
+      accessRequestApproved: '✅ {name} kullanıcısının erişim talebi onaylandı',
+      accessRequestError: '❌ {name} kullanıcısının talep onaylama hatası'
     },
     vi: {
       welcome: 'Chào mừng',
@@ -751,7 +3309,125 @@ function App() {
       admin: 'Bảng quản trị',
       buy: 'Mua',
       monthly: 'Hàng tháng',
-      lifetime: 'Trọn đời'
+      lifetime: 'Press đời',
+      // Новые переводы
+      comingSoon: 'SẮP RA MẮT',
+      comingSoonDescription: 'Sắp có sẵn',
+      chatWithTraders: 'Trò chuyện với các trader khác',
+      manageParameters: 'Quản lý tham số',
+      manageAppSettings: 'Quản lý cài đặt ứng dụng',
+      mlModel: 'Mô hình ML',
+      statistics: 'Thống kê',
+      viewDetails: 'Xem thống kê chi tiết',
+      notifications: 'Thông báo',
+      setupPushNotifications: 'Thiết lập thông báo đẩy',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      forestNecromancer: 'FOREST NECROMANCER',
+      grayCardinal: 'GRAY CARDINAL',
+      logisticSpy: 'LOGISTIC SPY',
+      sniper80x: 'SNIPER 80X',
+      // Статусы
+      activeStatus: 'HOẠT ĐỘNG',
+      inactive: 'KHÔNG HOẠT ĐỘNG',
+      available: 'CÓ SẴN',
+      blocked: 'BỊ CHẶN',
+      success: 'Thành công',
+      failure: 'Thất bại',
+      // Действия
+      buyAction: 'Mua',
+      selectAction: 'Chọn',
+      approve: 'Phê duyệt',
+      delete: 'Xóa',
+      save: 'Lưu',
+      cancel: 'Hủy',
+      apply: 'Áp dụng',
+      update: 'Cập nhật',
+      // Генерация сигналов
+      loadingMarkets: 'Đang tải thị trường...',
+      analyzingTrends: 'Đang phân tích xu hướng...',
+      applyingML: 'Đang áp dụng mô hình ML...',
+      calculatingEntry: 'Đang tính toán điểm vào...',
+      assessingRisks: 'Đang đánh giá rủi ro...',
+      finalCheck: 'Kiểm tra cuối cùng...',
+      // Админ-панель
+      activeUsers: 'Người dùng hoạt động',
+      totalSignals: 'Tổng tín hiệu',
+      successful: 'Thành công',
+      failed: 'Thất bại',
+      topUsers: 'Người dùng hàng đầu',
+      accessRequests: 'Yêu cầu truy cập',
+      subscriptionHistory: 'Lịch sử thay đổi đăng ký',
+      // Статистика
+      myStatistics: 'Thống kê của tôi',
+      winRate: 'Tỷ lệ thắng',
+      currentStreak: 'Chuỗi hiện tại',
+      bestStreak: 'Chuỗi tốt nhất',
+      averageProfit: 'Lợi nhuận trung bình',
+      // Подписки
+      monthlySubscription: 'Đăng ký hàng tháng',
+      lifetimePurchase: 'Mua trọn đời',
+      autoRenewal: 'Gia hạn tự động',
+      noTimeLimit: 'Không giới hạn thời gian',
+      selectSubscriptionType: 'Chọn loại đăng ký:',
+      // Уведомления
+      soundNotification: 'Âm thanh',
+      vibration: 'Rung',
+      pushNotification: 'Đẩy',
+      enabled: 'Đã bật',
+      disabled: 'Đã tắt',
+      // Аналитика
+      aiAnalytics: 'Phân tích AI',
+      successfulTradesHistory: 'Lịch sử giao dịch thành công',
+      analyzeSignal: 'Phân tích tín hiệu',
+      analyzingIneligible: 'Đang phân tích...',
+      cancelAnalysis: 'Hủy phân tích',
+      // Системные сообщения
+      userAdded: 'Người dùng đã được thêm vào hệ thống',
+      errorOccurred: 'Đã xảy ra lỗi',
+      loadingData: 'Đang tải dữ liệu...',
+      // Модальные окна
+      tradeActivated: 'Giao dịch đã được kích hoạt',
+      timeExpired: '⏰ Hết thời gian!',
+      leaveFeedback: 'Vui lòng để lại phản hồi về kết quả giao dịch',
+      pair: 'Cặp',
+      direction: 'Hướng',
+      resultButtonsActive: 'Các nút kết quả đã được kích hoạt',
+      indicateTradeResult: 'Vui lòng chỉ định kết quả giao dịch sau khi hết thời gian',
+      successfulTrade: 'Giao dịch thành công',
+      losingTrade: 'Giao dịch thua lỗ',
+      leaveFeedbackToUnlock: '⚠️ Vui lòng để lại phản hồi để mở khóa điều hướng',
+      navigationLocked: 'Điều hướng bị khóa',
+      waitForExpiration: 'Vui lòng chờ tín hiệu hết hạn và để lại phản hồi',
+      timeRemaining: 'Thời gian còn lại đến khi hết hạn',
+      noSuitableEntry: '⚠️ Không có điểm vào phù hợp',
+      marketConditionsNotOptimal: 'Điều kiện thị trường hiện tại không tối ưu để mở vị thế',
+      analysisCompleted: 'Phân tích hoàn tất',
+      recommendations: 'Khuyến nghị',
+      tryAnotherPair: 'Thử một cặp khác',
+      selectAnotherPairDescription: 'Chọn một cặp tiền tệ khác với điều kiện thuận lợi hơn',
+      waitForOptimalConditions: 'Chờ điều kiện tối ưu',
+      tryAgainWhen: 'Thử lại sau {seconds} giây khi thị trường ổn định',
+      returnToPairSelection: 'Quay lại lựa chọn cặp',
+      patienceIsKey: '💡 Kiên nhẫn là chìa khóa của giao dịch thành công',
+      warningAttention: '⚠️ Chú ý!',
+      systemBypassDetected: 'Đã phát hiện nỗ lực bỏ qua hệ thống',
+      activeSignalRequiresCompletion: 'Bạn có một tín hiệu đang hoạt động cần được hoàn thành. Tải lại trang sẽ không giúp bỏ qua khóa điều hướng.',
+      activeSignal: 'Tín hiệu đang hoạt động',
+      feedbackRequired: '⏰ Cần phản hồi!',
+      returnToOpenTrade: 'Quay lại giao dịch đang mở',
+      bypassProtectionActive: 'Hệ thống bảo vệ bỏ qua khóa điều hướng đã được kích hoạt',
+      waitForActiveSignal: '⚠️ Vui lòng chờ hoàn thành tín hiệu đang hoạt động và để lại phản hồi trước khi tiếp tục!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ Đã cập nhật đăng ký cho người dùng {name}! Người dùng sẽ có quyền truy cập vào các mô hình ML đã chọn.',
+      subscriptionUpdateError: '❌ Lỗi cập nhật đăng ký cho người dùng {name}',
+      subscriptionDisabled: '✅ Đã tắt đăng ký cho người dùng {name}!',
+      subscriptionDisableError: '❌ Lỗi tắt đăng ký cho người dùng {name}',
+      confirmDeleteUser: 'Bạn có chắc chắn muốn xóa người dùng {name}? Hành động này không thể hoàn tác.',
+      userDeleted: '✅ Người dùng {name} đã bị xóa khỏi hệ thống',
+      userDeleteError: '❌ Lỗi xóa người dùng {name}',
+      accessRequestApproved: '✅ Yêu cầu truy cập của người dùng {name} đã được phê duyệt',
+      accessRequestError: '❌ Lỗi phê duyệt yêu cầu của người dùng {name}'
     },
     id: {
       welcome: 'Selamat datang',
@@ -774,7 +3450,125 @@ function App() {
       admin: 'Panel Admin',
       buy: 'Beli',
       monthly: 'Bulanan',
-      lifetime: 'Seumur hidup'
+      lifetime: 'Seumur hidup',
+      // Новые переводы
+      comingSoon: 'SEGERA',
+      comingSoonDescription: 'Segera tersedia',
+      chatWithTraders: 'Chat dengan trader lain',
+      manageParameters: 'Kelola parameter',
+      manageAppSettings: 'Kelola pengaturan aplikasi',
+      mlModel: 'Model ML',
+      statistics: 'Statistik',
+      viewDetails: 'Lihat statistik detail',
+      notifications: 'Notifikasi',
+      setupPushNotifications: 'Atur notifikasi push',
+      // ML модели
+      shadowStack: 'SHADOW STACK',
+      forestNecromancer: 'FOREST NECROMANCER',
+      grayCardinal: 'GRAY CARDINAL',
+      logisticSpy: 'LOGISTIC SPY',
+      sniper80x: 'SNIPER 80X',
+      // Статусы
+      activeStatus: 'AKTIF',
+      inactive: 'TIDAK AKTIF',
+      available: 'TERSEDIA',
+      blocked: 'DIBLOKIR',
+      success: 'Berhasil',
+      failure: 'Gagal',
+      // Действия
+      buyAction: 'Beli',
+      selectAction: 'Pilih',
+      approve: 'Setujui',
+      delete: 'Hapus',
+      save: 'Simpan',
+      cancel: 'Batal',
+      apply: 'Terapkan',
+      update: 'Perbarui',
+      // Генерация сигналов
+      loadingMarkets: 'Memuat pasar...',
+      analyzingTrends: 'Menganalisis tren...',
+      applyingML: 'Menerapkan model ML...',
+      calculatingEntry: 'Menghitung titik masuk...',
+      assessingRisks: 'Menilai risiko...',
+      finalCheck: 'Pemeriksaan akhir...',
+      // Админ-панель
+      activeUsers: 'Pengguna aktif',
+      totalSignals: 'Total sinyal',
+      successful: 'Berhasil',
+      failed: 'Gagal',
+      topUsers: 'Pengguna teratas',
+      accessRequests: 'Permintaan akses',
+      subscriptionHistory: 'Riwayat perubahan langganan',
+      // Статистика
+      myStatistics: 'Statistik saya',
+      winRate: 'Tingkat kemenangan',
+      currentStreak: 'Streak saat ini',
+      bestStreak: 'Streak terbaik',
+      averageProfit: 'Keuntungan rata-rata',
+      // Подписки
+      monthlySubscription: 'Langganan bulanan',
+      lifetimePurchase: 'Pembelian seumur hidup',
+      autoRenewal: 'Perpanjangan otomatis',
+      noTimeLimit: 'Tidak ada batas waktu',
+      selectSubscriptionType: 'Pilih jenis langganan:',
+      // Уведомления
+      soundNotification: 'Suara',
+      vibration: 'Getaran',
+      pushNotification: 'Push',
+      enabled: 'Diaktifkan',
+      disabled: 'Dinonaktifkan',
+      // Аналитика
+      aiAnalytics: 'Analitik AI',
+      successfulTradesHistory: 'Riwayat perdagangan berhasil',
+      analyzeSignal: 'Analisis sinyal',
+      analyzingIneligible: 'Menganalisis...',
+      cancelAnalysis: 'Batalkan analisis',
+      // Системные сообщения
+      userAdded: 'Pengguna ditambahkan ke sistem',
+      errorOccurred: 'Terjadi kesalahan',
+      loadingData: 'Memuat data...',
+      // Модальные окна
+      tradeActivated: 'Perdagangan telah diaktifkan',
+      timeExpired: '⏰ Waktu habis!',
+      leaveFeedback: 'Silakan berikan umpan balik tentang hasil perdagangan',
+      pair: 'Pasangan',
+      direction: 'Arah',
+      resultButtonsActive: 'Tombol hasil telah aktif',
+      indicateTradeResult: 'Silakan tunjukkan hasil perdagangan setelah waktu habis',
+      successfulTrade: 'Perdagangan berhasil',
+      losingTrade: 'Perdagangan rugi',
+      leaveFeedbackToUnlock: '⚠️ Silakan berikan umpan balik untuk membuka kunci navigasi',
+      navigationLocked: 'Navigasi terkunci',
+      waitForExpiration: 'Silakan tunggu sinyal berakhir dan berikan umpan balik',
+      timeRemaining: 'Waktu tersisa hingga berakhir',
+      noSuitableEntry: '⚠️ Tidak ada titik masuk yang cocok',
+      marketConditionsNotOptimal: 'Kondisi pasar saat ini tidak optimal untuk membuka posisi',
+      analysisCompleted: 'Analisis selesai',
+      recommendations: 'Rekomendasi',
+      tryAnotherPair: 'Coba pasangan lain',
+      selectAnotherPairDescription: 'Pilih pasangan mata uang lain dengan kondisi yang lebih menguntungkan',
+      waitForOptimalConditions: 'Tunggu kondisi optimal',
+      tryAgainWhen: 'Coba lagi dalam {seconds} detik ketika pasar stabil',
+      returnToPairSelection: 'Kembali ke pemilihan pasangan',
+      patienceIsKey: '💡 Kesabaran adalah kunci perdagangan yang berhasil',
+      warningAttention: '⚠️ Perhatian!',
+      systemBypassDetected: 'Upaya bypass sistem terdeteksi',
+      activeSignalRequiresCompletion: 'Anda memiliki sinyal aktif yang perlu diselesaikan. Memuat ulang halaman tidak akan membantu bypass kunci navigasi.',
+      activeSignal: 'Sinyal aktif',
+      feedbackRequired: '⏰ Umpan balik diperlukan!',
+      returnToOpenTrade: 'Kembali ke perdagangan terbuka',
+      bypassProtectionActive: 'Sistem perlindungan bypass kunci navigasi aktif',
+      waitForActiveSignal: '⚠️ Silakan tunggu sinyal aktif selesai dan berikan umpan balik sebelum melanjutkan!',
+      // Alert сообщения
+      subscriptionUpdated: '✅ Langganan pengguna {name} telah diperbarui! Pengguna akan mendapatkan akses ke model ML yang dipilih.',
+      subscriptionUpdateError: '❌ Kesalahan memperbarui langganan pengguna {name}',
+      subscriptionDisabled: '✅ Langganan pengguna {name} telah dinonaktifkan!',
+      subscriptionDisableError: '❌ Kesalahan menonaktifkan langganan pengguna {name}',
+      confirmDeleteUser: 'Apakah Anda yakin ingin menghapus pengguna {name}? Tindakan ini tidak dapat dibatalkan.',
+      userDeleted: '✅ Pengguna {name} telah dihapus dari sistem',
+      userDeleteError: '❌ Kesalahan menghapus pengguna {name}',
+      accessRequestApproved: '✅ Permintaan akses pengguna {name} telah disetujui',
+      accessRequestError: '❌ Kesalahan menyetujui permintaan pengguna {name}'
     }
   }
 
@@ -963,12 +3757,12 @@ function App() {
   const mlModels = [
     {
       id: 'shadow-stack',
-      name: 'ТЕНЕВОЙ СТЕК',
+      name: t('shadowStack'),
       emoji: '🌑',
-      algorithm: 'Ensemble (RandomForest, XGBoost, ExtraTrees, HistGB, LogisticRegression)',
+      algorithm: t('shadowStackAlgo'),
       winrate: '65-70%',
-      description: 'Не палится, не лагает, не брешет. Просто делает грязь.',
-      style: 'Среднесрок, интрадей',
+      description: t('shadowStackDesc'),
+      style: t('shadowStackStyle'),
       status: 'available',
       color: 'from-slate-600 to-slate-800',
       price: '$299',
@@ -977,12 +3771,12 @@ function App() {
     },
     {
       id: 'forest-necromancer',
-      name: 'ЛЕСНОЙ НЕКРОМАНТ',
+      name: t('forestNecromancer'),
       emoji: '🌲',
-      algorithm: 'RandomForest - Призванный из леса решений',
+      algorithm: t('forestNecromancerAlgo'),
       winrate: '62-67%',
-      description: 'С виду ботаник, по факту шаман рынков.',
-      style: 'Информер с визуализацией импульсных зон',
+      description: t('forestNecromancerDesc'),
+      style: t('forestNecromancerStyle'),
       status: 'available',
       color: 'from-green-600 to-green-800',
       price: '$199',
@@ -991,12 +3785,12 @@ function App() {
     },
     {
       id: 'gray-cardinal',
-      name: 'СЕРЫЙ КАРДИНАЛ',
+      name: t('grayCardinal'),
       emoji: '🎭',
-      algorithm: 'XGBoost - Не на слуху, зато всё под контролем',
+      algorithm: t('grayCardinalAlgo'),
       winrate: '~66%',
-      description: 'Ты его не видишь, но он знает твой вход раньше тебя.',
-      style: 'Сигналы на младших ТФ, с доп. фильтрами',
+      description: t('grayCardinalDesc'),
+      style: t('grayCardinalStyle'),
       status: 'available',
       color: 'from-gray-600 to-gray-800',
       price: '$249',
@@ -1005,12 +3799,12 @@ function App() {
     },
     {
       id: 'logistic-spy',
-      name: 'ЛОГИСТИЧЕСКИЙ ШПИОН',
+      name: t('logisticSpy'),
       emoji: '🕵️',
-      algorithm: 'LogisticRegression - Классик в мире ML',
+      algorithm: t('logisticSpyAlgo'),
       winrate: '~60-65%',
-      description: 'Старая школа, но знает все ходы.',
-      style: 'Консервативный, проверенный временем',
+      description: t('logisticSpyDesc'),
+      style: t('logisticSpyStyle'),
       status: 'active',
       color: 'from-blue-600 to-blue-800',
       price: '$99',
@@ -1019,15 +3813,15 @@ function App() {
     },
     {
       id: 'sniper-80x',
-      name: 'СНАЙПЕР 80Х',
+      name: t('sniper80x'),
       emoji: '🔫',
-      algorithm: 'Финальная модель - Легенда среди своих',
+      algorithm: t('sniper80xAlgo'),
       winrate: '80%+',
-      description: 'Запускаешь — и рынок замолкает. Один вход — один труп.',
-      style: 'Точный вход, позиционный, иногда скальп',
+      description: t('sniper80xDesc'),
+      style: t('sniper80xStyle'),
       status: 'restricted',
       color: 'from-red-600 to-red-800',
-      warning: 'Только по команде. Авто не включается.',
+      warning: t('sniper80xWarning'),
       price: '$999',
       monthlyPrice: '$199',
       lifetimePrice: '$999'
@@ -1037,7 +3831,7 @@ function App() {
   const deleteUser = async (userIdToDelete) => {
     try {
       // Подтверждение удаления
-      const confirmed = confirm(`Вы уверены, что хотите удалить пользователя ${userIdToDelete}? Это действие нельзя отменить.`)
+      const confirmed = confirm(`${t('confirmDeleteUser')} ${userIdToDelete}? ${t('actionCannotBeUndone')}`)
       if (!confirmed) return
 
       console.log(`🗑️ Удаление пользователя ${userIdToDelete}`)
@@ -1163,6 +3957,10 @@ ${isLoss ? `
 Тон: СТРОГИЙ, ПРЯМОЙ, ПРОФЕССИОНАЛЬНЫЙ. Минимум воды, максимум конкретики!`
 
     try {
+      // Создаем AbortController для таймаута
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 секунд таймаут
+      
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -1179,19 +3977,37 @@ ${isLoss ? `
               content: prompt
             }
           ]
-        })
+        }),
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
 
       const data = await response.json()
       
-      if (data.choices && data.choices[0]) {
+      if (data.choices && data.choices[0] && data.choices[0].message) {
         setAnalysisResult(data.choices[0].message.content)
+      } else if (data.error) {
+        setAnalysisResult(`Ошибка API: ${data.error.message || 'Неизвестная ошибка'}`)
       } else {
-        setAnalysisResult('Ошибка получения анализа. Проверьте API ключ.')
+        setAnalysisResult('Ошибка получения анализа. Неверный формат ответа.')
       }
     } catch (error) {
       console.error('Ошибка анализа:', error)
-      setAnalysisResult('Ошибка подключения к OpenRouter API')
+      
+      if (error.name === 'AbortError') {
+        setAnalysisResult('⏰ Таймаут: Анализ занял слишком много времени. Попробуйте еще раз.')
+      } else if (error.message.includes('HTTP')) {
+        setAnalysisResult(`❌ Ошибка сервера: ${error.message}`)
+      } else if (error.message.includes('Failed to fetch')) {
+        setAnalysisResult('🌐 Ошибка сети: Проверьте подключение к интернету.')
+      } else {
+        setAnalysisResult(`❌ Ошибка: ${error.message}`)
+      }
     } finally {
       setIsAnalyzing(false)
     }
@@ -1475,19 +4291,19 @@ ${isLoss ? `
     }
   }, [userId, isAuthorized])
 
-  // Загрузка метрик рынка при выборе режима single
-  useEffect(() => {
-    if (currentScreen === 'signal-selection' && selectedMode === 'single') {
-      loadMarketMetrics()
-    }
-  }, [currentScreen, selectedMode])
-
-  // Загрузка метрик при переходе на экран выбора пар
+  // Загрузка метрик рынка при переходе на экран выбора пар
   useEffect(() => {
     if (currentScreen === 'signal-selection') {
+      console.log('📊 Загружаем метрики при переходе на signal-selection')
       loadMarketMetrics()
     }
   }, [currentScreen])
+
+  // Предзагрузка метрик при инициализации приложения
+  useEffect(() => {
+    console.log('📊 Предзагружаем метрики при инициализации')
+      loadMarketMetrics()
+  }, [])
 
   // Загрузка истории сигналов при переходе на экран аналитики
   useEffect(() => {
@@ -1575,12 +4391,12 @@ ${isLoss ? `
     
     // Этапы генерации
     const stages = [
-      { stage: 'Подключение к рынку...', delay: 800 },
-      { stage: 'Анализ технических индикаторов...', delay: 1200 },
-      { stage: 'Оценка новостного фона...', delay: 1000 },
-      { stage: 'Расчёт оптимальной экспирации...', delay: 900 },
-      { stage: 'Применение ML моделей...', delay: 1100 },
-      { stage: 'Формирование ТОП-3 сигналов...', delay: 1000 }
+      { stage: t('connectingToMarket'), delay: 800 },
+      { stage: t('analyzingTechnicalIndicators'), delay: 1200 },
+      { stage: t('evaluatingNewsBackground'), delay: 1000 },
+      { stage: t('calculatingOptimalExpiration'), delay: 900 },
+      { stage: t('applyingMLModels'), delay: 1100 },
+      { stage: t('formingTop3Signals'), delay: 1000 }
     ]
     
     for (const { stage, delay } of stages) {
@@ -1677,11 +4493,11 @@ ${isLoss ? `
     
     // Этапы генерации
     const stages = [
-      { stage: 'Подключение к рынку...', delay: 600 },
-      { stage: `Анализ пары ${pair}...`, delay: 800 },
-      { stage: 'Расчёт технических индикаторов...', delay: 700 },
-      { stage: 'Применение ML модели...', delay: 900 },
-      { stage: 'Определение точки входа...', delay: 700 }
+      { stage: t('connectingToMarket'), delay: 600 },
+      { stage: t('analyzingPair', { pair }), delay: 800 },
+      { stage: t('calculatingTechnicalIndicators'), delay: 700 },
+      { stage: t('applyingMLModel'), delay: 900 },
+      { stage: t('determiningEntryPoint'), delay: 700 }
     ]
     
     for (const { stage, delay } of stages) {
@@ -2019,7 +4835,7 @@ ${isLoss ? `
                 className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white py-6 px-12 text-xl font-bold rounded-2xl shadow-2xl shadow-emerald-500/30 transition-all duration-500 hover:shadow-emerald-500/50 hover:scale-110 hover:-translate-y-2 animate-pulse-slow"
               >
                 <span className="flex items-center gap-3">
-                  {t('continue')} / Continue
+                  {t('continue')}
                   <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </span>
               </Button>
@@ -2105,7 +4921,12 @@ ${isLoss ? `
 
           {/* Start Button */}
           <Button 
-            onClick={() => setCurrentScreen('menu')}
+            onClick={() => {
+              if (userData?.id) {
+                loadUserSubscriptions(userData.id)
+              }
+              setCurrentScreen('menu')
+            }}
             className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white py-6 text-lg font-semibold rounded-xl shadow-2xl shadow-emerald-500/30 transition-all duration-300 hover:shadow-emerald-500/50 hover:scale-105 hover:-translate-y-1"
           >
             {t('start')}
@@ -2130,7 +4951,7 @@ ${isLoss ? `
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-white">{t('menu')}</h2>
-            <p className="text-slate-400">Выберите действие / Choose action</p>
+            <p className="text-slate-400">{t('chooseAction')}</p>
           </div>
 
           {/* Menu Options */}
@@ -2146,7 +4967,7 @@ ${isLoss ? `
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">{t('tradingSignals')}</h3>
-                    <p className="text-slate-400 text-sm">Получайте сигналы для торговли / Get trading signals</p>
+                    <p className="text-slate-400 text-sm">{t('getTradingSignals')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all duration-300" />
@@ -2164,7 +4985,7 @@ ${isLoss ? `
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">{t('analytics')}</h3>
-                    <p className="text-slate-400 text-sm">Анализ сигналов с AI / AI signal analysis</p>
+                    <p className="text-slate-400 text-sm">{t('aiSignalAnalysis')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all duration-300" />
@@ -2182,7 +5003,7 @@ ${isLoss ? `
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">{t('community')}</h3>
-                    <p className="text-slate-400 text-sm">Общение с другими трейдерами / Chat with other traders</p>
+                    <p className="text-slate-400 text-sm">{t('chatWithTraders')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-300" />
@@ -2190,8 +5011,7 @@ ${isLoss ? `
             </Card>
 
             <Card 
-              onClick={() => setCurrentScreen('premium')}
-              className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-yellow-500/50 transition-all duration-300 group card-3d border-yellow-500/30 shadow-xl"
+              className="glass-effect p-6 backdrop-blur-sm cursor-not-allowed opacity-60 border-yellow-500/30 shadow-xl"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -2201,11 +5021,13 @@ ${isLoss ? `
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-xl font-bold text-white">{t('premium')}</h3>
-                      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
-                        VIP
+                      <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/50">
+                        {t('comingSoon')}
                       </Badge>
                     </div>
-                    <p className="text-slate-400 text-sm">Приватные ML-модели</p>
+                    <p className="text-slate-400 text-sm">
+                      {t('comingSoonDescription')}
+                    </p>
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all duration-300" />
@@ -2213,7 +5035,12 @@ ${isLoss ? `
             </Card>
 
             <Card 
-              onClick={() => setCurrentScreen('settings')}
+              onClick={() => {
+                if (userData?.id) {
+                  loadUserSubscriptions(userData.id)
+                }
+                setCurrentScreen('settings')
+              }}
               className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-amber-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
             >
               <div className="flex items-center justify-between">
@@ -2223,7 +5050,7 @@ ${isLoss ? `
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">{t('settings')}</h3>
-                    <p className="text-slate-400 text-sm">Управление параметрами</p>
+                    <p className="text-slate-400 text-sm">{t('manageParameters')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-300" />
@@ -2381,7 +5208,7 @@ ${isLoss ? `
 
                       {/* Signal Type */}
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-sm">Направление:</span>
+                        <span className="text-slate-400 text-sm">{t('direction')}:</span>
                         <Badge className={`${
                           signal.type === 'BUY' 
                             ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
@@ -2393,7 +5220,7 @@ ${isLoss ? `
 
                       {/* Expiration Time */}
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-sm">Экспирация:</span>
+                        <span className="text-slate-400 text-sm">{t('expiration')}:</span>
                         <span className="text-white font-semibold">
                           {signal.expiration} мин
                         </span>
@@ -2404,7 +5231,7 @@ ${isLoss ? `
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-400 flex items-center gap-1">
                             <Target className="w-3 h-3" />
-                            Уверенность
+{t('confidence')}
                           </span>
                           <span className="text-white font-semibold">
                             {(signal.confidence * 100).toFixed(1)}%
@@ -2429,7 +5256,7 @@ ${isLoss ? `
 
                       {/* Click to Activate */}
                       <div className="text-center pt-2">
-                        <span className="text-emerald-400 text-sm font-semibold">Нажмите для активации</span>
+                        <span className="text-emerald-400 text-sm font-semibold">{t('clickToActivate')}</span>
                       </div>
                     </div>
                   </Card>
@@ -2441,9 +5268,9 @@ ${isLoss ? `
             <>
               <div className="mb-6 text-center">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  ✅ Сигнал готов!
+                  ✅ {t('signalReady')}!
                 </h2>
-                <p className="text-slate-400">Активируйте сигнал для торговли</p>
+                <p className="text-slate-400">{t('activateSignalForTrading')}</p>
               </div>
 
               <div className="max-w-md mx-auto">
@@ -2473,7 +5300,7 @@ ${isLoss ? `
 
                       {/* Signal Type */}
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-sm">Направление:</span>
+                        <span className="text-slate-400 text-sm">{t('direction')}:</span>
                         <Badge className={`${
                           signal.type === 'BUY' 
                             ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
@@ -2485,7 +5312,7 @@ ${isLoss ? `
 
                       {/* Expiration Time */}
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-sm">Экспирация:</span>
+                        <span className="text-slate-400 text-sm">{t('expiration')}:</span>
                         <span className="text-white font-semibold">
                           {signal.expiration} мин
                         </span>
@@ -2496,7 +5323,7 @@ ${isLoss ? `
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-400 flex items-center gap-1">
                             <Target className="w-3 h-3" />
-                            Уверенность
+{t('confidence')}
                           </span>
                           <span className="text-white font-semibold">
                             {(signal.confidence * 100).toFixed(1)}%
@@ -2521,7 +5348,7 @@ ${isLoss ? `
 
                       {/* Click to Activate */}
                       <div className="text-center pt-2">
-                        <span className="text-emerald-400 text-sm font-semibold">Нажмите для активации</span>
+                        <span className="text-emerald-400 text-sm font-semibold">{t('clickToActivate')}</span>
                       </div>
                     </div>
                   </Card>
@@ -2642,6 +5469,94 @@ ${isLoss ? `
 
   // Analytics Screen - List of completed signals for AI analysis
   if (currentScreen === 'analytics') {
+    // Проверка VIP доступа к AI Аналитике
+    const hasVipAccess = userSubscriptions && userSubscriptions.length > 0
+    
+    if (!hasVipAccess) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          {/* Header */}
+          <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/50 shadow-xl">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 icon-3d">
+                    <BarChart3 className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-white">{t('aiAnalytics')}</h1>
+                    <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50 text-xs">
+                      GPT-4O MINI
+                    </Badge>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => {
+                    if (userData?.id) {
+                      loadUserSubscriptions(userData.id)
+                    }
+                    setCurrentScreen('menu')
+                  }}
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-slate-400 hover:text-white hover:bg-slate-800/50"
+                >
+                  <ChevronRight className="w-5 h-5 rotate-180" />
+                </Button>
+              </div>
+            </div>
+          </header>
+
+          {/* VIP Lock Screen */}
+          <div className="container mx-auto px-4 py-12">
+            <div className="max-w-md mx-auto text-center">
+              <Card className="glass-effect border-amber-500/30 p-8 card-3d shadow-2xl">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center icon-3d shadow-xl shadow-amber-500/20">
+                    <Crown className="w-10 h-10 text-amber-400" />
+                  </div>
+                  
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">VIP Функция</h2>
+                    <p className="text-slate-400 mb-4">
+                      AI Аналитика доступна только для пользователей с активной подпиской
+                    </p>
+                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50 mb-6">
+                      <Crown className="w-4 h-4 mr-2" />
+                      Требуется подписка
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-4 w-full">
+                    <Button 
+                      onClick={() => setCurrentScreen('premium')}
+                      className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-amber-500/30 transition-all duration-300 hover:scale-105"
+                    >
+                      <Crown className="w-5 h-5 mr-2" />
+                      Получить подписку
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => {
+                        if (userData?.id) {
+                          loadUserSubscriptions(userData.id)
+                        }
+                        setCurrentScreen('menu')
+                      }}
+                      variant="ghost"
+                      className="w-full text-slate-400 hover:text-white hover:bg-slate-800/50"
+                    >
+                      Вернуться в меню
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -2660,7 +5575,12 @@ ${isLoss ? `
                 </div>
               </div>
               <Button 
-                onClick={() => setCurrentScreen('menu')}
+                onClick={() => {
+                  if (userData?.id) {
+                    loadUserSubscriptions(userData.id)
+                  }
+                  setCurrentScreen('menu')
+                }}
                 variant="ghost" 
                 size="icon" 
                 className="text-slate-400 hover:text-white hover:bg-slate-800/50"
@@ -2740,7 +5660,7 @@ ${isLoss ? `
                             {signal.confidence && (
                               <div className="mt-1">
                                 <span className="text-xs text-slate-400">
-                                  Уверенность: {Math.round(signal.confidence * 100)}%
+      {t('confidence')}: {Math.round(signal.confidence * 100)}%
                                 </span>
                               </div>
                             )}
@@ -2853,24 +5773,24 @@ ${isLoss ? `
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                    <span className="text-slate-400 text-xs block mb-1">Тип сигнала</span>
+                    <span className="text-slate-400 text-xs block mb-1">{t('signalType')}</span>
                     <span className="text-white font-bold">{selectedSignalForAnalysis.signal_type.toUpperCase()}</span>
                   </div>
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                    <span className="text-slate-400 text-xs block mb-1">Направление</span>
+                    <span className="text-slate-400 text-xs block mb-1">{t('direction')}</span>
                     <span className={`font-bold ${(selectedSignalForAnalysis.direction || 'SELL') === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {selectedSignalForAnalysis.direction || 'SELL'}
                     </span>
                   </div>
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                    <span className="text-slate-400 text-xs block mb-1">Результат</span>
+                    <span className="text-slate-400 text-xs block mb-1">{t('result')}</span>
                     <span className={`font-bold ${selectedSignalForAnalysis.feedback === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
+                      {selectedSignalForAnalysis.feedback === 'success' ? t('success') : t('failure')}
                     </span>
                   </div>
                   {selectedSignalForAnalysis.entry_price && (
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                      <span className="text-slate-400 text-xs block mb-1">Цена входа</span>
+                      <span className="text-slate-400 text-xs block mb-1">{t('entryPrice')}</span>
                       <span className="text-white font-bold">{selectedSignalForAnalysis.entry_price}</span>
                   </div>
                   )}
@@ -2882,7 +5802,7 @@ ${isLoss ? `
                   )}
                   {selectedSignalForAnalysis.confidence && (
                     <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                      <span className="text-slate-400 text-xs block mb-1">Уверенность</span>
+                      <span className="text-slate-400 text-xs block mb-1">{t('confidence')}</span>
                       <span className="text-white font-bold">{Math.round(selectedSignalForAnalysis.confidence * 100)}%</span>
                     </div>
                   )}
@@ -2896,7 +5816,7 @@ ${isLoss ? `
                   className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-6 text-lg font-bold shadow-xl shadow-cyan-500/30 mb-6"
                 >
                   <Brain className="w-6 h-6 mr-2" />
-                  Запустить AI анализ
+                  {t('runAIAnalysis')}
                 </Button>
               )}
 
@@ -2907,8 +5827,17 @@ ${isLoss ? `
                     <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center animate-pulse">
                       <Brain className="w-8 h-8 text-cyan-400 animate-spin" />
                     </div>
-                    <h3 className="text-xl font-bold text-white">Анализирую сделку...</h3>
-                    <p className="text-slate-400">GPT-4o mini обрабатывает данные</p>
+                    <h3 className="text-xl font-bold text-white">{t('analyzingTrade')}</h3>
+                    <p className="text-slate-400">{t('gptProcessingData')}</p>
+                    <Button
+                      onClick={() => {
+                        setIsAnalyzing(false)
+                        setAnalysisResult(null)
+                      }}
+                      className="mt-4 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50"
+                    >
+                      {t('cancelAnalysis')}
+                    </Button>
                   </div>
                 </Card>
               )}
@@ -2921,7 +5850,7 @@ ${isLoss ? `
                       <Brain className="w-6 h-6 text-cyan-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">AI Анализ</h3>
+                      <h3 className="text-xl font-bold text-white">{t('aiAnalytics')}</h3>
                       <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50 text-xs">
                         GPT-4O MINI
                       </Badge>
@@ -3077,7 +6006,7 @@ ${isLoss ? `
                   <Bell className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">Уведомления</h1>
+                  <h1 className="text-xl font-bold text-white">{t('notifications')}</h1>
                   <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50 text-xs">
                     NOTIFICATIONS
                   </Badge>
@@ -3102,7 +6031,7 @@ ${isLoss ? `
             <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-emerald-400" />
-                Торговые сигналы
+                {t('tradingSignals')}
               </h3>
               
               <div className="space-y-4">
@@ -3114,8 +6043,8 @@ ${isLoss ? `
                       <Bell className={`w-5 h-5 ${notificationSettings.newSignals ? 'text-emerald-400' : 'text-slate-500'}`} />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Новые сигналы</h4>
-                      <p className="text-slate-400 text-sm">Уведомления о новых сигналах</p>
+                      <h4 className="text-white font-semibold">{t('newSignals')}</h4>
+                      <p className="text-slate-400 text-sm">{t('newSignalsDescription')}</p>
                     </div>
                   </div>
                   <Button
@@ -3127,7 +6056,7 @@ ${isLoss ? `
                       : 'border-slate-600 text-slate-400'
                     }
                   >
-                    {notificationSettings.newSignals ? 'ВКЛ' : 'ВЫКЛ'}
+                    {notificationSettings.newSignals ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
 
@@ -3139,8 +6068,8 @@ ${isLoss ? `
                       <CheckCircle2 className={`w-5 h-5 ${notificationSettings.signalResults ? 'text-cyan-400' : 'text-slate-500'}`} />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Результаты сигналов</h4>
-                      <p className="text-slate-400 text-sm">Уведомления о закрытии сделок</p>
+                      <h4 className="text-white font-semibold">{t('signalResults')}</h4>
+                      <p className="text-slate-400 text-sm">{t('signalResultsDescription')}</p>
                     </div>
                   </div>
                   <Button
@@ -3152,7 +6081,7 @@ ${isLoss ? `
                       : 'border-slate-600 text-slate-400'
                     }
                   >
-                    {notificationSettings.signalResults ? 'ВКЛ' : 'ВЫКЛ'}
+                    {notificationSettings.signalResults ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
 
@@ -3164,8 +6093,8 @@ ${isLoss ? `
                       <BarChart3 className={`w-5 h-5 ${notificationSettings.dailySummary ? 'text-purple-400' : 'text-slate-500'}`} />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Ежедневная сводка</h4>
-                      <p className="text-slate-400 text-sm">Итоги дня в 21:00</p>
+                      <h4 className="text-white font-semibold">{t('dailySummary')}</h4>
+                      <p className="text-slate-400 text-sm">{t('dailySummaryDescription')}</p>
                     </div>
                   </div>
                   <Button
@@ -3177,7 +6106,7 @@ ${isLoss ? `
                       : 'border-slate-600 text-slate-400'
                     }
                   >
-                    {notificationSettings.dailySummary ? 'ВКЛ' : 'ВЫКЛ'}
+                    {notificationSettings.dailySummary ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
               </div>
@@ -3187,7 +6116,7 @@ ${isLoss ? `
             <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Newspaper className="w-5 h-5 text-amber-400" />
-                Системные уведомления
+                {t('systemNotifications')}
               </h3>
               
               <div className="space-y-4">
@@ -3199,8 +6128,8 @@ ${isLoss ? `
                       <Newspaper className={`w-5 h-5 ${notificationSettings.marketNews ? 'text-blue-400' : 'text-slate-500'}`} />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Новости рынка</h4>
-                      <p className="text-slate-400 text-sm">Важные события на рынке</p>
+                      <h4 className="text-white font-semibold">{t('marketNews')}</h4>
+                      <p className="text-slate-400 text-sm">{t('marketNewsDescription')}</p>
                     </div>
                   </div>
                   <Button
@@ -3212,7 +6141,7 @@ ${isLoss ? `
                       : 'border-slate-600 text-slate-400'
                     }
                   >
-                    {notificationSettings.marketNews ? 'ВКЛ' : 'ВЫКЛ'}
+                    {notificationSettings.marketNews ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
 
@@ -3224,8 +6153,8 @@ ${isLoss ? `
                       <Settings className={`w-5 h-5 ${notificationSettings.systemUpdates ? 'text-green-400' : 'text-slate-500'}`} />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Обновления системы</h4>
-                      <p className="text-slate-400 text-sm">Новые функции и исправления</p>
+                      <h4 className="text-white font-semibold">{t('systemUpdates')}</h4>
+                      <p className="text-slate-400 text-sm">{t('systemUpdatesDescription')}</p>
                     </div>
                   </div>
                   <Button
@@ -3237,7 +6166,7 @@ ${isLoss ? `
                       : 'border-slate-600 text-slate-400'
                     }
                   >
-                    {notificationSettings.systemUpdates ? 'ВКЛ' : 'ВЫКЛ'}
+                    {notificationSettings.systemUpdates ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
               </div>
@@ -3247,7 +6176,7 @@ ${isLoss ? `
             <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Volume2 className="w-5 h-5 text-purple-400" />
-                Звук и вибрация
+                {t('soundAndVibration')}
               </h3>
               
               <div className="space-y-4">
@@ -3263,8 +6192,8 @@ ${isLoss ? `
                       )}
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Звук</h4>
-                      <p className="text-slate-400 text-sm">Звуковые уведомления</p>
+                      <h4 className="text-white font-semibold">{t('soundNotification')}</h4>
+                      <p className="text-slate-400 text-sm">{t('soundNotificationsDescription')}</p>
                     </div>
                   </div>
                   <Button
@@ -3276,7 +6205,7 @@ ${isLoss ? `
                       : 'border-slate-600 text-slate-400'
                     }
                   >
-                    {notificationSettings.soundEnabled ? 'ВКЛ' : 'ВЫКЛ'}
+                    {notificationSettings.soundEnabled ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
 
@@ -3288,8 +6217,8 @@ ${isLoss ? `
                       <Vibrate className={`w-5 h-5 ${notificationSettings.vibrationEnabled ? 'text-pink-400' : 'text-slate-500'}`} />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Вибрация</h4>
-                      <p className="text-slate-400 text-sm">Вибро-сигнал при уведомлениях</p>
+                      <h4 className="text-white font-semibold">{t('vibration')}</h4>
+                      <p className="text-slate-400 text-sm">{t('vibrationDescription')}</p>
                     </div>
                   </div>
                   <Button
@@ -3301,7 +6230,7 @@ ${isLoss ? `
                       : 'border-slate-600 text-slate-400'
                     }
                   >
-                    {notificationSettings.vibrationEnabled ? 'ВКЛ' : 'ВЫКЛ'}
+                    {notificationSettings.vibrationEnabled ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
 
@@ -3313,8 +6242,8 @@ ${isLoss ? `
                       <Mail className={`w-5 h-5 ${notificationSettings.emailNotifications ? 'text-indigo-400' : 'text-slate-500'}`} />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Email уведомления</h4>
-                      <p className="text-slate-400 text-sm">Дублировать на почту</p>
+                      <h4 className="text-white font-semibold">{t('emailNotifications')}</h4>
+                      <p className="text-slate-400 text-sm">{t('emailNotificationsDescription')}</p>
                     </div>
                   </div>
                   <Button
@@ -3326,7 +6255,7 @@ ${isLoss ? `
                       : 'border-slate-600 text-slate-400'
                     }
                   >
-                    {notificationSettings.emailNotifications ? 'ВКЛ' : 'ВЫКЛ'}
+                    {notificationSettings.emailNotifications ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
               </div>
@@ -3339,9 +6268,9 @@ ${isLoss ? `
                   <Bell className="w-5 h-5 text-cyan-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-1">Умные уведомления</h3>
+                  <h3 className="text-lg font-bold text-white mb-1">{t('smartNotifications')}</h3>
                   <p className="text-slate-400 text-sm">
-                    Получайте своевременные уведомления о важных событиях. Вы можете настроить каждый тип отдельно.
+                    {t('smartNotificationsDescription')}
                   </p>
                 </div>
               </div>
@@ -3385,7 +6314,7 @@ ${isLoss ? `
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">Forex</h3>
-                    <p className="text-slate-400 text-sm">Расписание Forex рынка</p>
+                    <p className="text-slate-400 text-sm">{t('forexSchedule')}</p>
                     <div className="flex gap-2 mt-2">
                       <Badge variant="outline" className="border-emerald-500/50 text-emerald-400 text-xs">
                         EUR/USD
@@ -3424,7 +6353,12 @@ ${isLoss ? `
 
           {/* Back Button */}
           <Button 
-            onClick={() => setCurrentScreen('menu')}
+            onClick={() => {
+                  if (userData?.id) {
+                    loadUserSubscriptions(userData.id)
+                  }
+                  setCurrentScreen('menu')
+                }}
             variant="ghost"
             className="w-full text-slate-400 hover:text-white hover:bg-slate-800/50"
           >
@@ -3592,14 +6526,13 @@ ${isLoss ? `
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-white">{t('settings')}</h2>
-            <p className="text-slate-400">Управление параметрами приложения</p>
+            <p className="text-slate-400">{t('manageAppSettings')}</p>
           </div>
 
           {/* Settings Options */}
           <div className="space-y-4">
             <Card 
-              onClick={() => setCurrentScreen('ml-selector')}
-              className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-purple-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
+              className="glass-effect p-6 backdrop-blur-sm cursor-not-allowed opacity-60 border-slate-700/50 shadow-xl"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -3607,15 +6540,21 @@ ${isLoss ? `
                     <Brain className="w-6 h-6 text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">ML Модель</h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-white">{t('mlModel')}</h3>
+                      <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/50">
+                        {t('comingSoon')}
+                      </Badge>
+                    </div>
                     <p className="text-slate-400 text-sm">
-                      {mlModels.find(m => m.id === selectedMLModel)?.name || 'Не выбрана'}
+                      {t('comingSoonDescription')}
                     </p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
+
 
             <Card 
               onClick={() => setCurrentScreen('user-stats')}
@@ -3627,8 +6566,8 @@ ${isLoss ? `
                     <BarChart3 className="w-6 h-6 text-cyan-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">Статистика</h3>
-                    <p className="text-slate-400 text-sm">Просмотр детальной статистики</p>
+                    <h3 className="text-lg font-bold text-white">{t('statistics')}</h3>
+                    <p className="text-slate-400 text-sm">{t('viewDetails')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all duration-300" />
@@ -3645,8 +6584,8 @@ ${isLoss ? `
                     <Bell className="w-6 h-6 text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">Уведомления</h3>
-                    <p className="text-slate-400 text-sm">Настройка push-уведомлений</p>
+                    <h3 className="text-lg font-bold text-white">{t('notifications')}</h3>
+                    <p className="text-slate-400 text-sm">{t('setupPushNotifications')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-300" />
@@ -3686,7 +6625,12 @@ ${isLoss ? `
 
           {/* Back Button */}
           <Button 
-            onClick={() => setCurrentScreen('menu')}
+            onClick={() => {
+                  if (userData?.id) {
+                    loadUserSubscriptions(userData.id)
+                  }
+                  setCurrentScreen('menu')
+                }}
             variant="ghost"
             className="w-full text-slate-400 hover:text-white hover:bg-slate-800/50"
           >
@@ -3835,6 +6779,11 @@ ${isLoss ? `
                           <Lock className="w-5 h-5 text-red-400" />
                       ) : (
                         <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedModelForPurchase(model)
+                            setShowPurchaseModal(true)
+                          }}
                           variant="outline"
                             size="sm"
                             className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-8 px-3"
@@ -3869,6 +6818,107 @@ ${isLoss ? `
     )
   }
 
+  // Purchase Modal
+  if (showPurchaseModal && selectedModelForPurchase) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"></div>
+        <Card className="glass-effect border-yellow-500/30 p-8 max-w-md w-full card-3d shadow-2xl relative z-50">
+          <div className="text-center mb-6">
+            <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 flex items-center justify-center icon-3d shadow-xl shadow-yellow-500/20 mx-auto mb-4">
+              <span className="text-4xl">{selectedModelForPurchase.emoji}</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Покупка {selectedModelForPurchase.name}</h2>
+            <p className="text-slate-400 text-sm">{selectedModelForPurchase.algorithm}</p>
+          </div>
+
+          <div className="space-y-4 mb-6">
+            <div className="text-center">
+                 <h3 className="text-lg font-semibold text-white mb-4">{t('selectSubscriptionType')}</h3>
+            </div>
+            
+            {/* Ежемесячная подписка */}
+            <Card 
+              onClick={() => {
+                const message = `🔔 Запрос на покупку ML модели
+
+📋 Модель: ${selectedModelForPurchase.name} (${selectedModelForPurchase.emoji})
+💰 Тип: Ежемесячная подписка
+💵 Цена: ${selectedModelForPurchase.monthlyPrice}
+👤 Пользователь: ${userData?.first_name} ${userData?.last_name}
+🆔 ID: ${userData?.id}
+📱 Username: @${userData?.username || 'не указан'}
+
+Пожалуйста, свяжитесь с пользователем для оформления подписки.`
+                
+                // Отправляем сообщение админу
+                window.open(`https://t.me/${ADMIN_TELEGRAM_ID}?text=${encodeURIComponent(message)}`, '_blank')
+                setShowPurchaseModal(false)
+                setSelectedModelForPurchase(null)
+              }}
+              className="glass-effect border-blue-500/30 p-4 cursor-pointer hover:border-blue-500/50 transition-all duration-300"
+            >
+              <div className="flex items-center justify-between">
+                     <div>
+                       <h4 className="text-white font-semibold">{t('monthlySubscription')}</h4>
+                       <p className="text-slate-400 text-sm">{t('autoRenewal')}</p>
+                     </div>
+                <div className="text-right">
+                  <p className="text-blue-400 font-bold text-lg">{selectedModelForPurchase.monthlyPrice}</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Пожизненная покупка */}
+            <Card 
+              onClick={() => {
+                const message = `🔔 Запрос на покупку ML модели
+
+📋 Модель: ${selectedModelForPurchase.name} (${selectedModelForPurchase.emoji})
+💰 Тип: Пожизненная покупка
+💵 Цена: ${selectedModelForPurchase.lifetimePrice}
+👤 Пользователь: ${userData?.first_name} ${userData?.last_name}
+🆔 ID: ${userData?.id}
+📱 Username: @${userData?.username || 'не указан'}
+
+Пожалуйста, свяжитесь с пользователем для оформления покупки.`
+                
+                // Отправляем сообщение админу
+                window.open(`https://t.me/${ADMIN_TELEGRAM_ID}?text=${encodeURIComponent(message)}`, '_blank')
+                setShowPurchaseModal(false)
+                setSelectedModelForPurchase(null)
+              }}
+              className="glass-effect border-green-500/30 p-4 cursor-pointer hover:border-green-500/50 transition-all duration-300"
+            >
+              <div className="flex items-center justify-between">
+                     <div>
+                       <h4 className="text-white font-semibold">{t('lifetimePurchase')}</h4>
+                       <p className="text-slate-400 text-sm">{t('noTimeLimit')}</p>
+                     </div>
+                <div className="text-right">
+                  <p className="text-green-400 font-bold text-lg">{selectedModelForPurchase.lifetimePrice}</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => {
+                setShowPurchaseModal(false)
+                setSelectedModelForPurchase(null)
+              }}
+              variant="outline"
+              className="flex-1 text-slate-400 border-slate-600 hover:bg-slate-800/50"
+            >
+                   {t('cancel')}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   // User Statistics Screen
   if (currentScreen === 'user-stats') {
     return (
@@ -3882,7 +6932,7 @@ ${isLoss ? `
                   <BarChart3 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">Моя статистика</h1>
+                  <h1 className="text-xl font-bold text-white">{t('myStatistics')}</h1>
                   <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50 text-xs">
                     PERSONAL STATS
                   </Badge>
@@ -3906,25 +6956,25 @@ ${isLoss ? `
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 perspective-container mb-8">
             <Card className="glass-effect border-emerald-500/20 p-4 card-3d shadow-xl shadow-emerald-500/10">
               <div className="flex flex-col">
-                <span className="text-emerald-400 text-xs font-medium mb-1">Всего сигналов</span>
+                <span className="text-emerald-400 text-xs font-medium mb-1">{t('totalSignals')}</span>
                 <span className="text-2xl font-bold text-white">{userStats.totalSignals}</span>
               </div>
             </Card>
             <Card className="glass-effect border-green-500/20 p-4 card-3d shadow-xl shadow-green-500/10">
               <div className="flex flex-col">
-                <span className="text-green-400 text-xs font-medium mb-1">Успешных</span>
+                <span className="text-green-400 text-xs font-medium mb-1">{t('successful')}</span>
                 <span className="text-2xl font-bold text-white">{userStats.successfulSignals}</span>
               </div>
             </Card>
             <Card className="glass-effect border-rose-500/20 p-4 card-3d shadow-xl shadow-rose-500/10">
               <div className="flex flex-col">
-                <span className="text-rose-400 text-xs font-medium mb-1">Проигрышных</span>
+                <span className="text-rose-400 text-xs font-medium mb-1">{t('failed')}</span>
                 <span className="text-2xl font-bold text-white">{userStats.failedSignals}</span>
               </div>
             </Card>
             <Card className="glass-effect border-cyan-500/20 p-4 card-3d shadow-xl shadow-cyan-500/10">
               <div className="flex flex-col">
-                <span className="text-cyan-400 text-xs font-medium mb-1">Win Rate</span>
+                <span className="text-cyan-400 text-xs font-medium mb-1">{t('winRate')}</span>
                 <span className="text-2xl font-bold text-white">{userStats.winRate}%</span>
               </div>
             </Card>
@@ -3936,24 +6986,24 @@ ${isLoss ? `
               <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center icon-3d shadow-lg shadow-purple-500/20">
                 <Activity className="w-5 h-5 text-purple-400" />
               </div>
-              <h3 className="text-lg font-bold text-white">Детальная информация</h3>
+              <h3 className="text-lg font-bold text-white">{t('detailedInformation')}</h3>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
-                <span className="text-slate-400 text-xs block mb-2">Дней торговли</span>
+                <span className="text-slate-400 text-xs block mb-2">{t('tradingDays')}</span>
                 <span className="text-purple-400 font-bold text-xl">{userStats.tradingDays}</span>
               </div>
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
-                <span className="text-slate-400 text-xs block mb-2">Сигналов в день</span>
+                <span className="text-slate-400 text-xs block mb-2">{t('signalsPerDay')}</span>
                 <span className="text-cyan-400 font-bold text-xl">{userStats.avgSignalsPerDay}</span>
               </div>
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
-                <span className="text-slate-400 text-xs block mb-2">Лучшая пара</span>
+                <span className="text-slate-400 text-xs block mb-2">{t('bestPair')}</span>
                 <span className="text-emerald-400 font-bold text-xl">{userStats.bestPair}</span>
               </div>
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
-                <span className="text-slate-400 text-xs block mb-2">Худшая пара</span>
+                <span className="text-slate-400 text-xs block mb-2">{t('worstPair')}</span>
                 <span className="text-rose-400 font-bold text-xl">{userStats.worstPair}</span>
               </div>
             </div>
@@ -4047,31 +7097,31 @@ ${isLoss ? `
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 perspective-container mb-8">
             <Card className="glass-effect border-emerald-500/20 p-4 card-3d shadow-xl shadow-emerald-500/10">
               <div className="flex flex-col">
-                <span className="text-emerald-400 text-xs font-medium mb-1">Всего пользователей</span>
+                <span className="text-emerald-400 text-xs font-medium mb-1">{t('totalUsers')}</span>
                 <span className="text-2xl font-bold text-white">{adminStats.totalUsers.toLocaleString()}</span>
               </div>
             </Card>
             <Card className="glass-effect border-cyan-500/20 p-4 card-3d shadow-xl shadow-cyan-500/10">
               <div className="flex flex-col">
-                <span className="text-cyan-400 text-xs font-medium mb-1">Онлайн</span>
+                <span className="text-cyan-400 text-xs font-medium mb-1">{t('online')}</span>
                 <span className="text-2xl font-bold text-white">{adminStats.activeUsers.toLocaleString()}</span>
               </div>
             </Card>
             <Card className="glass-effect border-purple-500/20 p-4 card-3d shadow-xl shadow-purple-500/10">
               <div className="flex flex-col">
-                <span className="text-purple-400 text-xs font-medium mb-1">Всего сигналов</span>
+                <span className="text-purple-400 text-xs font-medium mb-1">{t('totalSignals')}</span>
                 <span className="text-2xl font-bold text-white">{adminStats.totalSignals.toLocaleString()}</span>
               </div>
             </Card>
             <Card className="glass-effect border-green-500/20 p-4 card-3d shadow-xl shadow-green-500/10">
               <div className="flex flex-col">
-                <span className="text-green-400 text-xs font-medium mb-1">Успешных</span>
+                <span className="text-green-400 text-xs font-medium mb-1">{t('successful')}</span>
                 <span className="text-2xl font-bold text-white">{adminStats.successfulSignals.toLocaleString()}</span>
               </div>
             </Card>
             <Card className="glass-effect border-rose-500/20 p-4 card-3d shadow-xl shadow-rose-500/10">
               <div className="flex flex-col">
-                <span className="text-rose-400 text-xs font-medium mb-1">Проигрышных</span>
+                <span className="text-rose-400 text-xs font-medium mb-1">{t('failed')}</span>
                 <span className="text-2xl font-bold text-white">{adminStats.failedSignals.toLocaleString()}</span>
               </div>
             </Card>
@@ -4083,7 +7133,7 @@ ${isLoss ? `
               <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center icon-3d shadow-lg shadow-emerald-500/20">
                 <Users className="w-5 h-5 text-emerald-400" />
               </div>
-              <h3 className="text-lg font-bold text-white">Топ пользователи</h3>
+              <h3 className="text-lg font-bold text-white">{t('topUsers')}</h3>
             </div>
             
             <div className="space-y-3">
@@ -4196,7 +7246,7 @@ ${isLoss ? `
                         className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm"
                       >
                         <Check className="w-4 h-4 mr-2" />
-                        Одобрить
+                        {t('approve')}
                       </Button>
                     </div>
                   </div>
@@ -4206,8 +7256,8 @@ ${isLoss ? `
                   <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
                     <UserPlus className="w-8 h-8 text-slate-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Нет заявок на доступ</h3>
-                  <p className="text-slate-400">Новые заявки будут отображаться здесь</p>
+                  <h3 className="text-lg font-semibold text-white mb-2">{t('noAccessRequests')}</h3>
+                  <p className="text-slate-400">{t('newRequestsWillAppearHere')}</p>
                 </div>
               )}
             </div>
@@ -4254,25 +7304,25 @@ ${isLoss ? `
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 perspective-container mb-8">
             <Card className="glass-effect border-emerald-500/20 p-4 card-3d shadow-xl shadow-emerald-500/10">
               <div className="flex flex-col">
-                <span className="text-emerald-400 text-xs font-medium mb-1">Всего сигналов</span>
+                <span className="text-emerald-400 text-xs font-medium mb-1">{t('totalSignals')}</span>
                 <span className="text-2xl font-bold text-white">{selectedUser.signals}</span>
               </div>
             </Card>
             <Card className="glass-effect border-green-500/20 p-4 card-3d shadow-xl shadow-green-500/10">
               <div className="flex flex-col">
-                <span className="text-green-400 text-xs font-medium mb-1">Успешных</span>
+                <span className="text-green-400 text-xs font-medium mb-1">{t('successful')}</span>
                 <span className="text-2xl font-bold text-white">{selectedUser.successful}</span>
               </div>
             </Card>
             <Card className="glass-effect border-rose-500/20 p-4 card-3d shadow-xl shadow-rose-500/10">
               <div className="flex flex-col">
-                <span className="text-rose-400 text-xs font-medium mb-1">Проигрышных</span>
+                <span className="text-rose-400 text-xs font-medium mb-1">{t('failed')}</span>
                 <span className="text-2xl font-bold text-white">{selectedUser.failed}</span>
               </div>
             </Card>
             <Card className="glass-effect border-cyan-500/20 p-4 card-3d shadow-xl shadow-cyan-500/10">
               <div className="flex flex-col">
-                <span className="text-cyan-400 text-xs font-medium mb-1">Win Rate</span>
+                <span className="text-cyan-400 text-xs font-medium mb-1">{t('winRate')}</span>
                 <span className="text-2xl font-bold text-white">{selectedUser.winRate}%</span>
               </div>
             </Card>
@@ -4284,12 +7334,12 @@ ${isLoss ? `
               <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center icon-3d shadow-lg shadow-purple-500/20">
                 <Activity className="w-5 h-5 text-purple-400" />
               </div>
-              <h3 className="text-lg font-bold text-white">Детальная информация</h3>
+              <h3 className="text-lg font-bold text-white">{t('detailedInformation')}</h3>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
-                <span className="text-slate-400 text-xs block mb-2">Дней торговли</span>
+                <span className="text-slate-400 text-xs block mb-2">{t('tradingDays')}</span>
                 <span className="text-purple-400 font-bold text-xl">{selectedUser.tradingDays}</span>
               </div>
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
@@ -4354,6 +7404,159 @@ ${isLoss ? `
               })}
             </div>
           </Card>
+
+          {/* Subscription Templates */}
+          <Card className="glass-effect border-blue-500/30 p-6 card-3d shadow-2xl mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center icon-3d shadow-lg shadow-blue-500/20">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Быстрые шаблоны</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {subscriptionTemplates.map(template => (
+                <Button
+                  key={template.id}
+                  onClick={() => {
+                    if (selectedUser) {
+                      const updatedUser = {
+                        ...selectedUser,
+                        subscriptions: template.subscriptions
+                      };
+                      setSelectedUser(updatedUser);
+                      console.log(`Применен шаблон ${template.name} для пользователя ${selectedUser.id}`);
+                    }
+                  }}
+                  className={`bg-${template.color_scheme}-500/20 hover:bg-${template.color_scheme}-500/30 text-${template.color_scheme}-400 border-${template.color_scheme}-500/50`}
+                  size="sm"
+                >
+                  <span className="mr-2">{template.icon}</span>
+                  {template.name}
+                </Button>
+              ))}
+            </div>
+          </Card>
+
+          {/* Subscription Management */}
+          <Card className="glass-effect border-amber-500/30 p-6 card-3d shadow-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center icon-3d shadow-lg shadow-amber-500/20">
+                <Crown className="w-5 h-5 text-amber-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Управление подписками</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-slate-300 font-medium">ML Модели</span>
+                  <Badge className={`${selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-slate-500/20 text-slate-400 border-slate-500/50'}`}>
+                    {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? 'Активна' : 'Неактивна'}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-4">
+                  {/* Выбор ML моделей */}
+                  <div>
+                    <span className="text-slate-400 text-sm mb-2 block">Выберите ML модели:</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['logistic-spy', 'shadow-stack', 'forest-necromancer', 'gray-cardinal', 'sniper-80x'].map((model) => (
+                        <label key={model} className="flex items-center gap-2 p-2 bg-slate-800/30 rounded-lg border border-slate-700/30 hover:border-cyan-500/50 cursor-pointer transition-all">
+                          <input
+                            type="checkbox"
+                            checked={selectedUser.subscriptions && selectedUser.subscriptions.includes(model)}
+                            onChange={(e) => {
+                              const currentSubs = selectedUser.subscriptions || []
+                              let newSubs
+                              if (e.target.checked) {
+                                newSubs = [...currentSubs, model]
+                              } else {
+                                newSubs = currentSubs.filter(sub => sub !== model)
+                              }
+                              const updatedUser = {
+                                ...selectedUser,
+                                subscriptions: newSubs
+                              }
+                              setSelectedUser(updatedUser)
+                            }}
+                            className="w-4 h-4 text-cyan-500 bg-slate-700 border-slate-600 rounded focus:ring-cyan-500"
+                          />
+                          <span className="text-slate-300 text-sm">{model}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Кнопки управления */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      onClick={async () => {
+                        // Сохраняем изменения
+                        console.log('Сохранение подписки для пользователя:', selectedUser.id, selectedUser.subscriptions)
+                        
+                        // Обновляем подписку пользователя через API
+                        const success = await updateUserSubscription(selectedUser.id, selectedUser.subscriptions)
+                        
+                        if (success) {
+                          alert(t('subscriptionUpdated').replace('{name}', selectedUser.name))
+                        } else {
+                          alert(t('subscriptionUpdateError').replace('{name}', selectedUser.name))
+                        }
+                      }}
+                      className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50"
+                      size="sm"
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Сохранить
+                    </Button>
+                    
+                    <Button
+                      onClick={async () => {
+                        // Отключаем все подписки
+                        const updatedUser = {
+                          ...selectedUser,
+                          subscriptions: []
+                        }
+                        setSelectedUser(updatedUser)
+                        
+                        // Обновляем через API
+                        const success = await updateUserSubscription(selectedUser.id, [])
+                        
+                        if (success) {
+                          alert(t('subscriptionDisabled').replace('{name}', selectedUser.name))
+                        } else {
+                          alert(t('subscriptionDisableError').replace('{name}', selectedUser.name))
+                        }
+                      }}
+                      variant="ghost"
+                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/20"
+                      size="sm"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Отключить все
+                    </Button>
+                  </div>
+                </div>
+                
+                {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 && (
+                  <div className="mt-4 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="w-4 h-4 text-emerald-400" />
+                      <span className="text-emerald-400 font-medium text-sm">Доступные модели:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUser.subscriptions.map((model, index) => (
+                        <Badge key={index} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs">
+                          {model}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     )
@@ -4379,7 +7582,12 @@ ${isLoss ? `
                 </div>
               </div>
               <Button 
-                onClick={() => setCurrentScreen('menu')}
+                onClick={() => {
+                  if (userData?.id) {
+                    loadUserSubscriptions(userData.id)
+                  }
+                  setCurrentScreen('menu')
+                }}
                 variant="ghost" 
                 size="icon" 
                 className="text-slate-400 hover:text-white hover:bg-slate-800/50"
@@ -4555,7 +7763,7 @@ ${isLoss ? `
               className="text-slate-400 hover:text-white hover:bg-slate-800/50"
               onClick={() => {
                 if (isNavigationBlocked()) {
-                  alert('⚠️ Дождитесь завершения активного сигнала и оставьте фидбек перед переходом!')
+                  alert(t('waitForActiveSignal'))
                 } else {
                   setCurrentScreen('settings')
                 }
@@ -4640,7 +7848,7 @@ ${isLoss ? `
                           <div className="flex items-center justify-between text-xs mb-1">
                             <span className="text-slate-400 flex items-center gap-1">
                               <Target className="w-3 h-3" />
-                              Уверенность
+  {t('confidence')}
                             </span>
                             <span className="text-white font-semibold">
                               {(signal.confidence * 100).toFixed(1)}%
@@ -4868,7 +8076,7 @@ ${isLoss ? `
         <Button 
           onClick={() => {
             if (isNavigationBlocked()) {
-              alert('⚠️ Дождитесь завершения активного сигнала и оставьте фидбек перед переходом!')
+              alert(t('waitForActiveSignal'))
             } else {
               setCurrentScreen('mode-select')
             }
@@ -4890,7 +8098,7 @@ ${isLoss ? `
                 {/* Header */}
                 <div className="flex items-center justify-center gap-3 mb-6">
                   <Lock className="w-8 h-8 text-red-400" />
-                  <h1 className="text-2xl font-bold text-white">СДЕЛКА АКТИВИРОВАНА</h1>
+                  <h1 className="text-2xl font-bold text-white">{t('tradeActivated')}</h1>
                 </div>
 
                 <div className="flex items-center justify-center gap-4 mb-6">
@@ -4925,7 +8133,7 @@ ${isLoss ? `
                       <h3 className="text-4xl font-bold text-white">
                         {Math.floor(signalTimer / 60)}:{(signalTimer % 60).toString().padStart(2, '0')}
                       </h3>
-                      <p className="text-slate-400 text-sm mt-1">Осталось до экспирации</p>
+                      <p className="text-slate-400 text-sm mt-1">{t('timeRemaining')}</p>
                     </div>
                   </div>
                   <div className="w-full bg-slate-800/50 rounded-full h-2 overflow-hidden">
@@ -4941,9 +8149,9 @@ ${isLoss ? `
                     <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
                       <span className="text-white text-xs font-bold">🚫</span>
                     </div>
-                    <p className="text-cyan-400 font-semibold">Навигация заблокирована</p>
+                    <p className="text-cyan-400 font-semibold">{t('navigationLocked')}</p>
                   </div>
-                  <p className="text-slate-400 text-sm">Дождитесь экспирации сигнала и оставьте фидбек</p>
+                  <p className="text-slate-400 text-sm">{t('waitForExpiration')}</p>
                 </div>
               </>
             ) : (
@@ -4953,18 +8161,18 @@ ${isLoss ? `
                   <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4 animate-pulse">
                     <Clock className="w-10 h-10 text-amber-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">⏰ Время истекло!</h2>
-                  <p className="text-slate-400">Оставьте фидбек о результате сделки</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">{t('timeExpired')}</h2>
+                  <p className="text-slate-400">{t('leaveFeedback')}</p>
                 </div>
 
                 <Card className="glass-effect border-slate-700/50 p-6 mb-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Пара:</span>
+                      <span className="text-slate-400">{t('pair')}:</span>
                       <span className="text-white font-bold">{pendingSignal.pair}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Направление:</span>
+                      <span className="text-slate-400">{t('direction')}:</span>
                       <Badge className={pendingSignal.type === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}>
                         {pendingSignal.type}
                       </Badge>
@@ -4978,9 +8186,9 @@ ${isLoss ? `
                     <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
                       <span className="text-white text-xs font-bold">💡</span>
                     </div>
-                    <p className="text-amber-400 font-semibold">Кнопки результата стали активными</p>
+                    <p className="text-amber-400 font-semibold">{t('resultButtonsActive')}</p>
                   </div>
-                  <p className="text-slate-400 text-sm">После истечения времени укажите результат торговли</p>
+                  <p className="text-slate-400 text-sm">{t('indicateTradeResult')}</p>
                 </div>
 
                 <div className="space-y-4">
@@ -4991,7 +8199,7 @@ ${isLoss ? `
                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></span>
                     <span className="relative flex items-center justify-center gap-3">
                       <span className="text-3xl animate-bounce">✅</span>
-                      <span>Успешная сделка</span>
+                      <span>{t('successfulTrade')}</span>
                       <TrendingUp className="w-6 h-6" />
                     </span>
                   </Button>
@@ -5002,14 +8210,14 @@ ${isLoss ? `
                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></span>
                     <span className="relative flex items-center justify-center gap-3">
                       <span className="text-3xl animate-pulse">❌</span>
-                      <span>Убыточная сделка</span>
+                      <span>{t('losingTrade')}</span>
                       <TrendingDown className="w-6 h-6" />
                     </span>
                   </Button>
                 </div>
 
                 <p className="text-amber-400 text-sm text-center mt-4">
-                  ⚠️ Оставьте фидбек чтобы разблокировать навигацию
+                  {t('leaveFeedbackToUnlock')}
                 </p>
               </>
             )}
@@ -5025,19 +8233,19 @@ ${isLoss ? `
               <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Activity className="w-10 h-10 text-amber-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3">⚠️ Нет подходящей точки входа</h3>
+              <h3 className="text-2xl font-bold text-white mb-3">{t('noSuitableEntry')}</h3>
               <p className="text-slate-400 text-base mb-2">
-                Текущие рыночные условия не оптимальны для открытия позиции
+                {t('marketConditionsNotOptimal')}
               </p>
               <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50 text-sm">
-                Анализ завершён
+                {t('analysisCompleted')}
               </Badge>
             </div>
 
             <Card className="glass-effect border-slate-700/50 p-6 mb-6 bg-slate-900/50">
               <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Target className="w-5 h-5 text-cyan-400" />
-                Рекомендации
+                {t('recommendations')}
               </h4>
               <div className="space-y-3">
                 <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg border border-cyan-500/20">
@@ -5045,8 +8253,8 @@ ${isLoss ? `
                     <span className="text-cyan-400 font-bold">1</span>
                   </div>
                   <div>
-                    <p className="text-white font-semibold mb-1">Попробуйте другую пару</p>
-                    <p className="text-slate-400 text-sm">Выберите другую валютную пару с более благоприятными условиями</p>
+                    <p className="text-white font-semibold mb-1">{t('tryAnotherPair')}</p>
+                    <p className="text-slate-400 text-sm">{t('selectAnotherPairDescription')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg border border-purple-500/20">
@@ -5054,7 +8262,7 @@ ${isLoss ? `
                     <span className="text-purple-400 font-bold">2</span>
                   </div>
                   <div>
-                    <p className="text-white font-semibold mb-1">Подождите оптимальных условий</p>
+                    <p className="text-white font-semibold mb-1">{t('waitForOptimalConditions')}</p>
                     <p className="text-slate-400 text-sm">Попробуйте снова через {signalCooldown} секунд, когда рынок стабилизируется</p>
                   </div>
                 </div>
@@ -5069,11 +8277,11 @@ ${isLoss ? `
               className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white py-6 text-lg font-bold shadow-lg shadow-amber-500/30"
             >
               <ChevronRight className="w-5 h-5 mr-2 rotate-180" />
-              Вернуться к выбору пары
+              {t('returnToPairSelection')}
             </Button>
 
-            <p className="text-slate-500 text-xs text-center mt-4">
-              💡 Терпение — ключ к успешной торговле
+            <p className="text-slate-400 text-xs text-center mt-4">
+              {t('patienceIsKey')}
             </p>
           </Card>
         </div>
@@ -5087,20 +8295,19 @@ ${isLoss ? `
               <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Shield className="w-10 h-10 text-red-400" />
               </div>
-              <h2 className="text-3xl font-bold text-white mb-3">⚠️ ВНИМАНИЕ!</h2>
+              <h2 className="text-3xl font-bold text-white mb-3">{t('warningAttention')}</h2>
               <p className="text-red-400 text-lg font-semibold mb-2">
-                Обнаружена попытка обхода системы
+                {t('systemBypassDetected')}
               </p>
               <p className="text-slate-400">
-                У вас есть активный сигнал, который требует завершения. 
-                Перезагрузка страницы не поможет обойти блокировку навигации.
+                {t('activeSignalRequiresCompletion')}
               </p>
             </div>
 
             <Card className="glass-effect border-slate-700/50 p-6 mb-6 bg-slate-900/50">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-cyan-400" />
-                Активный сигнал
+                {t('activeSignal')}
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -5119,7 +8326,7 @@ ${isLoss ? `
                 </div>
                 {!isWaitingFeedback && (
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Осталось времени:</span>
+                    <span className="text-slate-400">{t('timeRemaining')}:</span>
                     <span className="text-amber-400 font-bold text-lg">
                       {Math.floor(signalTimer / 60)}:{(signalTimer % 60).toString().padStart(2, '0')}
                     </span>
@@ -5127,7 +8334,7 @@ ${isLoss ? `
                 )}
                 {isWaitingFeedback && (
                   <div className="text-center py-2">
-                    <span className="text-red-400 font-semibold">⏰ Требуется фидбек!</span>
+                    <span className="text-red-400 font-semibold">{t('feedbackRequired')}</span>
                   </div>
                 )}
               </div>
@@ -5141,11 +8348,11 @@ ${isLoss ? `
               className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white py-6 text-lg font-bold shadow-lg shadow-cyan-500/30"
             >
               <ArrowRight className="w-5 h-5 mr-2" />
-              Вернуться к открытой сделке
+              {t('returnToOpenTrade')}
             </Button>
 
             <p className="text-slate-500 text-xs text-center mt-4">
-              Система защиты от обхода блокировки навигации активирована
+              {t('bypassProtectionActive')}
             </p>
           </Card>
         </div>
@@ -5160,5 +8367,6 @@ function AppWrapper() {
 }
 
 export default AppWrapper
+
 
 
