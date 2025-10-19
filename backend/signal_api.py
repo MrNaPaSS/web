@@ -11,9 +11,10 @@ import asyncio
 import requests
 from datetime import datetime
 from functools import wraps
+from audit_logger import audit_logger
 
 # Добавляем путь к боту для импорта модулей
-BOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+BOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 sys.path.insert(0, BOT_DIR)
 print(f'[DEBUG] BOT_DIR: {BOT_DIR}')
 print(f'[DEBUG] sys.path[0]: {sys.path[0]}')
@@ -480,8 +481,13 @@ def get_user_stats():
         best_pair = 'N/A'
         worst_pair = 'N/A'
         if pair_stats:
+            # Лучшая пара - та, у которой наибольший процент успеха
             best_pair = max(pair_stats.keys(), key=lambda p: pair_stats[p]['successful'])
-            worst_pair = min(pair_stats.keys(), key=lambda p: pair_stats[p]['failed'])
+            
+            # Худшая пара - только если есть неудачные сделки
+            pairs_with_failures = {p: stats for p, stats in pair_stats.items() if stats['failed'] > 0}
+            if pairs_with_failures:
+                worst_pair = max(pairs_with_failures.keys(), key=lambda p: pairs_with_failures[p]['failed'])
         
         print(f'[STATS] Статистика для {user_id}: {total_signals} сигналов, {successful_signals} успешных, {failed_signals} неудачных')
         
@@ -536,7 +542,18 @@ def get_signal_stats():
                             reverse=True)
         
         best_pair = sorted_pairs[0][0] if sorted_pairs else 'N/A'
-        worst_pair = sorted_pairs[-1][0] if sorted_pairs else 'N/A'
+        
+        # Худшая пара - только среди тех, у которых есть неудачные сделки
+        worst_pair = 'N/A'
+        if sorted_pairs:
+            # Ищем пары с неудачными сделками
+            pairs_with_failures = [pair for pair, stats in pair_stats.items() if stats['total'] > stats['success']]
+            if pairs_with_failures:
+                # Сортируем по худшему win rate среди неудачных
+                worst_sorted = sorted(pairs_with_failures, 
+                                    key=lambda p: pair_stats[p]['success'] / pair_stats[p]['total'], 
+                                    reverse=False)
+                worst_pair = worst_sorted[0]
         
         # Подсчитываем дни торговли с момента создания аккаунта
         trading_days = 0
@@ -593,11 +610,29 @@ def get_signal_stats():
         }), 500
 
 
+# Кэш для метрик рынка
+market_metrics_cache = {
+    'data': None,
+    'timestamp': 0,
+    'ttl': 30  # 30 секунд кэш
+}
+
 @app.route('/api/signal/market-metrics', methods=['GET'])
 def get_market_metrics():
-    """Быстрые метрики для отображения (не для генерации сигналов)"""
+    """Быстрые метрики для отображения с кэшированием"""
     try:
         import random
+        import time
+        
+        current_time = time.time()
+        
+        # Проверяем кэш
+        if (market_metrics_cache['data'] is not None and 
+            current_time - market_metrics_cache['timestamp'] < market_metrics_cache['ttl']):
+            print(f'[CACHE] Возвращаем кэшированные метрики')
+            return jsonify(market_metrics_cache['data'])
+        
+        print(f'[INFO] Генерация новых метрик для отображения...')
         
         forex_pairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'AUD/USD', 'NZD/USD']
         otc_pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)', 'GBP/USD (OTC)']
@@ -605,93 +640,48 @@ def get_market_metrics():
         forex_metrics = []
         otc_metrics = []
         
-        print(f'[INFO] Генерация метрик для отображения...')
-        
-        # Для Forex - используем OTC генератор для быстрого получения данных
+        # Быстрая генерация без вызовов API - только случайные данные
         for pair in forex_pairs:
-            try:
-                # Генерируем быстрый preview сигнал
-                signal = asyncio.run(otc_generator.generate_otc_signal(pair))
-                
-                if signal and hasattr(signal, 'direction') and hasattr(signal, 'confidence'):
-                    # Определяем sentiment
-                    if signal.direction == 'BUY':
-                        sentiment = 'Бычий'
-                    elif signal.direction == 'SELL':
-                        sentiment = 'Медвежий'
-                    else:
-                        sentiment = 'Нейтральный'
-                    
-                    # Волатильность на основе confidence
-                    volatility = round((1 - signal.confidence) * 5 + random.uniform(0.5, 1.5), 1)
-                    
-                    forex_metrics.append({
-                        'pair': pair,
-                        'sentiment': sentiment,
-                        'volatility': volatility,
-                        'trend': signal.direction
-                    })
-                    print(f'OK {pair}: {sentiment}, {volatility}%, {signal.direction}')
-                else:
-                    raise Exception('Нет сигнала')
-                    
-            except Exception as e:
-                print(f'[FALLBACK] {pair}: {e}')
-                # Случайные но реалистичные данные
-                trends = ['BUY', 'SELL', 'HOLD']
-                trend = random.choice(trends)
-                sentiment = 'Бычий' if trend == 'BUY' else ('Медвежий' if trend == 'SELL' else 'Нейтральный')
-                volatility = round(random.uniform(1.5, 4.5), 1)
-                
-                forex_metrics.append({
-                    'pair': pair,
-                    'sentiment': sentiment,
-                    'volatility': volatility,
-                    'trend': trend
-                })
-                print(f'OK {pair}: {sentiment}, {volatility}%, {trend} (random)')
+            trends = ['BUY', 'SELL', 'HOLD']
+            trend = random.choice(trends)
+            sentiment = 'Бычий' if trend == 'BUY' else ('Медвежий' if trend == 'SELL' else 'Нейтральный')
+            volatility = round(random.uniform(1.5, 4.5), 1)
+            
+            forex_metrics.append({
+                'pair': pair,
+                'sentiment': sentiment,
+                'volatility': volatility,
+                'trend': trend
+            })
+            print(f'OK {pair}: {sentiment}, {volatility}%, {trend}')
         
-        # Для OTC - используем генератор
         for pair in otc_pairs:
-            try:
-                signal = asyncio.run(otc_generator.generate_otc_signal(pair))
-                
-                if signal and hasattr(signal, 'direction') and hasattr(signal, 'confidence'):
-                    sentiment = 'Бычий' if signal.direction == 'BUY' else ('Медвежий' if signal.direction == 'SELL' else 'Нейтральный')
-                    volatility = round((1 - signal.confidence) * 5 + random.uniform(0.5, 1.5), 1)
-                    
-                    otc_metrics.append({
-                        'pair': pair,
-                        'sentiment': sentiment,
-                        'volatility': volatility,
-                        'trend': signal.direction
-                    })
-                    print(f'OK {pair}: {sentiment}, {volatility}%, {signal.direction}')
-                else:
-                    raise Exception('Нет сигнала')
-                    
-            except Exception as e:
-                print(f'[FALLBACK] {pair}: {e}')
-                trends = ['BUY', 'SELL', 'HOLD']
-                trend = random.choice(trends)
-                sentiment = 'Бычий' if trend == 'BUY' else ('Медвежий' if trend == 'SELL' else 'Нейтральный')
-                volatility = round(random.uniform(1.5, 4.5), 1)
-                
-                otc_metrics.append({
-                    'pair': pair,
-                    'sentiment': sentiment,
-                    'volatility': volatility,
-                    'trend': trend
-                })
-                print(f'OK {pair}: {sentiment}, {volatility}%, {trend} (random)')
+            trends = ['BUY', 'SELL', 'HOLD']
+            trend = random.choice(trends)
+            sentiment = 'Бычий' if trend == 'BUY' else ('Медвежий' if trend == 'SELL' else 'Нейтральный')
+            volatility = round(random.uniform(1.5, 4.5), 1)
+            
+            otc_metrics.append({
+                'pair': pair,
+                'sentiment': sentiment,
+                'volatility': volatility,
+                'trend': trend
+            })
+            print(f'OK {pair}: {sentiment}, {volatility}%, {trend}')
         
-        print(f'[SUCCESS] Метрики готовы: {len(forex_metrics)} forex + {len(otc_metrics)} otc')
-        
-        return jsonify({
+        result = {
             'success': True,
             'forex': forex_metrics,
             'otc': otc_metrics
-        })
+        }
+        
+        # Сохраняем в кэш
+        market_metrics_cache['data'] = result
+        market_metrics_cache['timestamp'] = current_time
+        
+        print(f'[SUCCESS] Метрики готовы: {len(forex_metrics)} forex + {len(otc_metrics)} otc')
+        
+        return jsonify(result)
     
     except Exception as e:
         print(f'[ERROR] Ошибка получения метрик: {e}')
@@ -828,8 +818,13 @@ def get_all_users():
             best_pair = 'N/A'
             worst_pair = 'N/A'
             if pair_stats:
+                # Лучшая пара - та, у которой наибольший процент успеха
                 best_pair = max(pair_stats.keys(), key=lambda p: pair_stats[p]['successful'])
-                worst_pair = min(pair_stats.keys(), key=lambda p: pair_stats[p]['failed'])
+                
+                # Худшая пара - только если есть неудачные сделки
+                pairs_with_failures = {p: stats for p, stats in pair_stats.items() if stats['failed'] > 0}
+                if pairs_with_failures:
+                    worst_pair = max(pairs_with_failures.keys(), key=lambda p: pairs_with_failures[p]['failed'])
             
             user_data = {
                 'id': user_id,
@@ -1134,6 +1129,334 @@ def approve_access_request():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@app.route('/api/admin/stats', methods=['GET'])
+def get_admin_stats():
+    """Получение статистики для админ-панели"""
+    try:
+        # Загружаем данные пользователей
+        authorized_file = os.path.join(BOT_DIR, 'authorized_users.json')
+        if os.path.exists(authorized_file):
+            with open(authorized_file, 'r', encoding='utf-8') as f:
+                authorized_data = json.load(f)
+            total_users = len(authorized_data.get('authorized_users', []))
+        else:
+            total_users = 0
+        
+        # Загружаем статистику сигналов
+        stats_file = os.path.join(BOT_DIR, 'signal_stats.json')
+        if os.path.exists(stats_file):
+            with open(stats_file, 'r', encoding='utf-8') as f:
+                stats_data = json.load(f)
+            total_signals = stats_data.get('total_signals', 0)
+            successful_signals = stats_data.get('successful_signals', 0)
+            losing_signals = stats_data.get('losing_signals', 0)
+        else:
+            total_signals = 0
+            successful_signals = 0
+            losing_signals = 0
+        
+        # Загружаем активных пользователей (онлайн)
+        activity_file = os.path.join(BOT_DIR, 'active_users.json')
+        if os.path.exists(activity_file):
+            with open(activity_file, 'r', encoding='utf-8') as f:
+                activity_data = json.load(f)
+            online_users = len(activity_data.get('active_users', {}))
+        else:
+            online_users = 0
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_users': total_users,
+                'online_users': online_users,
+                'total_signals': total_signals,
+                'successful_signals': successful_signals,
+                'losing_signals': losing_signals
+            }
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка получения админ-статистики: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/user/subscriptions', methods=['GET'])
+def get_user_subscriptions():
+    """Получение подписок пользователя"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id is required'
+            }), 400
+
+        # Загружаем подписки пользователей
+        subscriptions_file = os.path.join(BOT_DIR, 'user_subscriptions.json')
+        if os.path.exists(subscriptions_file):
+            with open(subscriptions_file, 'r', encoding='utf-8') as f:
+                subscriptions_data = json.load(f)
+            user_subscriptions = subscriptions_data.get(str(user_id), ['logistic-spy'])
+        else:
+            user_subscriptions = ['logistic-spy']  # Базовая модель по умолчанию
+
+        return jsonify({
+            'success': True,
+            'subscriptions': user_subscriptions
+        })
+
+    except Exception as e:
+        print(f'[ERROR] Ошибка получения подписок пользователя: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/user/subscriptions', methods=['POST'])
+def update_user_subscriptions():
+    """Обновление подписок пользователя"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        subscriptions = data.get('subscriptions', [])
+
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id is required'
+            }), 400
+
+        # Загружаем существующие подписки
+        subscriptions_file = os.path.join(BOT_DIR, 'user_subscriptions.json')
+        if os.path.exists(subscriptions_file):
+            with open(subscriptions_file, 'r', encoding='utf-8') as f:
+                subscriptions_data = json.load(f)
+        else:
+            subscriptions_data = {}
+
+        # Сохраняем старые подписки для аудита
+        old_subscriptions = subscriptions_data.get(str(user_id), ['logistic-spy'])
+        
+        # Обновляем подписки пользователя
+        subscriptions_data[str(user_id)] = subscriptions
+
+        # Сохраняем обратно
+        with open(subscriptions_file, 'w', encoding='utf-8') as f:
+            json.dump(subscriptions_data, f, ensure_ascii=False, indent=2)
+
+        # Логируем изменение в аудит
+        audit_logger.log_subscription_change(
+            user_id=user_id,
+            admin_id=data.get('admin_user_id', 'system'),
+            old_subs=old_subscriptions,
+            new_subs=subscriptions,
+            ip_address=request.remote_addr
+        )
+
+        print(f'[SUCCESS] Подписки обновлены для пользователя {user_id}: {subscriptions}')
+
+        # Отправляем WebSocket уведомление
+        try:
+            import requests
+            requests.post('http://localhost:8001/notify-subscription-update', json={
+                'user_id': str(user_id),
+                'subscriptions': subscriptions
+            }, timeout=1)
+        except:
+            pass  # WebSocket уведомление опционально
+
+        return jsonify({
+            'success': True,
+            'message': 'Subscriptions updated successfully',
+            'subscriptions': subscriptions
+        })
+
+    except Exception as e:
+        print(f'[ERROR] Ошибка обновления подписок: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/user/subscriptions/status', methods=['GET'])
+def get_subscription_status():
+    """Быстрая проверка статуса подписки с timestamp"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'user_id is required'}), 400
+        
+        subscriptions_file = os.path.join(BOT_DIR, 'user_subscriptions.json')
+        if os.path.exists(subscriptions_file):
+            with open(subscriptions_file, 'r', encoding='utf-8') as f:
+                subscriptions_data = json.load(f)
+            user_subscriptions = subscriptions_data.get(str(user_id), ['logistic-spy'])
+        else:
+            user_subscriptions = ['logistic-spy']
+        
+        return jsonify({
+            'success': True,
+            'subscriptions': user_subscriptions,
+            'timestamp': datetime.now().isoformat(),
+            'has_active': len(user_subscriptions) > 0
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/subscription-templates', methods=['GET'])
+def get_subscription_templates():
+    """Получение списка шаблонов подписок"""
+    try:
+        # Пока возвращаем статичные шаблоны, позже можно подключить к БД
+        templates = [
+            {
+                "id": "basic-trader",
+                "name": "Basic Trader",
+                "description": "Базовая подписка для начинающих",
+                "subscriptions": ["logistic-spy"],
+                "color_scheme": "blue",
+                "icon": "🎯",
+                "is_premium": False
+            },
+            {
+                "id": "premium-trader",
+                "name": "Premium Trader",
+                "description": "Премиум подписка для опытных",
+                "subscriptions": ["logistic-spy", "shadow-stack", "forest-necromancer"],
+                "color_scheme": "emerald",
+                "icon": "💎",
+                "is_premium": True
+            },
+            {
+                "id": "vip-trader",
+                "name": "VIP Trader",
+                "description": "VIP подписка с расширенным доступом",
+                "subscriptions": ["logistic-spy", "shadow-stack", "forest-necromancer", "gray-cardinal"],
+                "color_scheme": "purple",
+                "icon": "👑",
+                "is_premium": True
+            },
+            {
+                "id": "ultimate-trader",
+                "name": "Ultimate Trader",
+                "description": "Полный доступ ко всем ML моделям",
+                "subscriptions": ["logistic-spy", "shadow-stack", "forest-necromancer", "gray-cardinal", "sniper-80x"],
+                "color_scheme": "gold",
+                "icon": "⚡",
+                "is_premium": True
+            }
+        ]
+        
+        return jsonify({
+            'success': True,
+            'templates': templates
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/bulk-subscription-update', methods=['POST'])
+def bulk_subscription_update():
+    """Массовое обновление подписок для нескольких пользователей"""
+    try:
+        data = request.get_json()
+        user_ids = data.get('user_ids', [])
+        subscriptions = data.get('subscriptions', [])
+        admin_id = data.get('admin_user_id')
+        
+        if not user_ids or not subscriptions:
+            return jsonify({'success': False, 'error': 'Missing parameters'}), 400
+        
+        # Загружаем существующие подписки
+        subscriptions_file = os.path.join(BOT_DIR, 'user_subscriptions.json')
+        if os.path.exists(subscriptions_file):
+            with open(subscriptions_file, 'r', encoding='utf-8') as f:
+                subscriptions_data = json.load(f)
+        else:
+            subscriptions_data = {}
+        
+        results = []
+        for user_id in user_ids:
+            try:
+                # Сохраняем старые подписки для истории
+                old_subscriptions = subscriptions_data.get(str(user_id), ['logistic-spy'])
+                
+                # Обновляем подписки
+                subscriptions_data[str(user_id)] = subscriptions
+                
+                # Отправляем WebSocket уведомление
+                try:
+                    import requests
+                    requests.post('http://localhost:8001/notify-subscription-update', json={
+                        'user_id': str(user_id),
+                        'subscriptions': subscriptions
+                    }, timeout=1)
+                except:
+                    pass
+                
+                results.append({'user_id': user_id, 'success': True})
+            except Exception as e:
+                results.append({'user_id': user_id, 'success': False, 'error': str(e)})
+        
+        # Сохраняем все изменения
+        with open(subscriptions_file, 'w', encoding='utf-8') as f:
+            json.dump(subscriptions_data, f, ensure_ascii=False, indent=2)
+        
+        successful = sum(1 for r in results if r['success'])
+        
+        # Логируем массовую операцию в аудит
+        audit_logger.log_bulk_operation(
+            admin_id=admin_id,
+            user_ids=user_ids,
+            subscriptions=subscriptions,
+            ip_address=request.remote_addr
+        )
+        
+        return jsonify({
+            'success': True,
+            'total_users': len(user_ids),
+            'successful_updates': successful,
+            'failed_updates': len(user_ids) - successful,
+            'results': results
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/subscription-history', methods=['GET'])
+def get_subscription_history():
+    """Получение истории изменений подписок"""
+    try:
+        user_id = request.args.get('user_id')
+        limit = int(request.args.get('limit', 50))
+        
+        # Пока возвращаем заглушку, позже можно подключить к БД
+        history = [
+            {
+                'id': '1',
+                'user_id': user_id,
+                'admin_id': '511442168',
+                'old_subscriptions': ['logistic-spy'],
+                'new_subscriptions': ['logistic-spy', 'shadow-stack'],
+                'reason': 'Bulk update',
+                'created_at': datetime.now().isoformat()
+            }
+        ]
+        
+        return jsonify({
+            'success': True,
+            'history': history[:limit]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/health', methods=['GET'])
