@@ -306,8 +306,11 @@ async def generate_signal():
             # РЕАЛЬНАЯ генерация ОТС сигналов
             if mode == 'top3':
                 # Генерируем ТОП-3 ОТС сигнала
-                pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)']
+                pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)', 'GBP/USD (OTC)', 'USD/CAD (OTC)']
+                generated_count = 0
                 for p in pairs:
+                    if generated_count >= 3:  # Ограничиваем до 3 сигналов
+                        break
                     print(f'[DEBUG] Генерируем OTC сигнал для {p}')
                     signal = await otc_generator.generate_otc_signal(p)
                     print(f'[DEBUG] Результат генерации OTC: {signal}')
@@ -325,6 +328,7 @@ async def generate_signal():
                             'reasoning': getattr(signal, 'reasoning', 'Технический анализ')
                         })
                         update_user_stats(user_id, 'otc')
+                        generated_count += 1
             else:
                 # Одиночный ОТС сигнал
                 if not pair:
