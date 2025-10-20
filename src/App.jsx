@@ -7188,33 +7188,12 @@ ${isLoss ? `
       }
     } catch (error) {
       console.error('❌ Ошибка получения сигналов:', error)
-      // Fallback: генерируем моковые сигналы если API недоступен
-      console.warn('⚠️ Используем mock сигналы (API недоступен)')
-      const pairs = selectedMarket === 'forex' 
-        ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
-        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)']
-      const signals = []
-      for (let i = 0; i < 3; i++) {
-        signals.push({
-          signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
-          id: Date.now() + i,
-          pair: pairs[i],
-          type: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          entry: selectedMarket === 'forex' ? (Math.random() * 2 + 1).toFixed(4) : (Math.random() * 10000 + 1000).toFixed(2),
-          confidence: Math.random() * 0.3 + 0.7,
-          expiration: Math.floor(Math.random() * 5) + 1,
-          signal_type: selectedMarket === 'otc' ? 'otc' : 'forex',
-          timestamp: new Date().toISOString(),
-          status: 'generated',
-          time: 'Только что'
-        })
-      }
-      setGeneratedSignals(signals)
-      setLastTop3Generation(Date.now())
-      setTop3Cooldown(600)
+      // НЕ генерируем mock сигналы - показываем сообщение об ошибке
+      console.warn('⚠️ API недоступен - НЕ генерируем mock сигналы')
       setIsGenerating(false)
-      setCurrentScreen('signal-selection')
+      // Показываем сообщение об ошибке пользователю
+      alert('Ошибка получения сигналов. Попробуйте позже.')
+      setCurrentScreen('mode-select')
     }
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
@@ -7271,24 +7250,11 @@ ${isLoss ? `
       }
     } catch (error) {
       console.error('❌ Ошибка получения сигнала:', error)
-      // Fallback: генерируем моковый сигнал если API недоступен
-      console.warn('⚠️ Используем mock сигнал (API недоступен)')
-      const mockSignal = {
-        signal_id: `mock_${pair.replace('/', '_')}_${Date.now()}`,
-        id: Date.now(),
-        pair: pair,
-        type: Math.random() > 0.5 ? 'BUY' : 'SELL',
-        direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
-        entry: selectedMarket === 'forex' ? (Math.random() * 2 + 1).toFixed(4) : (Math.random() * 10000 + 1000).toFixed(2),
-        confidence: Math.random() * 0.3 + 0.7,
-        expiration: Math.floor(Math.random() * 5) + 1,
-        signal_type: pair.includes('OTC') ? 'otc' : 'forex',
-        timestamp: new Date().toISOString(),
-        status: 'generated',
-        time: 'Только что'
-      }
-      setGeneratedSignals([mockSignal])
+      // НЕ генерируем mock сигнал - показываем сообщение об ошибке
+      console.warn('⚠️ API недоступен - НЕ генерируем mock сигнал')
       setIsGenerating(false)
+      // Показываем сообщение об ошибке пользователю
+      alert('Ошибка получения сигнала. Попробуйте позже.')
       setCurrentScreen('signal-selection')
     }
   }
@@ -9019,8 +8985,10 @@ ${isLoss ? `
                 clearSignalState()
                 generateTop3Signals()
               }}
-              className={`glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-amber-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${
-                !canGenerateTop3() || (selectedMarket === 'forex' && !isForexMarketOpen()) ? 'opacity-60 cursor-not-allowed' : ''
+              className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${
+                !canGenerateTop3() || (selectedMarket === 'forex' && !isForexMarketOpen()) 
+                  ? 'opacity-60 cursor-not-allowed' 
+                  : 'cursor-pointer hover:border-amber-500/50'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -9036,6 +9004,11 @@ ${isLoss ? `
                       </Badge>
                     </div>
                     <p className="text-slate-400 text-sm mb-3">{t('bestOpportunitiesOfDay')}</p>
+                    {selectedMarket === 'forex' && !isForexMarketOpen() && (
+                      <p className="text-xs text-rose-400 mb-2">
+                        {t('forexMarketClosedLabel')}
+                      </p>
+                    )}
                     {!canGenerateTop3() && (
                       <p className="text-xs text-amber-400 mb-2">
                         {t('availableIn', {minutes: Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)})}

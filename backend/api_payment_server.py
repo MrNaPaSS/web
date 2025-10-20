@@ -109,7 +109,7 @@ def create_payment():
         if not all([user_id, model_id, subscription_type, currency]):
             return jsonify({
                 "ok": False,
-                "error": "Отсутствуют обязательные параметры"
+                "error": "Missing required parameters"
             }), 400
         
         # Создаём инвойс
@@ -178,7 +178,7 @@ def check_payment(invoice_id):
         if not invoice_info.get('ok'):
             return jsonify({
                 "ok": False,
-                "error": "Инвойс не найден"
+                "error": "Invoice not found"
             }), 404
         
         invoices = invoice_info.get('result', {}).get('items', [])
@@ -186,7 +186,7 @@ def check_payment(invoice_id):
         if not invoices:
             return jsonify({
                 "ok": False,
-                "error": "Инвойс не найден"
+                "error": "Invoice not found"
             }), 404
         
         invoice = invoices[0]

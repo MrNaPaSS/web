@@ -269,8 +269,6 @@ async def generate_signal():
                             'type': signal.direction,
                             'direction': signal.direction,
                             'entry': signal.entry_price,
-                            'tp': signal.take_profit,
-                            'sl': signal.stop_loss,
                             'confidence': signal.confidence,
                             'expiration': signal.expiration_minutes,
                             'signal_type': 'forex',
@@ -296,8 +294,6 @@ async def generate_signal():
                         'type': signal.direction,
                         'direction': signal.direction,
                         'entry': signal.entry_price,
-                        'tp': signal.take_profit,
-                        'sl': signal.stop_loss,
                         'confidence': signal.confidence,
                         'expiration': signal.expiration_minutes,
                         'signal_type': 'forex',
@@ -322,13 +318,11 @@ async def generate_signal():
                             'type': signal.direction,
                             'direction': signal.direction,
                             'entry': str(signal.entry_price),
-                            'tp': [str(signal.target_price)],
-                            'sl': str(signal.stop_loss),
                             'confidence': signal.confidence,
                             'expiration': signal.duration,
                             'signal_type': 'otc',
                             'timestamp': datetime.now().isoformat(),
-                            'reasoning': signal.reasoning
+                            'reasoning': getattr(signal, 'reasoning', 'Технический анализ')
                         })
                         update_user_stats(user_id, 'otc')
             else:
@@ -349,13 +343,11 @@ async def generate_signal():
                         'type': signal.direction,
                         'direction': signal.direction,
                         'entry': str(signal.entry_price),
-                        'tp': [str(signal.target_price)],
-                        'sl': str(signal.stop_loss),
                         'confidence': signal.confidence,
-                        'expiration': signal.expiration_minutes,
+                        'expiration': signal.duration,
                         'signal_type': 'otc',
                         'timestamp': datetime.now().isoformat(),
-                        'reasoning': signal.reasoning
+                        'reasoning': getattr(signal, 'reasoning', 'Технический анализ')
                     })
                     update_user_stats(user_id, 'otc')
         
