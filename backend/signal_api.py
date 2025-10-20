@@ -305,18 +305,15 @@ async def generate_signal():
         else:  # OTC
             # РЕАЛЬНАЯ генерация ОТС сигналов
             if mode == 'top3':
-                # Генерируем ТОП-3 ОТС сигнала
-                pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)', 'GBP/USD (OTC)', 'USD/CAD (OTC)']
-                attempts = 0
-                max_attempts = 10  # Максимум попыток
+                # Генерируем ТОП-3 ОТС сигнала - используем тот же подход что и для Forex
+                print(f'[DEBUG] Генерируем ТОП-3 OTC сигналов')
                 
+                # Сначала пробуем получить реальные сигналы
+                pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)']
                 for p in pairs:
-                    if len(signals) >= 3:  # Остановка когда есть 3 сигнала
+                    if len(signals) >= 3:
                         break
-                    if attempts >= max_attempts:  # Остановка по количеству попыток
-                        break
-                        
-                    print(f'[DEBUG] Генерируем OTC сигнал для {p} (попытка {attempts + 1})')
+                    print(f'[DEBUG] Генерируем OTC сигнал для {p}')
                     signal = await otc_generator.generate_otc_signal(p)
                     print(f'[DEBUG] Результат генерации OTC: {signal}')
                     
@@ -334,14 +331,10 @@ async def generate_signal():
                             'reasoning': getattr(signal, 'reasoning', 'Технический анализ')
                         })
                         update_user_stats(user_id, 'otc')
-                        print(f'[SUCCESS] Добавлен сигнал {p}: {signal.confidence:.1%}')
-                    else:
-                        print(f'[SKIP] Сигнал {p} не прошел порог 60%')
-                    
-                    attempts += 1
+                        print(f'[SUCCESS] Добавлен реальный OTC сигнал {p}: {signal.confidence:.1%}')
                 
-                # Если не хватает сигналов, генерируем mock
-                while len(signals) < 3 and attempts < max_attempts:
+                # Если не хватает сигналов, добавляем mock до 3
+                while len(signals) < 3:
                     mock_pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)', 'GBP/USD (OTC)', 'USD/CAD (OTC)']
                     for mock_pair in mock_pairs:
                         if len(signals) >= 3:
@@ -350,19 +343,20 @@ async def generate_signal():
                             mock_signal = {
                                 'signal_id': f'mock_otc_{mock_pair.replace("/", "_").replace(" ", "_")}_{int(datetime.now().timestamp())}',
                                 'pair': mock_pair,
-                                'type': 'BUY' if attempts % 2 == 0 else 'SELL',
-                                'direction': 'BUY' if attempts % 2 == 0 else 'SELL',
-                                'entry': str(round(1.0 + (attempts * 0.1), 4)),
-                                'confidence': 0.75 + (attempts * 0.05),
-                                'expiration': 2 + (attempts % 3),
+                                'type': 'BUY' if len(signals) % 2 == 0 else 'SELL',
+                                'direction': 'BUY' if len(signals) % 2 == 0 else 'SELL',
+                                'entry': str(round(1.0 + (len(signals) * 0.1), 4)),
+                                'confidence': 0.75 + (len(signals) * 0.05),
+                                'expiration': 2 + (len(signals) % 3),
                                 'signal_type': 'otc',
                                 'timestamp': datetime.now().isoformat(),
                                 'reasoning': 'Mock сигнал для демонстрации'
                             }
                             signals.append(mock_signal)
                             print(f'[MOCK] Добавлен mock сигнал {mock_pair}')
-                            attempts += 1
                             break
+                
+                print(f'[SUCCESS] Сгенерировано {len(signals)} сигналов для user {user_id}')
             else:
                 # Одиночный ОТС сигнал
                 if not pair:
