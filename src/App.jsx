@@ -793,7 +793,74 @@ function App() {
       userDeleted: '✅ Пользователь {name} удалён из системы',
       userDeleteError: '❌ Ошибка удаления пользователя {name}',
       accessRequestApproved: '✅ Заявка на доступ одобрена для {name}',
-      accessRequestError: '❌ Ошибка одобрения заявки для {name}'
+      accessRequestError: '❌ Ошибка одобрения заявки для {name}',
+      // Новые переводы для хардкод строк
+      popular: 'Популярно',
+      bestOpportunitiesOfDay: 'Лучшие возможности дня',
+      threeBestSignalsSimultaneously: '3 лучших сигнала одновременно',
+      highSuccessProbability: 'Высокая вероятность успеха',
+      riskDiversification: 'Диверсификация рисков',
+      focusOnOneTrade: 'Фокус на одной сделке',
+      simpleManagement: 'Простое управление',
+      idealForBeginners: 'Идеально для начинающих',
+      analysis: 'Анализ',
+      accuracy: 'Точность',
+      selectSignalForActivation: 'Выберите сигнал для активации',
+      selectPairForSignalGeneration: 'Выберите пару для генерации сигнала',
+      marketState: 'Состояние рынка',
+      mood: 'Настроение',
+      volatility: 'Волатильность',
+      recommendation: 'Рекомендация:',
+      clickToGenerateSignal: 'Нажмите для генерации сигнала',
+      selectSignal: 'Выберите сигнал',
+      selectSignalForAnalysis: 'Выберите сигнал для анализа',
+      aiWillAnalyzeAndGiveRecommendations: 'AI проанализирует сделку и даст рекомендации',
+      noExecutedSignals: 'Нет исполненных сигналов',
+      executeSeveralDealsToSeeInAnalytics: 'Выполните несколько сделок, чтобы увидеть их в аналитике',
+      expiration: 'Экспирация',
+      dealActivated: 'СДЕЛКА АКТИВИРОВАНА',
+      navigationLocked: 'Навигация заблокирована',
+      timeRemainingUntilExpiration: 'Осталось до экспирации',
+      howDidTheDealGo: 'Как прошла сделка?',
+      generationMode: 'Режим генерации',
+      signalGeneration: 'Генерация сигналов',
+      howDoYouWantToReceiveSignals: 'Как вы хотите получать сигналы?',
+      top3Signals: 'ТОП-3 сигнала',
+      singleSignals: 'Одиночные сигналы',
+      oneSignalAtATime: 'По одному сигналу за раз',
+      allUsersStatistics: 'Статистика всех пользователей',
+      mlModelSelection: 'Выбор ML модели',
+      or: 'или',
+      aboutMLModels: 'О ML моделях',
+      purchaseModel: 'Покупка {name}',
+      signalsChartByMonth: 'График сигналов по месяцам',
+      successfulLosing: 'успешных/проигрышных',
+      accessRequests: 'Заявки на доступ',
+      signalsPerDay: 'Сигналов в день',
+      bestPair: 'Лучшая пара',
+      worstPair: 'Худшая пара',
+      quickTemplates: 'Быстрые шаблоны',
+      subscriptionManagement: 'Управление подписками',
+      selectMLModels: 'Выберите ML модели:',
+      availableModels: 'Доступные модели:',
+      premiumMLModels: 'Премиум ML-модели',
+      activeSignals: 'Активных сигналов',
+      progressToTP1: 'Прогресс к TP1',
+      waitingForEntry: 'Ожидание входа',
+      vipFunction: 'VIP Функция',
+      winRate: 'Win Rate',
+      pleaseWaitSystemAnalyzing: 'Пожалуйста, подождите. Система анализирует рынок...',
+      forexSignalsPro: 'Forex Signals Pro',
+      accurateSignals: 'Точные сигналы',
+      successfulTradesPercent: '87% успешных сделок',
+      instantNotifications: 'Мгновенные уведомления',
+      realTimeSignals: 'Получайте сигналы в реальном времени',
+      premiumQuality: 'Премиум качество',
+      professionalMarketAnalysis: 'Профессиональный анализ рынка',
+      forex: 'Forex',
+      otc: 'OTC',
+      top3: 'ТОП-3',
+      single: 'Одиночные'
     },
     en: {
       welcome: 'Welcome',
@@ -987,7 +1054,74 @@ function App() {
       // Системные сообщения
       userAdded: 'User added to system',
       errorOccurred: 'An error occurred',
-      loadingData: 'Loading data...'
+      loadingData: 'Loading data...',
+      // Новые переводы для хардкод строк
+      popular: 'Popular',
+      bestOpportunitiesOfDay: 'Best opportunities of the day',
+      threeBestSignalsSimultaneously: '3 best signals simultaneously',
+      highSuccessProbability: 'High probability of success',
+      riskDiversification: 'Risk diversification',
+      focusOnOneTrade: 'Focus on one trade',
+      simpleManagement: 'Simple management',
+      idealForBeginners: 'Ideal for beginners',
+      analysis: 'Analysis',
+      accuracy: 'Accuracy',
+      selectSignalForActivation: 'Select signal for activation',
+      selectPairForSignalGeneration: 'Select pair for signal generation',
+      marketState: 'Market state',
+      mood: 'Mood',
+      volatility: 'Volatility',
+      recommendation: 'Recommendation:',
+      clickToGenerateSignal: 'Click to generate signal',
+      selectSignal: 'Select signal',
+      selectSignalForAnalysis: 'Select signal for analysis',
+      aiWillAnalyzeAndGiveRecommendations: 'AI will analyze the deal and give recommendations',
+      noExecutedSignals: 'No executed signals',
+      executeSeveralDealsToSeeInAnalytics: 'Execute several deals to see them in analytics',
+      expiration: 'Expiration',
+      dealActivated: 'DEAL ACTIVATED',
+      navigationLocked: 'Navigation locked',
+      timeRemainingUntilExpiration: 'Time remaining until expiration',
+      howDidTheDealGo: 'How did the deal go?',
+      generationMode: 'Generation mode',
+      signalGeneration: 'Signal generation',
+      howDoYouWantToReceiveSignals: 'How do you want to receive signals?',
+      top3Signals: 'TOP-3 signals',
+      singleSignals: 'Single signals',
+      oneSignalAtATime: 'One signal at a time',
+      allUsersStatistics: 'All users statistics',
+      mlModelSelection: 'ML model selection',
+      or: 'or',
+      aboutMLModels: 'About ML models',
+      purchaseModel: 'Purchase {name}',
+      signalsChartByMonth: 'Signals chart by month',
+      successfulLosing: 'successful/losing',
+      accessRequests: 'Access requests',
+      signalsPerDay: 'Signals per day',
+      bestPair: 'Best pair',
+      worstPair: 'Worst pair',
+      quickTemplates: 'Quick templates',
+      subscriptionManagement: 'Subscription management',
+      selectMLModels: 'Select ML models:',
+      availableModels: 'Available models:',
+      premiumMLModels: 'Premium ML models',
+      activeSignals: 'Active signals',
+      progressToTP1: 'Progress to TP1',
+      waitingForEntry: 'Waiting for entry',
+      vipFunction: 'VIP Function',
+      winRate: 'Win Rate',
+      pleaseWaitSystemAnalyzing: 'Please wait. The system is analyzing the market...',
+      forexSignalsPro: 'Forex Signals Pro',
+      accurateSignals: 'Accurate signals',
+      successfulTradesPercent: '87% successful trades',
+      instantNotifications: 'Instant notifications',
+      realTimeSignals: 'Receive signals in real-time',
+      premiumQuality: 'Premium quality',
+      professionalMarketAnalysis: 'Professional market analysis',
+      forex: 'Forex',
+      otc: 'OTC',
+      top3: 'TOP-3',
+      single: 'Single'
     },
     th: {
       welcome: 'ยินดีต้อนรับ',
@@ -1165,7 +1299,74 @@ function App() {
       // Системные сообщения
       userAdded: 'เพิ่มผู้ใช้เข้าระบบแล้ว',
       errorOccurred: 'เกิดข้อผิดพลาด',
-      loadingData: 'กำลังโหลดข้อมูล...'
+      loadingData: 'กำลังโหลดข้อมูล...',
+      // Новые переводы для хардкод строк
+      popular: 'ยอดนิยม',
+      bestOpportunitiesOfDay: 'โอกาสที่ดีที่สุดของวัน',
+      threeBestSignalsSimultaneously: '3 สัญญาณที่ดีที่สุดพร้อมกัน',
+      highSuccessProbability: 'ความน่าจะเป็นของความสำเร็จสูง',
+      riskDiversification: 'การกระจายความเสี่ยง',
+      focusOnOneTrade: 'มุ่งเน้นที่การเทรดหนึ่งครั้ง',
+      simpleManagement: 'การจัดการง่าย',
+      idealForBeginners: 'เหมาะสำหรับผู้เริ่มต้น',
+      analysis: 'การวิเคราะห์',
+      accuracy: 'ความแม่นยำ',
+      selectSignalForActivation: 'เลือกสัญญาณเพื่อเปิดใช้งาน',
+      selectPairForSignalGeneration: 'เลือกคู่สำหรับการสร้างสัญญาณ',
+      marketState: 'สถานะตลาด',
+      mood: 'อารมณ์',
+      volatility: 'ความผันผวน',
+      recommendation: 'คำแนะนำ:',
+      clickToGenerateSignal: 'คลิกเพื่อสร้างสัญญาณ',
+      selectSignal: 'เลือกสัญญาณ',
+      selectSignalForAnalysis: 'เลือกสัญญาณเพื่อการวิเคราะห์',
+      aiWillAnalyzeAndGiveRecommendations: 'AI จะวิเคราะห์การเทรดและให้คำแนะนำ',
+      noExecutedSignals: 'ไม่มีสัญญาณที่ดำเนินการ',
+      executeSeveralDealsToSeeInAnalytics: 'ดำเนินการเทรดหลายครั้งเพื่อดูในการวิเคราะห์',
+      eviration: 'หมดอายุ',
+      dealActivated: 'เทรดเปิดใช้งานแล้ว',
+      navigationLocked: 'การนำทางถูกล็อก',
+      timeRemainingUntilExpiration: 'เวลาที่เหลือจนกว่าจะหมดอายุ',
+      howDidTheDealGo: 'การเทรดเป็นอย่างไร?',
+      generationMode: 'โหมดการสร้าง',
+      signalGeneration: 'การสร้างสัญญาณ',
+      howDoYouWantToReceiveSignals: 'คุณต้องการรับสัญญาณอย่างไร?',
+      top3Signals: 'สัญญาณ 3 อันดับแรก',
+      singleSignals: 'สัญญาณเดี่ยว',
+      oneSignalAtATime: 'หนึ่งสัญญาณต่อครั้ง',
+      allUsersStatistics: 'สถิติผู้ใช้ทั้งหมด',
+      mlModelSelection: 'การเลือกโมเดล ML',
+      or: 'หรือ',
+      aboutMLModels: 'เกี่ยวกับโมเดล ML',
+      purchaseModel: 'ซื้อ {name}',
+      signalsChartByMonth: 'แผนภูมิสัญญาณตามเดือน',
+      successfulLosing: 'สำเร็จ/แพ้',
+      accessRequests: 'คำขอเข้าถึง',
+      signalsPerDay: 'สัญญาณต่อวัน',
+      bestPair: 'คู่ที่ดีที่สุด',
+      worstPair: 'คู่ที่แย่ที่สุด',
+      quickTemplates: 'เทมเพลตด่วน',
+      subscriptionManagement: 'การจัดการการสมัครสมาชิก',
+      selectMLModels: 'เลือกโมเดล ML:',
+      availableModels: 'โมเดลที่มี:',
+      premiumMLModels: 'โมเดล ML พรีเมียม',
+      activeSignals: 'สัญญาณที่ใช้งานอยู่',
+      progressToTP1: 'ความคืบหน้าไปยัง TP1',
+      waitingForEntry: 'รอการเข้า',
+      vipFunction: 'ฟังก์ชัน VIP',
+      winRate: 'อัตราชนะ',
+      pleaseWaitSystemAnalyzing: 'โปรดรอ ระบบกำลังวิเคราะห์ตลาด...',
+      forexSignalsPro: 'Forex Signals Pro',
+      accurateSignals: 'สัญญาณที่แม่นยำ',
+      successfulTradesPercent: '87% การเทรดที่สำเร็จ',
+      instantNotifications: 'การแจ้งเตือนทันที',
+      realTimeSignals: 'รับสัญญาณแบบเรียลไทม์',
+      premiumQuality: 'คุณภาพพรีเมียม',
+      professionalMarketAnalysis: 'การวิเคราะห์ตลาดมืออาชีพ',
+      forex: 'Forex',
+      otc: 'OTC',
+      top3: 'TOP-3',
+      single: 'เดี่ยว'
     },
     es: {
       welcome: 'Bienvenido',
@@ -1401,7 +1602,74 @@ function App() {
       userDeleted: '✅ Usuario {name} eliminado del sistema',
       userDeleteError: '❌ Error al eliminar usuario {name}',
       accessRequestApproved: '✅ Solicitud de acceso aprobada para {name}',
-      accessRequestError: '❌ Error al aprobar solicitud para {name}'
+      accessRequestError: '❌ Error al aprobar solicitud para {name}',
+      // Новые переводы для хардкод строк
+      popular: 'Popular',
+      bestOpportunitiesOfDay: 'Mejores oportunidades del día',
+      threeBestSignalsSimultaneously: '3 mejores señales simultáneamente',
+      highSuccessProbability: 'Alta probabilidad de éxito',
+      riskDiversification: 'Diversificación de riesgos',
+      focusOnOneTrade: 'Enfócate en una operación',
+      simpleManagement: 'Gestión simple',
+      idealForBeginners: 'Ideal para principiantes',
+      analysis: 'Análisis',
+      accuracy: 'Precisión',
+      selectSignalForActivation: 'Selecciona señal para activar',
+      selectPairForSignalGeneration: 'Selecciona par para generar señal',
+      marketState: 'Estado del mercado',
+      mood: 'Estado de ánimo',
+      volatility: 'Volatilidad',
+      recommendation: 'Recomendación:',
+      clickToGenerateSignal: 'Haz clic para generar señal',
+      selectSignal: 'Seleccionar señal',
+      selectSignalForAnalysis: 'Selecciona señal para análisis',
+      aiWillAnalyzeAndGiveRecommendations: 'IA analizará la operación y dará recomendaciones',
+      noExecutedSignals: 'No hay señales ejecutadas',
+      executeSeveralDealsToSeeInAnalytics: 'Ejecuta varias operaciones para verlas en analíticas',
+      expiration: 'Expiración',
+      dealActivated: 'OPERACIÓN ACTIVADA',
+      navigationLocked: 'Navegación bloqueada',
+      timeRemainingUntilExpiration: 'Tiempo restante hasta expiración',
+      howDidTheDealGo: '¿Cómo fue la operación?',
+      generationMode: 'Modo de generación',
+      signalGeneration: 'Generación de señales',
+      howDoYouWantToReceiveSignals: '¿Cómo quieres recibir señales?',
+      top3Signals: 'TOP-3 señales',
+      singleSignals: 'Señales individuales',
+      oneSignalAtATime: 'Una señal a la vez',
+      allUsersStatistics: 'Estadísticas de todos los usuarios',
+      mlModelSelection: 'Selección de modelo ML',
+      or: 'o',
+      aboutMLModels: 'Acerca de modelos ML',
+      purchaseModel: 'Comprar {name}',
+      signalsChartByMonth: 'Gráfico de señales por mes',
+      successfulLosing: 'exitosas/perdidas',
+      accessRequests: 'Solicitudes de acceso',
+      signalsPerDay: 'Señales por día',
+      bestPair: 'Mejor par',
+      worstPair: 'Peor par',
+      quickTemplates: 'Plantillas rápidas',
+      subscriptionManagement: 'Gestión de suscripciones',
+      selectMLModels: 'Selecciona modelos ML:',
+      availableModels: 'Modelos disponibles:',
+      premiumMLModels: 'Modelos ML premium',
+      activeSignals: 'Señales activas',
+      progressToTP1: 'Progreso hacia TP1',
+      waitingForEntry: 'Esperando entrada',
+      vipFunction: 'Función VIP',
+      winRate: 'Tasa de ganancia',
+      pleaseWaitSystemAnalyzing: 'Por favor espera. El sistema está analizando el mercado...',
+      forexSignalsPro: 'Forex Signals Pro',
+      accurateSignals: 'Señales precisas',
+      successfulTradesPercent: '87% operaciones exitosas',
+      instantNotifications: 'Notificaciones instantáneas',
+      realTimeSignals: 'Recibe señales en tiempo real',
+      premiumQuality: 'Calidad premium',
+      professionalMarketAnalysis: 'Análisis profesional del mercado',
+      forex: 'Forex',
+      otc: 'OTC',
+      top3: 'TOP-3',
+      single: 'Individual'
     },
     fr: {
       welcome: 'Bienvenue',
@@ -1637,7 +1905,74 @@ function App() {
       userDeleted: '✅ Utilisateur {name} supprimé du système',
       userDeleteError: '❌ Erreur lors de la suppression de l\'utilisateur {name}',
       accessRequestApproved: '✅ Demande d\'accès approuvée pour {name}',
-      accessRequestError: '❌ Erreur lors de l\'approbation de la demande pour {name}'
+      accessRequestError: '❌ Erreur lors de l\'approbation de la demande pour {name}',
+      // Новые переводы для хардкод строк
+      popular: 'Populaire',
+      bestOpportunitiesOfDay: 'Meilleures opportunités du jour',
+      threeBestSignalsSimultaneously: '3 meilleurs signaux simultanément',
+      highSuccessProbability: 'Probabilité de succès élevée',
+      riskDiversification: 'Diversification des risques',
+      focusOnOneTrade: 'Focus sur un trade',
+      simpleManagement: 'Gestion simple',
+      idealForBeginners: 'Idéal pour les débutants',
+      analysis: 'Analyse',
+      accuracy: 'Précision',
+      selectSignalForActivation: 'Sélectionnez le signal à activer',
+      selectPairForSignalGeneration: 'Sélectionnez la paire pour générer le signal',
+      marketState: 'État du marché',
+      mood: 'Humeur',
+      volatility: 'Volatilité',
+      recommendation: 'Recommandation:',
+      clickToGenerateSignal: 'Cliquez pour générer le signal',
+      selectSignal: 'Sélectionnez le signal',
+      selectSignalForAnalysis: 'Sélectionnez le signal à analyser',
+      aiWillAnalyzeAndGiveRecommendations: 'L\'IA analysera le trade et donnera des recommandations',
+      noExecutedSignals: 'Aucun signal exécuté',
+      executeSeveralDealsToSeeInAnalytics: 'Exécutez plusieurs trades pour les voir dans l\'analytique',
+      expiration: 'Expiration',
+      dealActivated: 'TRADE ACTIVÉ',
+      navigationLocked: 'Navigation verrouillée',
+      timeRemainingUntilExpiration: 'Temps restant jusqu\'à expiration',
+      howDidTheDealGo: 'Comment s\'est passé le trade?',
+      generationMode: 'Mode de génération',
+      signalGeneration: 'Génération de signaux',
+      howDoYouWantToReceiveSignals: 'Comment voulez-vous recevoir les signaux?',
+      top3Signals: 'TOP-3 signaux',
+      singleSignals: 'Signaux individuels',
+      oneSignalAtATime: 'Un signal à la fois',
+      allUsersStatistics: 'Statistiques de tous les utilisateurs',
+      mlModelSelection: 'Sélection du modèle ML',
+      or: 'ou',
+      aboutMLModels: 'À propos des modèles ML',
+      purchaseModel: 'Acheter {name}',
+      signalsChartByMonth: 'Graphique des signaux par mois',
+      successfulLosing: 'réussis/échoués',
+      accessRequests: 'Demandes d\'accès',
+      signalsPerDay: 'Signaux par jour',
+      bestPair: 'Meilleure paire',
+      worstPair: 'Pire paire',
+      quickTemplates: 'Modèles rapides',
+      subscriptionManagement: 'Gestion des abonnements',
+      selectMLModels: 'Sélectionnez les modèles ML:',
+      availableModels: 'Modèles disponibles:',
+      premiumMLModels: 'Modèles ML premium',
+      activeSignals: 'Signaux actifs',
+      progressToTP1: 'Progrès vers TP1',
+      waitingForEntry: 'En attente d\'entrée',
+      vipFunction: 'Fonction VIP',
+      winRate: 'Taux de réussite',
+      pleaseWaitSystemAnalyzing: 'Veuillez patienter. Le système analyse le marché...',
+      forexSignalsPro: 'Forex Signals Pro',
+      accurateSignals: 'Signaux précis',
+      successfulTradesPercent: '87% de trades réussis',
+      instantNotifications: 'Notifications instantanées',
+      realTimeSignals: 'Recevez des signaux en temps réel',
+      premiumQuality: 'Qualité premium',
+      professionalMarketAnalysis: 'Analyse professionnelle du marché',
+      forex: 'Forex',
+      otc: 'OTC',
+      top3: 'TOP-3',
+      single: 'Individuel'
     },
     de: {
       welcome: 'Willkommen',
@@ -1873,7 +2208,74 @@ function App() {
       userDeleted: '✅ Benutzer {name} aus dem System gelöscht',
       userDeleteError: '❌ Fehler beim Löschen des Benutzers {name}',
       accessRequestApproved: '✅ Zugriffsanfrage für {name} genehmigt',
-      accessRequestError: '❌ Fehler beim Genehmigen der Anfrage für {name}'
+      accessRequestError: '❌ Fehler beim Genehmigen der Anfrage für {name}',
+      // Новые переводы для хардкод строк
+      popular: 'Beliebt',
+      bestOpportunitiesOfDay: 'Beste Chancen des Tages',
+      threeBestSignalsSimultaneously: '3 beste Signale gleichzeitig',
+      highSuccessProbability: 'Hohe Erfolgswahrscheinlichkeit',
+      riskDiversification: 'Risikodiversifizierung',
+      focusOnOneTrade: 'Fokus auf einen Trade',
+      simpleManagement: 'Einfache Verwaltung',
+      idealForBeginners: 'Ideal für Anfänger',
+      analysis: 'Analyse',
+      accuracy: 'Genauigkeit',
+      selectSignalForActivation: 'Signal zur Aktivierung auswählen',
+      selectPairForSignalGeneration: 'Paar für Signalgenerierung auswählen',
+      marketState: 'Marktstatus',
+      mood: 'Stimmung',
+      volatility: 'Volatilität',
+      recommendation: 'Empfehlung:',
+      clickToGenerateSignal: 'Klicken Sie, um Signal zu generieren',
+      selectSignal: 'Signal auswählen',
+      selectSignalForAnalysis: 'Signal zur Analyse auswählen',
+      aiWillAnalyzeAndGiveRecommendations: 'KI wird den Trade analysieren und Empfehlungen geben',
+      noExecutedSignals: 'Keine ausgeführten Signale',
+      executeSeveralDealsToSeeInAnalytics: 'Führen Sie mehrere Trades aus, um sie in der Analytik zu sehen',
+      expiration: 'Ablauf',
+      dealActivated: 'TRADE AKTIVIERT',
+      navigationLocked: 'Navigation gesperrt',
+      timeRemainingUntilExpiration: 'Verbleibende Zeit bis Ablauf',
+      howDidTheDealGo: 'Wie ist der Trade gelaufen?',
+      generationMode: 'Generierungsmodus',
+      signalGeneration: 'Signalgenerierung',
+      howDoYouWantToReceiveSignals: 'Wie möchten Sie Signale erhalten?',
+      top3Signals: 'TOP-3 Signale',
+      singleSignals: 'Einzelsignale',
+      oneSignalAtATime: 'Ein Signal zur Zeit',
+      allUsersStatistics: 'Statistiken aller Benutzer',
+      mlModelSelection: 'ML-Modellauswahl',
+      or: 'oder',
+      aboutMLModels: 'Über ML-Modelle',
+      purchaseModel: 'Kaufen {name}',
+      signalsChartByMonth: 'Signaldiagramm nach Monaten',
+      successfulLosing: 'erfolgreich/verloren',
+      accessRequests: 'Zugriffsanfragen',
+      signalsPerDay: 'Signale pro Tag',
+      bestPair: 'Beste Paar',
+      worstPair: 'Schlechteste Paar',
+      quickTemplates: 'Schnelle Vorlagen',
+      subscriptionManagement: 'Abonnementverwaltung',
+      selectMLModels: 'ML-Modelle auswählen:',
+      availableModels: 'Verfügbare Modelle:',
+      premiumMLModels: 'Premium ML-Modelle',
+      activeSignals: 'Aktive Signale',
+      progressToTP1: 'Fortschritt zu TP1',
+      waitingForEntry: 'Warten auf Einstieg',
+      vipFunction: 'VIP-Funktion',
+      winRate: 'Gewinnrate',
+      pleaseWaitSystemAnalyzing: 'Bitte warten. Das System analysiert den Markt...',
+      forexSignalsPro: 'Forex Signals Pro',
+      accurateSignals: 'Präzise Signale',
+      successfulTradesPercent: '87% erfolgreiche Trades',
+      instantNotifications: 'Sofortige Benachrichtigungen',
+      realTimeSignals: 'Erhalten Sie Signale in Echtzeit',
+      premiumQuality: 'Premium-Qualität',
+      professionalMarketAnalysis: 'Professionelle Marktanalyse',
+      forex: 'Forex',
+      otc: 'OTC',
+      top3: 'TOP-3',
+      single: 'Einzel'
     },
     it: {
       welcome: 'Benvenuto',
@@ -2581,7 +2983,74 @@ function App() {
       userDeleted: '✅ 用户{name}已从系统中删除',
       userDeleteError: '❌ 删除用户{name}时出错',
       accessRequestApproved: '✅ 用户{name}的访问请求已批准',
-      accessRequestError: '❌ 批准用户{name}请求时出错'
+      accessRequestError: '❌ 批准用户{name}请求时出错',
+      // Новые переводы для хардкод строк
+      popular: '热门',
+      bestOpportunitiesOfDay: '一天中最好的机会',
+      threeBestSignalsSimultaneously: '3个最佳信号同时',
+      highSuccessProbability: '高成功率',
+      riskDiversification: '风险分散',
+      focusOnOneTrade: '专注于一笔交易',
+      simpleManagement: '简单管理',
+      idealForBeginners: '适合初学者',
+      analysis: '分析',
+      accuracy: '准确性',
+      selectSignalForActivation: '选择要激活的信号',
+      selectPairForSignalGeneration: '选择用于生成信号的货币对',
+      marketState: '市场状态',
+      mood: '情绪',
+      volatility: '波动性',
+      recommendation: '推荐：',
+      clickToGenerateSignal: '点击生成信号',
+      selectSignal: '选择信号',
+      selectSignalForAnalysis: '选择要分析的信号',
+      aiWillAnalyzeAndGiveRecommendations: 'AI将分析交易并提供建议',
+      noExecutedSignals: '没有已执行的信号',
+      executeSeveralDealsToSeeInAnalytics: '执行几笔交易以在分析中查看它们',
+      expiration: '到期',
+      dealActivated: '交易已激活',
+      navigationLocked: '导航已锁定',
+      timeRemainingUntilExpiration: '到期剩余时间',
+      howDidTheDealGo: '交易进行得如何？',
+      generationMode: '生成模式',
+      signalGeneration: '信号生成',
+      howDoYouWantToReceiveSignals: '您想如何接收信号？',
+      top3Signals: '前3信号',
+      singleSignals: '单一信号',
+      oneSignalAtATime: '一次一个信号',
+      allUsersStatistics: '所有用户统计',
+      mlModelSelection: 'ML模型选择',
+      or: '或',
+      aboutMLModels: '关于ML模型',
+      purchaseModel: '购买{name}',
+      signalsChartByMonth: '按月信号图表',
+      successfulLosing: '成功/失败',
+      accessRequests: '访问请求',
+      signalsPerDay: '每日信号数',
+      bestPair: '最佳货币对',
+      worstPair: '最差货币对',
+      quickTemplates: '快速模板',
+      subscriptionManagement: '订阅管理',
+      selectMLModels: '选择ML模型：',
+      availableModels: '可用模型：',
+      premiumMLModels: '高级ML模型',
+      activeSignals: '活跃信号',
+      progressToTP1: '到TP1的进度',
+      waitingForEntry: '等待入场',
+      vipFunction: 'VIP功能',
+      winRate: '胜率',
+      pleaseWaitSystemAnalyzing: '请稍等。系统正在分析市场...',
+      forexSignalsPro: 'Forex Signals Pro',
+      accurateSignals: '准确信号',
+      successfulTradesPercent: '87%成功交易',
+      instantNotifications: '即时通知',
+      realTimeSignals: '实时接收信号',
+      premiumQuality: '高级质量',
+      professionalMarketAnalysis: '专业市场分析',
+      forex: 'Forex',
+      otc: 'OTC',
+      top3: '前3',
+      single: '单一'
     },
     ja: {
       welcome: 'ようこそ',
@@ -4872,7 +5341,7 @@ ${isLoss ? `
             <h1 className="text-4xl font-bold text-white">
               {t('welcomeTo')}
               <span className="block bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent mt-2">
-                Forex Signals Pro
+                {t('forexSignalsPro')}
               </span>
             </h1>
             <p className="text-slate-400 text-lg">
@@ -4889,7 +5358,7 @@ ${isLoss ? `
                 </div>
                 <div>
                   <h3 className="text-white font-semibold">{t('accurateSignals')}</h3>
-                  <p className="text-slate-400 text-sm">{t('successfulTrades')}</p>
+                  <p className="text-slate-400 text-sm">{t('successfulTradesPercent')}</p>
                 </div>
               </div>
             </Card>
@@ -4913,7 +5382,7 @@ ${isLoss ? `
                 </div>
                 <div>
                   <h3 className="text-white font-semibold">{t('premiumQuality')}</h3>
-                  <p className="text-slate-400 text-sm">{t('professionalAnalysis')}</p>
+                  <p className="text-slate-400 text-sm">{t('professionalMarketAnalysis')}</p>
                 </div>
               </div>
             </Card>
@@ -5094,7 +5563,7 @@ ${isLoss ? `
 
           {/* Generation Status */}
           <Card className="glass-effect border-cyan-500/30 p-8 card-3d shadow-2xl text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">🧠 Генерация сигналов</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">🧠 {t('signalGeneration')}</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-3">
                 <Activity className="w-6 h-6 text-cyan-400 animate-pulse" />
@@ -5111,7 +5580,7 @@ ${isLoss ? `
               <div className="grid grid-cols-3 gap-4 mt-6">
                 <div className="p-4 bg-slate-800/50 rounded-lg border border-cyan-500/30">
                   <BarChart3 className="w-6 h-6 text-cyan-400 mx-auto mb-2 animate-bounce" />
-                  <p className="text-xs text-slate-400">Анализ</p>
+                  <p className="text-xs text-slate-400">{t('analysis')}</p>
                 </div>
                 <div className="p-4 bg-slate-800/50 rounded-lg border border-purple-500/30">
                   <Brain className="w-6 h-6 text-purple-400 mx-auto mb-2 animate-spin-slow" />
@@ -5119,14 +5588,14 @@ ${isLoss ? `
                 </div>
                 <div className="p-4 bg-slate-800/50 rounded-lg border border-emerald-500/30">
                   <Target className="w-6 h-6 text-emerald-400 mx-auto mb-2 animate-pulse" />
-                  <p className="text-xs text-slate-400">Точность</p>
+                  <p className="text-xs text-slate-400">{t('accuracy')}</p>
                 </div>
               </div>
             </div>
           </Card>
 
           <p className="text-slate-400 text-center text-sm">
-            Пожалуйста, подождите. Система анализирует рынок...
+            {t('pleaseWaitSystemAnalyzing')}
           </p>
         </div>
       </div>
@@ -5360,9 +5829,9 @@ ${isLoss ? `
             <>
               <div className="mb-6 text-center">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  📊 Состояние рынка
+                  📊 {t('marketState')}
                 </h2>
-                <p className="text-slate-400">Выберите пару для генерации сигнала</p>
+                <p className="text-slate-400">{t('selectPairForSignalGeneration')}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -5410,7 +5879,7 @@ ${isLoss ? `
                   {/* Market Status */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                      <span className="text-slate-400 text-xs block mb-1">Настроение</span>
+                      <span className="text-slate-400 text-xs block mb-1">{t('mood')}</span>
                       <Badge className={`${
                         market.sentiment === 'Бычий' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' :
                         market.sentiment === 'Медвежий' ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' :
@@ -5420,14 +5889,14 @@ ${isLoss ? `
                       </Badge>
                     </div>
                     <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                      <span className="text-slate-400 text-xs block mb-1">Волатильность</span>
+                      <span className="text-slate-400 text-xs block mb-1">{t('volatility')}</span>
                       <span className="text-white font-bold">{market.volatility}%</span>
                     </div>
                   </div>
 
                   {/* Trend Indicator */}
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400 text-sm">Рекомендация:</span>
+                    <span className="text-slate-400 text-sm">{t('recommendation')}</span>
                     <Badge className={`${
                       market.trend === 'BUY' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' :
                       market.trend === 'SELL' ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' :
@@ -5439,7 +5908,7 @@ ${isLoss ? `
 
                   {/* Click to Generate */}
                   <div className="text-center pt-2">
-                    <span className="text-emerald-400 text-sm font-semibold">Нажмите для генерации сигнала</span>
+                    <span className="text-emerald-400 text-sm font-semibold">{t('clickToGenerateSignal')}</span>
                   </div>
                 </div>
               </Card>
@@ -5597,8 +6066,8 @@ ${isLoss ? `
             // List of completed signals
             <>
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-white mb-2">Выберите сигнал для анализа</h2>
-                <p className="text-slate-400">AI проанализирует сделку и даст рекомендации</p>
+                <h2 className="text-2xl font-bold text-white mb-2">{t('selectSignalForAnalysis')}</h2>
+                <p className="text-slate-400">{t('aiWillAnalyzeAndGiveRecommendations')}</p>
               </div>
 
               <div className="space-y-4">
@@ -5685,8 +6154,8 @@ ${isLoss ? `
                     <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
                       <BarChart3 className="w-8 h-8 text-slate-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Нет исполненных сигналов</h3>
-                    <p className="text-slate-400">Выполните несколько сделок, чтобы увидеть их в аналитике</p>
+                    <h3 className="text-lg font-semibold text-white mb-2">{t('noExecutedSignals')}</h3>
+                    <p className="text-slate-400">{t('executeSeveralDealsToSeeInAnalytics')}</p>
                   </div>
                 )}
               </div>
@@ -5895,8 +6364,8 @@ ${isLoss ? `
                   <Lock className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">СДЕЛКА АКТИВИРОВАНА</h1>
-                  <p className="text-red-400 text-sm">Навигация заблокирована</p>
+                  <h1 className="text-xl font-bold text-white">{t('dealActivated')}</h1>
+                  <p className="text-red-400 text-sm">{t('navigationLocked')}</p>
                 </div>
               </div>
             </div>
@@ -5941,7 +6410,7 @@ ${isLoss ? `
                       {Math.floor(signalTimer / 60)}:{(signalTimer % 60).toString().padStart(2, '0')}
                     </span>
                   </div>
-                  <p className="text-slate-400 mb-4">Осталось до экспирации</p>
+                  <p className="text-slate-400 mb-4">{t('timeRemainingUntilExpiration')}</p>
                   <div className="w-full bg-slate-700 rounded-full h-3">
                     <div 
                       className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-1000"
@@ -5957,7 +6426,7 @@ ${isLoss ? `
                   <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
                     <Shield className="w-4 h-4 text-red-400" />
                   </div>
-                  <span className="text-blue-400 font-semibold">Навигация заблокирована</span>
+                  <span className="text-blue-400 font-semibold">{t('navigationLocked')}</span>
                 </div>
                 <p className="text-slate-400">
                   Дождитесь экспирации сигнала и оставьте фидбек
@@ -5968,7 +6437,7 @@ ${isLoss ? `
               {isWaitingFeedback && (
                 <Card className="glass-effect backdrop-blur-sm border-cyan-500/50 p-6 shadow-xl shadow-cyan-500/20">
                   <div className="text-center">
-                    <p className="text-white mb-4 text-lg">Как прошла сделка?</p>
+                    <p className="text-white mb-4 text-lg">{t('howDidTheDealGo')}</p>
                     <div className="flex gap-4 justify-center">
                       <Button 
                         onClick={() => submitFeedback(true)}
@@ -6382,8 +6851,8 @@ ${isLoss ? `
         <div className="max-w-md w-full space-y-8 animate-fade-in relative z-10 perspective-container">
           {/* Header */}
           <div className="text-center space-y-2">
-            <h2 className="text-3xl font-bold text-white">Режим генерации</h2>
-            <p className="text-slate-400">Как вы хотите получать сигналы?</p>
+            <h2 className="text-3xl font-bold text-white">{t('generationMode')}</h2>
+            <p className="text-slate-400">{t('howDoYouWantToReceiveSignals')}</p>
           </div>
 
           {/* Mode Options */}
@@ -6420,12 +6889,12 @@ ${isLoss ? `
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-xl font-bold text-white">ТОП-3 сигнала</h3>
+                      <h3 className="text-xl font-bold text-white">{t('top3Signals')}</h3>
                       <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
-                        Популярно
+                        {t('popular')}
                       </Badge>
                     </div>
-                    <p className="text-slate-400 text-sm mb-3">Лучшие возможности дня</p>
+                    <p className="text-slate-400 text-sm mb-3">{t('bestOpportunitiesOfDay')}</p>
                     {!canGenerateTop3() && (
                       <p className="text-xs text-amber-400 mb-2">
                         Доступно через: {Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)} мин
@@ -6434,15 +6903,15 @@ ${isLoss ? `
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>3 лучших сигнала одновременно</span>
+                        <span>{t('threeBestSignalsSimultaneously')}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Высокая вероятность успеха</span>
+                        <span>{t('highSuccessProbability')}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Диверсификация рисков</span>
+                        <span>{t('riskDiversification')}</span>
                       </div>
                     </div>
                   </div>
@@ -6471,8 +6940,8 @@ ${isLoss ? `
                     <Zap className="w-8 h-8 text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-1">Одиночные сигналы</h3>
-                    <p className="text-slate-400 text-sm mb-3">По одному сигналу за раз</p>
+                    <h3 className="text-xl font-bold text-white mb-1">{t('singleSignals')}</h3>
+                    <p className="text-slate-400 text-sm mb-3">{t('oneSignalAtATime')}</p>
                     {selectedMarket === 'forex' && !isForexMarketOpen() && (
                       <p className="text-xs text-rose-400 mb-2">
                         Форекс рынок закрыт (выходные)
@@ -6481,15 +6950,15 @@ ${isLoss ? `
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Фокус на одной сделке</span>
+                        <span>{t('focusOnOneTrade')}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Простое управление</span>
+                        <span>{t('simpleManagement')}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Идеально для начинающих</span>
+                        <span>{t('idealForBeginners')}</span>
                       </div>
                     </div>
                   </div>
@@ -7746,13 +8215,13 @@ ${isLoss ? `
                 <Activity className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Forex Signals Pro</h1>
+                <h1 className="text-xl font-bold text-white">{t('forexSignalsPro')}</h1>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs border-emerald-500/50 text-emerald-400">
-                    {selectedMarket === 'forex' ? 'Forex' : 'OTC'}
+                    {selectedMarket === 'forex' ? t('forex') : t('otc')}
                   </Badge>
                   <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400">
-                    {selectedMode === 'top3' ? 'ТОП-3' : 'Одиночные'}
+                    {selectedMode === 'top3' ? t('top3') : t('single')}
                   </Badge>
                 </div>
               </div>
