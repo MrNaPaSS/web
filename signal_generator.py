@@ -243,6 +243,11 @@ class SignalGenerator:
             
             # Получаем только базовые данные (1 API запрос вместо 5-6)
             if self.market_schedule.is_market_open():
+                # Дополнительная проверка для форекс рынка
+                if not self.market_schedule.is_forex_available():
+                    logger.warning(f"⚠️ Форекс недоступен с 22:00 до 6:00 по будням для {pair}")
+                    return None
+                
                 try:
                     # Простой запрос цены + RSI
                     market_data = await self.market_data_fetcher.get_basic_data(pair)
