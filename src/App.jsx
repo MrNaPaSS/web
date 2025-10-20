@@ -7349,6 +7349,8 @@ ${isLoss ? `
     setIsWaitingFeedback(false)
     // Сохраняем время начала в localStorage
     localStorage.setItem('signalStartTime', startTime.toString())
+    // Переходим на экран main после активации сигнала
+    setCurrentScreen('main')
   }
   // Отправка фидбека на бэкенд
   const submitFeedback = async (isSuccess) => {
@@ -7945,7 +7947,6 @@ ${isLoss ? `
                         <Button
                           onClick={() => {
                             activateSignal(signal)
-                            setCurrentScreen('main')
                           }}
                           className="w-full bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white py-2 px-4 rounded-lg font-semibold shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:scale-105"
                         >
