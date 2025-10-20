@@ -328,7 +328,7 @@ async def generate_signal():
                             'reasoning': getattr(signal, 'reasoning', 'Технический анализ')
                         })
                         update_user_stats(user_id, 'otc')
-                        generated_count += 1
+                    generated_count += 1  # Увеличиваем счетчик всегда
             else:
                 # Одиночный ОТС сигнал
                 if not pair:
