@@ -7172,7 +7172,6 @@ ${isLoss ? `
         setIsGenerating(false)
         // Автоматически активируем первый сигнал из ТОП-3
         if (signals.length > 0) {
-          // НЕ активируем автоматически - показываем экран выбора
           setCurrentScreen('signal-selection')
           console.log('✅ Показываем экран выбора сигналов:', signals)
         } else {
