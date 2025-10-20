@@ -7,17 +7,14 @@ import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Ac
 import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
-
 function App() {
   // КОНФИГУРАЦИЯ АДМИНА - ЗДЕСЬ УКАЖИ СВОЙ TELEGRAM ID
   const ADMIN_TELEGRAM_ID = '511442168' // ЗАМЕНИ НА СВОЙ РЕАЛЬНЫЙ TELEGRAM ID!
-  
   // Функция для определения правильного API URL
   const getApiUrl = (port) => {
     // Используем API поддомен
     return `https://bot.nomoneynohoney.online`
   }
-  
   const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
   const [selectedLanguage, setSelectedLanguage] = useState(null) // ru, en, es, fr, de, it, pt, zh, ja, ko, ar, hi
   const [selectedMarket, setSelectedMarket] = useState(null) // forex, otc
@@ -34,18 +31,15 @@ function App() {
   const [selectedUsersForBulk, setSelectedUsersForBulk] = useState([]) // Выбранные пользователи для массовых операций
   const [selectedModelForPurchase, setSelectedModelForPurchase] = useState(null) // Модель для покупки
   const [showPurchaseModal, setShowPurchaseModal] = useState(false) // Показать модальное окно покупки
-  
   // Функция для загрузки подписок пользователя
   const loadUserSubscriptions = async (userId) => {
     try {
       console.log('🔄 Loading subscriptions for user:', userId)
       const response = await fetch(`${getApiUrl()}/api/user/subscriptions?user_id=${userId}`)
       const data = await response.json()
-      
       if (data.success) {
         setUserSubscriptions(data.subscriptions)
         console.log('✅ User subscriptions loaded:', data.subscriptions)
-        
         // Обновляем выбранную ML модель на первую доступную из подписок
         if (data.subscriptions && data.subscriptions.length > 0) {
           const firstAvailableModel = data.subscriptions[0]
@@ -61,7 +55,6 @@ function App() {
       console.error('❌ Ошибка загрузки подписок:', error)
     }
   }
-
   // Функция для обновления подписки пользователя
   const updateUserSubscription = async (userId, subscriptions) => {
     try {
@@ -75,9 +68,7 @@ function App() {
           subscriptions: subscriptions
         })
       })
-      
       const data = await response.json()
-      
       if (data.success) {
         // Если это текущий пользователь, обновляем его подписку
         if (userId === userData?.id) {
@@ -97,7 +88,6 @@ function App() {
   const [selectedSignalForAnalysis, setSelectedSignalForAnalysis] = useState(null) // Выбранный сигнал для анализа
   const [analysisResult, setAnalysisResult] = useState(null) // Результат анализа от GPT
   const [isAnalyzing, setIsAnalyzing] = useState(false) // Флаг процесса анализа
-  
   // Автоматическая загрузка подписок при возврате в меню
   useEffect(() => {
     if (currentScreen === 'menu' && userData?.id) {
@@ -105,7 +95,6 @@ function App() {
       loadUserSubscriptions(userData.id)
     }
   }, [currentScreen, userData?.id])
-
   // Принудительная загрузка подписок при каждом переходе в меню
   useEffect(() => {
     if (currentScreen === 'menu' && userData?.id) {
@@ -114,23 +103,18 @@ function App() {
         console.log('🔄 Force loading subscriptions in menu')
         loadUserSubscriptions(userData.id)
       }, 100)
-      
       return () => clearTimeout(timer)
     }
   }, [currentScreen])
-
   // Периодическая проверка подписок каждые 2 секунды
   useEffect(() => {
     if (!userData?.id) return
-
     const interval = setInterval(() => {
       console.log('🔄 Periodic subscription check')
       loadUserSubscriptions(userData.id)
     }, 2000) // 2 секунды для очень быстрого обновления
-
     return () => clearInterval(interval)
   }, [userData?.id])
-
   // Загрузка подписок при инициализации пользователя
   useEffect(() => {
     if (userData?.id) {
@@ -138,7 +122,6 @@ function App() {
       loadUserSubscriptions(userData.id)
     }
   }, [userData?.id])
-
   // Загрузка подписок при переходе на экран настроек
   useEffect(() => {
     if (currentScreen === 'settings' && userData?.id) {
@@ -146,7 +129,6 @@ function App() {
       loadUserSubscriptions(userData.id)
     }
   }, [currentScreen, userData?.id])
-
   // Загрузка подписок при переходе на экран выбора ML модели
   useEffect(() => {
     if (currentScreen === 'ml-selector' && userData?.id) {
@@ -154,7 +136,6 @@ function App() {
       loadUserSubscriptions(userData.id)
     }
   }, [currentScreen, userData?.id])
-
   // Загрузка шаблонов при переходе в админ-панель
   useEffect(() => {
     if (currentScreen === 'admin' && isAdmin) {
@@ -162,7 +143,6 @@ function App() {
       loadSubscriptionTemplates()
     }
   }, [currentScreen, isAdmin])
-
   // Глобальное обновление подписок при всех переходах между экранами
   useEffect(() => {
     if (userData?.id && currentScreen !== 'auth' && currentScreen !== 'language-select') {
@@ -173,20 +153,17 @@ function App() {
       }, 100)
     }
   }, [currentScreen, userData?.id])
-
   // WebSocket для real-time обновлений подписок
   useWebSocket(userData?.id, (newSubscriptions) => {
     setUserSubscriptions(newSubscriptions);
     console.log('🔄 Subscriptions updated via WebSocket:', newSubscriptions);
   });
-
   // Функция для загрузки шаблонов подписок
   const loadSubscriptionTemplates = async () => {
     try {
       console.log('🔄 Loading subscription templates...')
       const response = await fetch(`${getApiUrl()}/api/admin/subscription-templates`)
       const data = await response.json()
-      
       if (data.success) {
         setSubscriptionTemplates(data.templates)
         console.log('✅ Subscription templates loaded:', data.templates)
@@ -197,7 +174,6 @@ function App() {
       console.error('❌ Ошибка загрузки шаблонов:', error)
     }
   }
-
   // Функция для массового обновления подписок
   const bulkUpdateSubscriptions = async (userIds, subscriptions) => {
     try {
@@ -213,9 +189,7 @@ function App() {
           admin_user_id: userData?.id
         })
       })
-      
       const data = await response.json()
-      
       if (data.success) {
         console.log('✅ Bulk update completed:', data)
         alert(t('bulkUpdateSuccess', {successful: data.successful_updates, total: data.total_users}))
@@ -231,37 +205,40 @@ function App() {
       return false
     }
   }
-  
   // Блокировка навигации и ожидание фидбека
   const [pendingSignal, setPendingSignal] = useState(null) // Активный сигнал ожидающий фидбека
   const [signalTimer, setSignalTimer] = useState(0) // Таймер экспирации в секундах
   const [isWaitingFeedback, setIsWaitingFeedback] = useState(false) // Флаг ожидания фидбека
   const [lastTop3Generation, setLastTop3Generation] = useState(null) // Время последней генерации ТОП-3
-
   // Функция проверки доступности форекс рынка
   const isForexMarketOpen = () => {
     const now = new Date()
-    const moscowTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Moscow"}))
-    const dayOfWeek = moscowTime.getDay() // 0 = воскресенье, 1 = понедельник, ..., 6 = суббота
+    const europeanTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Berlin"}))
+    const dayOfWeek = europeanTime.getDay() // 0 = воскресенье, 1 = понедельник, ..., 6 = суббота
+    const currentHour = europeanTime.getHours()
     
     // Рынок закрыт в субботу (6) и воскресенье (0)
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return false
     }
     
-    // Рынок открыт с понедельника 00:00 до пятницы 23:59
+    // Рынок закрыт по будням с 22:00 до 06:00 (европейское время)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Понедельник-Пятница
+      if (currentHour >= 22 || currentHour < 6) {
+        return false
+      }
+    }
+    
+    // Рынок открыт в остальное время
     return true
   }
-
   // Функция проверки возможности генерации топ-3 (каждые 10 минут)
   const canGenerateTop3 = () => {
     if (!lastTop3Generation) return true
-    
     const now = new Date()
     const lastGeneration = new Date(lastTop3Generation)
     const timeDiff = now - lastGeneration
     const tenMinutes = 10 * 60 * 1000 // 10 минут в миллисекундах
-    
     return timeDiff >= tenMinutes
   }
   const [top3Cooldown, setTop3Cooldown] = useState(0) // Оставшееся время до следующей генерации ТОП-3 в секундах
@@ -272,7 +249,6 @@ function App() {
   const [generationStage, setGenerationStage] = useState('') // Текущая стадия генерации
   const [generatedSignals, setGeneratedSignals] = useState([]) // Сгенерированные сигналы
   const [showReloadWarning, setShowReloadWarning] = useState(false) // Предупреждение при перезагрузке
-  
   // Notification settings
   const [notificationSettings, setNotificationSettings] = useState({
     newSignals: true,
@@ -284,29 +260,25 @@ function App() {
     vibrationEnabled: true,
     emailNotifications: false
   })
-
   // User statistics data - загружается из API
   const [userStats, setUserStats] = useState({
     totalSignals: 0,
     successfulSignals: 0,
     failedSignals: 0,
     winRate: 0.0,
-    bestPair: 'N/A',
-    worstPair: 'N/A',
+    bestPair: null,
+    worstPair: null,
     tradingDays: 0,
     avgSignalsPerDay: 0.0,
     signalsByMonth: []
   })
-
   // Market metrics - реальные данные по парам
   const [marketMetrics, setMarketMetrics] = useState({
     forex: [],
     otc: []
   })
-
   // User signals history - история сигналов пользователя для аналитики
   const [userSignalsHistory, setUserSignalsHistory] = useState([])
-
   // Admin statistics - реальные данные для админ панели
   const [adminStats, setAdminStats] = useState({
     totalUsers: 0,
@@ -317,18 +289,14 @@ function App() {
     topUsers: []
   })
   const [accessRequests, setAccessRequests] = useState([])
-
   // Загрузка метрик рынка
   const loadMarketMetrics = async () => {
     try {
       console.log('📊 Loading market metrics...')
-      
       const response = await fetch(`${getApiUrl(5002)}/api/signal/market-metrics`)
-      
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Получены метрики рынка:', data)
-        
         setMarketMetrics({
           forex: data.forex || [],
           otc: data.otc || []
@@ -350,23 +318,19 @@ function App() {
       })
     }
   }
-
   // Загрузка реальной статистики конкретного пользователя из API
   const loadUserStats = async () => {
     try {
       console.log('📊 Загружаем статистику пользователя:', userId)
-      
       const response = await fetch(`${getApiUrl(5000)}/api/user/stats?user_id=${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       })
-      
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Получена статистика пользователя:', data)
-        
         setUserStats({
           totalSignals: data.total_signals || 0,
           successfulSignals: data.successful_signals || 0,
@@ -409,23 +373,19 @@ function App() {
       })
     }
   }
-
   // Загрузка истории сигналов пользователя для аналитики
   const loadUserSignalsHistory = async () => {
     try {
       console.log('📊 Загружаем историю сигналов пользователя:', userId)
-      
       const response = await fetch(`${getApiUrl(5000)}/api/user/signals-history?user_id=${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       })
-      
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Получена история сигналов:', data)
-        
         setUserSignalsHistory(data.signals || [])
       } else {
         console.error('❌ Ошибка загрузки истории сигналов:', response.status)
@@ -438,12 +398,10 @@ function App() {
       setUserSignalsHistory([])
     }
   }
-
   // Загрузка админ статистики
   const loadAdminStats = async () => {
     try {
       console.log('📊 Загружаем админ статистику...')
-      
       // Загружаем общую статистику сигналов
       const statsResponse = await fetch(`${getApiUrl(5000)}/api/signal/stats`, {
         method: 'GET',
@@ -451,7 +409,6 @@ function App() {
           'Content-Type': 'application/json'
         }
       })
-      
       // Загружаем всех пользователей
       const usersResponse = await fetch(`${getApiUrl(5000)}/api/users/all`, {
         method: 'GET',
@@ -459,11 +416,9 @@ function App() {
           'Content-Type': 'application/json'
         }
       })
-      
       let totalSignals = 0
       let successfulSignals = 0
       let failedSignals = 0
-      
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
         totalSignals = statsData.total_signals || 0
@@ -471,7 +426,6 @@ function App() {
         failedSignals = statsData.failed_signals || 0
         console.log('✅ Получена общая статистика:', statsData)
       }
-      
       let users = []
       let onlineUsers = 0
       if (usersResponse.ok) {
@@ -480,7 +434,6 @@ function App() {
         onlineUsers = usersData.online_users || 0  // Количество онлайн пользователей
         console.log('✅ Users loaded:', users.length, 'online:', onlineUsers)
       }
-      
       setAdminStats({
         totalUsers: users.length,  // Общее количество подключенных пользователей
         activeUsers: onlineUsers,  // Количество онлайн пользователей
@@ -489,7 +442,6 @@ function App() {
         failedSignals: failedSignals,
         topUsers: users.slice(0, 10) // Топ 10 пользователей
       })
-      
     } catch (error) {
       console.error('❌ Ошибка загрузки админ статистики:', error)
       // Fallback - пустая статистика
@@ -503,15 +455,12 @@ function App() {
       })
     }
   }
-
   // Загрузка заявок на доступ
   const loadAccessRequests = async () => {
     try {
       console.log('📋 Загружаем заявки на доступ...')
-      
       const response = await fetch(`${getApiUrl(5000)}/api/admin/access-requests`)
       const data = await response.json()
-      
       if (data.success) {
         setAccessRequests(data.requests)
         console.log('✅ Заявки на доступ загружены:', data.requests.length)
@@ -520,12 +469,10 @@ function App() {
       console.error('❌ Ошибка загрузки заявок на доступ:', error)
     }
   }
-
   // Одобрение заявки на доступ
   const approveAccessRequest = async (userIdToApprove) => {
     try {
       console.log('✅ Одобряем заявку для пользователя:', userIdToApprove)
-      
       const response = await fetch(`${getApiUrl(5000)}/api/admin/approve-access`, {
         method: 'POST',
         headers: {
@@ -536,13 +483,10 @@ function App() {
           admin_user_id: userId // ID текущего админа
         })
       })
-      
       const data = await response.json()
-      
       if (data.success) {
         console.log('✅ Заявка одобрена')
         alert(t('userAddedSuccess'))
-        
         // Обновляем данные
         loadAdminStats()
         loadAccessRequests()
@@ -555,8 +499,6 @@ function App() {
       alert(t('errorOccurredWith', {error: error.message}))
     }
   }
-
-
   // Translations
   const translations = {
     ru: {
@@ -802,6 +744,7 @@ function App() {
       riskDiversification: 'Диверсификация рисков',
       focusOnOneTrade: 'Фокус на одной сделке',
       simpleManagement: 'Простое управление',
+      availableIn: 'Доступно через: {minutes} мин',
       idealForBeginners: 'Идеально для начинающих',
       analysis: 'Анализ',
       accuracy: 'Точность',
@@ -852,14 +795,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Пожалуйста, подождите. Система анализирует рынок...',
       moreDetails: 'Подробнее',
       tryAgainInCooldown: 'Попробуйте снова через {seconds} секунд, когда рынок стабилизируется',
-      
       // Alert messages
       bulkUpdateSuccess: 'Обновлено {successful} из {total} пользователей',
       bulkUpdateError: 'Ошибка массового обновления: {error}',
       bulkUpdateErrorGeneric: 'Ошибка массового обновления: {message}',
       userDeletedSuccess: 'Пользователь {userId} успешно удален из бота',
       userDeleteError: 'Ошибка удаления: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Пользователь добавлен в систему',
       errorOccurredWith: 'Произошла ошибка: {error}',
@@ -867,8 +808,11 @@ function App() {
       feedbackAcceptedFailure: 'Фидбек принят: Убыточная сделка',
       navigationBlockedMessage: 'У вас есть активный сигнал!\n\nДождитесь завершения экспирации и оставьте фидбек о результате сделки.\n\nНавигация разблокируется после отправки фидбека.',
       modelRestrictedAlert: 'Эта модель заблокирована и доступна только по команде',
-      
       forexSignalsPro: 'Forex Signals Pro',
+      loadingInterface: 'Загрузка интерфейса...',
+      loginError: 'Ошибка входа',
+      tryAgain: 'Попробовать снова',
+      appName: 'Forex Signals Pro',
       accurateSignals: 'Точные сигналы',
       successfulTradesPercent: '87% успешных сделок',
       instantNotifications: 'Мгновенные уведомления',
@@ -879,14 +823,10 @@ function App() {
       otc: 'OTC',
       top3: 'ТОП-3',
       single: 'Одиночные',
-      
       // Новые ключи для захардкоженных текстов
       hoursAgo: '{count} час{plural} назад',
       daysAgo: '{count} дн{plural} назад',
       selectLanguageDescription: 'Выберите предпочитаемый язык для продолжения / Choose your preferred language to continue',
-<<<<<<< Updated upstream
-=======
-      
       // Ключи для интерфейса уведомлений
       notificationsBadge: 'УВЕДОМЛЕНИЯ',
       tradingSignals: 'Торговые сигналы',
@@ -912,9 +852,8 @@ function App() {
       smartNotificationsDescription: 'Своевременно получайте уведомления о важных событиях. Вы можете настроить каждый тип отдельно.',
       enabled: 'Включено',
       disabled: 'Отключено',
->>>>>>> Stashed changes
-      forexMarketClosedWeekend: 'Форекс рынок закрыт в выходные дни. Переключитесь на OTC режим.',
-      forexMarketClosedLabel: 'Форекс рынок закрыт (выходные)',
+      forexMarketClosedWeekend: 'Форекс рынок закрыт в выходные дни или ночью (22:00-06:00). Переключитесь на OTC режим.',
+      forexMarketClosedLabel: 'Форекс рынок закрыт (выходные/ночь)',
       top3CooldownMessage: 'Топ-3 сигналы можно генерировать раз в 10 минут. Осталось: {minutes}:{seconds}',
       vipFeature: 'VIP Функция',
       vipAnalyticsDescription: 'AI Аналитика доступна только для пользователей с активной подпиской',
@@ -957,9 +896,6 @@ function App() {
       tryAgainInSeconds: 'Попробуйте снова через {seconds} секунд, когда рынок стабилизируется',
       modelReady: 'Модель обучена и готова к работе',
       aiAnalytics: 'AI Аналитика',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Закрыть анализ'
-=======
       closeAnalysis: 'Закрыть анализ',
       apiError: 'Ошибка API',
       unknownError: 'Неизвестная ошибка',
@@ -967,8 +903,107 @@ function App() {
       timeoutError: '⏰ Таймаут: Анализ занял слишком много времени. Попробуйте еще раз.',
       serverError: '❌ Ошибка сервера',
       networkError: '🌐 Ошибка сети: Проверьте подключение к интернету.',
-      generalError: '❌ Ошибка'
->>>>>>> Stashed changes
+      generalError: '❌ Ошибка',
+      // Дополнительные ключи
+      professionalMarketAnalysis: 'Профессиональный анализ рынка',
+      activeStatus: 'АКТИВНА',
+      inactive: 'НЕАКТИВНА',
+      available: 'ДОСТУПНА',
+      blocked: 'ЗАБЛОКИРОВАНА',
+      success: 'Успешно',
+      failure: 'Проигрыш',
+      buyAction: 'Купить',
+      selectAction: 'Выбрать',
+      approve: 'Одобрить',
+      delete: 'Удалить',
+      save: 'Сохранить',
+      cancel: 'Отмена',
+      apply: 'Применить',
+      update: 'Обновить',
+      loadingMarkets: 'Загрузка рынков...',
+      analyzingTrends: 'Анализ трендов...',
+      applyingML: 'Применение ML моделей...',
+      calculatingEntry: 'Расчет точек входа...',
+      assessingRisks: 'Оценка рисков...',
+      finalCheck: 'Финальная проверка...',
+      activeUsers: 'Активные пользователи',
+      totalSignals: 'Всего сигналов',
+      successful: 'Успешных',
+      failed: 'Проигрышных',
+      topUsers: 'Топ пользователи',
+      accessRequests: 'Заявки на доступ',
+      subscriptionHistory: 'История изменений подписок',
+      myStatistics: 'Моя статистика',
+      winRate: 'Винрейт',
+      currentStreak: 'Текущая серия',
+      bestStreak: 'Лучшая серия',
+      averageProfit: 'Средняя прибыль',
+      monthlySubscription: 'Ежемесячная подписка',
+      lifetimePurchase: 'Пожизненная покупка',
+      autoRenewal: 'Автоматическое продление',
+      noTimeLimit: 'Без ограничений по времени',
+      selectSubscriptionType: 'Выберите тип подписки:',
+      pushNotification: 'Push',
+      enabled: 'Включено',
+      disabled: 'Отключено',
+      notificationsBadge: 'УВЕДОМЛЕНИЯ',
+      waitingForEntry: 'Ожидание входа',
+      vipFunction: 'VIP Функция',
+      pleaseWaitSystemAnalyzing: 'Пожалуйста, подождите. Система анализирует рынок...',
+      moreDetails: 'Подробнее',
+      tryAgainInCooldown: 'Попробуйте снова в кулдауне',
+      // Новые ключи для локализации
+      signalCount: '{count} сигнал',
+      signalCountZero: 'Нет сигналов',
+      generatedSignal: 'Сгенерированный сигнал',
+      top3SignalsReady: 'ТОП-3 сигнала готовы!',
+      sell: 'ПРОДАТЬ',
+      wait: 'Ожидание',
+      waiting: 'Ожидание',
+      minutesShort: 'мин',
+      secondsShort: 'сек',
+      hoursShort: 'ч',
+      bearish: 'Медвежий',
+      bullish: 'Бычий',
+      neutral: 'Нейтральный',
+      notAvailable: 'Н/Д',
+      notSpecified: 'Не указано',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'AI Аналитика',
+      selectSignalForAnalysis: 'Выберите сигнал для анализа',
+      aiWillAnalyze: 'AI проанализирует сделку и даст рекомендации',
+      marketStatus: 'Состояние рынка',
+      selectPairForSignal: 'Выберите пару для генерации сигнала',
+      successfully: 'Успешно',
+      sentiment: 'Настроение',
+      volatility: 'Волатильность',
+      recommendation: 'Рекомендация:',
+      clickToGenerateSignal: 'Нажмите для генерации сигнала',
+      confidence: 'Уверенность',
+      signalGeneration: 'Генерация сигналов',
+      usingMLModel: 'Используется ML модель...',
+      analysis: 'Анализ',
+      mlModel: 'ML модель',
+      accuracy: 'Точность',
+      pleaseWait: 'Пожалуйста, подождите. Система анализирует рынок...',
+      howToReceiveSignals: 'Как вы хотите получать сигналы?',
+      top3Signals: 'ТОП-3 сигнала',
+      popular: 'Популярно',
+      bestOpportunities: 'Лучшие возможности дня',
+      threeBestSignals: '3 лучших сигнала',
+      simultaneously: 'одновременно',
+      highSuccessProbability: 'Высокая вероятность успеха',
+      riskDiversification: 'Диверсификация рисков',
+      singleSignals: 'Одиночные сигналы',
+      oneSignalAtTime: 'По одному сигналу за раз',
+      focusOnOneTrade: 'Фокус на одной сделке',
+      simpleManagement: 'Простое управление',
+      idealForBeginners: 'Идеально для начинающих',
+      dealActivated: 'СДЕЛКА АКТИВИРОВАНА',
+      navigationBlocked: 'Навигация заблокирована',
+      remainingUntilExpiration: 'Осталось до экспирации',
+      waitForExpiration: 'Дождитесь экспирации сигнала и оставьте фидбек',
+      back: 'Назад'
     },
     en: {
       welcome: 'Welcome',
@@ -1171,6 +1206,7 @@ function App() {
       riskDiversification: 'Risk diversification',
       focusOnOneTrade: 'Focus on one trade',
       simpleManagement: 'Simple management',
+      availableIn: 'Available in: {minutes} min',
       idealForBeginners: 'Ideal for beginners',
       analysis: 'Analysis',
       accuracy: 'Accuracy',
@@ -1221,14 +1257,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Please wait. The system is analyzing the market...',
       moreDetails: 'More Details',
       tryAgainInCooldown: 'Try again in {seconds} seconds when the market stabilizes',
-      
       // Alert messages
       bulkUpdateSuccess: 'Updated {successful} of {total} users',
       bulkUpdateError: 'Bulk update error: {error}',
       bulkUpdateErrorGeneric: 'Bulk update error: {message}',
       userDeletedSuccess: 'User {userId} successfully deleted from bot',
       userDeleteError: 'Delete error: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'User added to system',
       errorOccurredWith: 'An error occurred: {error}',
@@ -1236,8 +1270,11 @@ function App() {
       feedbackAcceptedFailure: 'Feedback accepted: Losing trade',
       navigationBlockedMessage: 'You have an active signal!\n\nWait for expiration and leave feedback about the trade result.\n\nNavigation will be unlocked after sending feedback.',
       modelRestrictedAlert: 'This model is restricted and available only on command',
-      
       forexSignalsPro: 'Forex Signals Pro',
+      loadingInterface: 'Loading interface...',
+      loginError: 'Login error',
+      tryAgain: 'Try again',
+      appName: 'Forex Signals Pro',
       accurateSignals: 'Accurate signals',
       successfulTradesPercent: '87% successful trades',
       instantNotifications: 'Instant notifications',
@@ -1248,14 +1285,10 @@ function App() {
       otc: 'OTC',
       top3: 'TOP-3',
       single: 'Single',
-      
       // New keys for hardcoded texts
       hoursAgo: '{count} hour{plural} ago',
       daysAgo: '{count} day{plural} ago',
       selectLanguageDescription: 'Choose your preferred language to continue',
-<<<<<<< Updated upstream
-=======
-      
       // Keys for notifications interface
       notificationsBadge: 'NOTIFICATIONS',
       tradingSignals: 'Trading Signals',
@@ -1281,9 +1314,8 @@ function App() {
       smartNotificationsDescription: 'Get timely notifications about important events. You can configure each type separately.',
       enabled: 'Enabled',
       disabled: 'Disabled',
->>>>>>> Stashed changes
-      forexMarketClosedWeekend: 'Forex market is closed on weekends. Switch to OTC mode.',
-      forexMarketClosedLabel: 'Forex market closed (weekends)',
+      forexMarketClosedWeekend: 'Forex market is closed on weekends or at night (22:00-06:00). Switch to OTC mode.',
+      forexMarketClosedLabel: 'Forex market closed (weekends/night)',
       top3CooldownMessage: 'TOP-3 signals can be generated once every 10 minutes. Remaining: {minutes}:{seconds}',
       vipFeature: 'VIP Feature',
       vipAnalyticsDescription: 'AI Analytics is available only for users with active subscription',
@@ -1326,9 +1358,6 @@ function App() {
       tryAgainInSeconds: 'Try again in {seconds} seconds when the market stabilizes',
       modelReady: 'Model is trained and ready to work',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Close analysis'
-=======
       closeAnalysis: 'Close analysis',
       apiError: 'API Error',
       unknownError: 'Unknown error',
@@ -1336,8 +1365,108 @@ function App() {
       timeoutError: '⏰ Timeout: Analysis took too long. Please try again.',
       serverError: '❌ Server error',
       networkError: '🌐 Network error: Check your internet connection.',
-      generalError: '❌ Error'
->>>>>>> Stashed changes
+      generalError: '❌ Error',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      professionalMarketAnalysis: 'Professional market analysis',
+      activeStatus: 'ACTIVE',
+      inactive: 'INACTIVE',
+      available: 'AVAILABLE',
+      blocked: 'BLOCKED',
+      success: 'Success',
+      failure: 'Failure',
+      buyAction: 'Buy',
+      selectAction: 'Select',
+      approve: 'Approve',
+      delete: 'Delete',
+      save: 'Save',
+      cancel: 'Cancel',
+      apply: 'Apply',
+      update: 'Update',
+      loadingMarkets: 'Loading markets...',
+      analyzingTrends: 'Analyzing trends...',
+      applyingML: 'Applying ML models...',
+      calculatingEntry: 'Calculating entry points...',
+      assessingRisks: 'Assessing risks...',
+      finalCheck: 'Final check...',
+      activeUsers: 'Active users',
+      totalSignals: 'Total signals',
+      successful: 'Successful',
+      failed: 'Failed',
+      topUsers: 'Top users',
+      accessRequests: 'Access requests',
+      subscriptionHistory: 'Subscription change history',
+      myStatistics: 'My statistics',
+      winRate: 'Win rate',
+      currentStreak: 'Current streak',
+      bestStreak: 'Best streak',
+      averageProfit: 'Average profit',
+      monthlySubscription: 'Monthly subscription',
+      lifetimePurchase: 'Lifetime purchase',
+      autoRenewal: 'Auto renewal',
+      noTimeLimit: 'No time limit',
+      selectSubscriptionType: 'Select subscription type:',
+      pushNotification: 'Push',
+      enabled: 'Enabled',
+      disabled: 'Disabled',
+      notificationsBadge: 'NOTIFICATIONS',
+      waitingForEntry: 'Waiting for entry',
+      vipFunction: 'VIP Function',
+      pleaseWaitSystemAnalyzing: 'Please wait. System is analyzing the market...',
+      moreDetails: 'More details',
+      tryAgainInCooldown: 'Try again in cooldown',
+      // New localization keys
+      signalCount: '{count} signal(s)',
+      signalCountZero: 'No signals',
+      generatedSignal: 'Generated signal',
+      top3SignalsReady: 'TOP-3 signals ready!',
+      sell: 'SELL',
+      wait: 'Wait',
+      waiting: 'Waiting',
+      minutesShort: 'min',
+      secondsShort: 'sec',
+      hoursShort: 'h',
+      bearish: 'Bearish',
+      bullish: 'Bullish',
+      neutral: 'Neutral',
+      notAvailable: 'N/A',
+      notSpecified: 'Not specified',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'AI Analytics',
+      selectSignalForAnalysis: 'Select a signal for analysis',
+      aiWillAnalyze: 'AI will analyze the deal and give recommendations',
+      marketStatus: 'Market Status',
+      selectPairForSignal: 'Select a pair for signal generation',
+      successfully: 'Successfully',
+      sentiment: 'Sentiment',
+      volatility: 'Volatility',
+      recommendation: 'Recommendation:',
+      clickToGenerateSignal: 'Click to generate signal',
+      confidence: 'Confidence',
+      signalGeneration: 'Signal Generation',
+      usingMLModel: 'Using ML model...',
+      analysis: 'Analysis',
+      mlModel: 'ML Model',
+      accuracy: 'Accuracy',
+      pleaseWait: 'Please wait. The system is analyzing the market...',
+      howToReceiveSignals: 'How do you want to receive signals?',
+      top3Signals: 'TOP-3 Signals',
+      popular: 'Popular',
+      bestOpportunities: 'Best opportunities of the day',
+      threeBestSignals: '3 best signals',
+      simultaneously: 'simultaneously',
+      highSuccessProbability: 'High probability of success',
+      riskDiversification: 'Risk diversification',
+      singleSignals: 'Single Signals',
+      oneSignalAtTime: 'One signal at a time',
+      focusOnOneTrade: 'Focus on one trade',
+      simpleManagement: 'Simple management',
+      idealForBeginners: 'Ideal for beginners',
+      dealActivated: 'DEAL ACTIVATED',
+      navigationBlocked: 'Navigation blocked',
+      remainingUntilExpiration: 'Remaining until expiration',
+      waitForExpiration: 'Wait for signal expiration and leave feedback',
+      back: 'Back'
     },
     th: {
       welcome: 'ยินดีต้อนรับ',
@@ -1506,7 +1635,6 @@ function App() {
       pushNotification: 'Push',
       enabled: 'เปิดใช้งาน',
       disabled: 'ปิดใช้งาน',
-      
       // Keys for notifications interface
       notificationsBadge: 'การแจ้งเตือน',
       tradingSignals: 'สัญญาณการซื้อขาย',
@@ -1548,6 +1676,7 @@ function App() {
       riskDiversification: 'การกระจายความเสี่ยง',
       focusOnOneTrade: 'มุ่งเน้นที่การเทรดหนึ่งครั้ง',
       simpleManagement: 'การจัดการง่าย',
+      availableIn: 'ใช้ได้ใน: {minutes} นาที',
       idealForBeginners: 'เหมาะสำหรับผู้เริ่มต้น',
       analysis: 'การวิเคราะห์',
       accuracy: 'ความแม่นยำ',
@@ -1598,14 +1727,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'โปรดรอ ระบบกำลังวิเคราะห์ตลาด...',
       moreDetails: 'รายละเอียดเพิ่มเติม',
       tryAgainInCooldown: 'ลองอีกครั้งใน {seconds} วินาที เมื่อตลาดเสถียร',
-      
       // Alert messages
       bulkUpdateSuccess: 'อัปเดต {successful} จาก {total} ผู้ใช้',
       bulkUpdateError: 'ข้อผิดพลาดการอัปเดตจำนวนมาก: {error}',
       bulkUpdateErrorGeneric: 'ข้อผิดพลาดการอัปเดตจำนวนมาก: {message}',
       userDeletedSuccess: 'ผู้ใช้ {userId} ถูกลบออกจากบอทเรียบร้อยแล้ว',
       userDeleteError: 'ข้อผิดพลาดการลบ: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'เพิ่มผู้ใช้เข้าสู่ระบบแล้ว',
       errorOccurredWith: 'เกิดข้อผิดพลาด: {error}',
@@ -1613,7 +1740,6 @@ function App() {
       feedbackAcceptedFailure: 'รับฟีดแบ็ก: การเทรดที่ขาดทุน',
       navigationBlockedMessage: 'คุณมีสัญญาณที่ใช้งานอยู่!\n\nรอการหมดอายุและให้ฟีดแบ็กเกี่ยวกับผลการเทรด\n\nการนำทางจะปลดล็อกหลังจากส่งฟีดแบ็ก',
       modelRestrictedAlert: 'โมเดลนี้ถูกจำกัดและใช้ได้เฉพาะตามคำสั่ง',
-      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'สัญญาณที่แม่นยำ',
       successfulTradesPercent: '87% การเทรดที่สำเร็จ',
@@ -1625,7 +1751,6 @@ function App() {
       otc: 'OTC',
       top3: 'TOP-3',
       single: 'เดี่ยว',
-      
       // New keys for hardcoded texts
       hoursAgo: '{count} ชั่วโมงที่แล้ว',
       daysAgo: '{count} วันที่แล้ว',
@@ -1674,9 +1799,6 @@ function App() {
       tryAgainInSeconds: 'ลองอีกครั้งใน {seconds} วินาทีเมื่อตลาดเสถียร',
       modelReady: 'โมเดลได้รับการฝึกอบรมและพร้อมใช้งาน',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'ปิดการวิเคราะห์'
-=======
       closeAnalysis: 'ปิดการวิเคราะห์',
       apiError: 'ข้อผิดพลาด API',
       unknownError: 'ข้อผิดพลาดที่ไม่ทราบ',
@@ -1684,8 +1806,108 @@ function App() {
       timeoutError: '⏰ หมดเวลา: การวิเคราะห์ใช้เวลานานเกินไป กรุณาลองใหม่',
       serverError: '❌ ข้อผิดพลาดเซิร์ฟเวอร์',
       networkError: '🌐 ข้อผิดพลาดเครือข่าย: ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต',
-      generalError: '❌ ข้อผิดพลาด'
->>>>>>> Stashed changes
+      generalError: '❌ ข้อผิดพลาด',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      professionalMarketAnalysis: 'การวิเคราะห์ตลาดมืออาชีพ',
+      activeStatus: 'ใช้งานอยู่',
+      inactive: 'ไม่ใช้งาน',
+      available: 'ใช้งานได้',
+      blocked: 'ถูกบล็อก',
+      success: 'สำเร็จ',
+      failure: 'ล้มเหลว',
+      buyAction: 'ซื้อ',
+      selectAction: 'เลือก',
+      approve: 'อนุมัติ',
+      delete: 'ลบ',
+      save: 'บันทึก',
+      cancel: 'ยกเลิก',
+      apply: 'ใช้',
+      update: 'อัปเดต',
+      loadingMarkets: 'กำลังโหลดตลาด...',
+      analyzingTrends: 'กำลังวิเคราะห์เทรนด์...',
+      applyingML: 'กำลังใช้โมเดล ML...',
+      calculatingEntry: 'กำลังคำนวณจุดเข้า...',
+      assessingRisks: 'กำลังประเมินความเสี่ยง...',
+      finalCheck: 'การตรวจสอบสุดท้าย...',
+      activeUsers: 'ผู้ใช้ที่ใช้งานอยู่',
+      totalSignals: 'สัญญาณทั้งหมด',
+      successful: 'สำเร็จ',
+      failed: 'ล้มเหลว',
+      topUsers: 'ผู้ใช้ยอดนิยม',
+      accessRequests: 'คำขอเข้าถึง',
+      subscriptionHistory: 'ประวัติการเปลี่ยนแปลงการสมัครสมาชิก',
+      myStatistics: 'สถิติของฉัน',
+      winRate: 'อัตราชนะ',
+      currentStreak: 'สตรีคปัจจุบัน',
+      bestStreak: 'สตรีคที่ดีที่สุด',
+      averageProfit: 'กำไรเฉลี่ย',
+      monthlySubscription: 'การสมัครสมาชิกรายเดือน',
+      lifetimePurchase: 'การซื้อตลอดชีพ',
+      autoRenewal: 'ต่ออายุอัตโนมัติ',
+      noTimeLimit: 'ไม่มีข้อจำกัดเวลา',
+      selectSubscriptionType: 'เลือกประเภทการสมัครสมาชิก:',
+      pushNotification: 'Push',
+      enabled: 'เปิดใช้งาน',
+      disabled: 'ปิดใช้งาน',
+      notificationsBadge: 'การแจ้งเตือน',
+      waitingForEntry: 'รอการเข้า',
+      vipFunction: 'ฟังก์ชัน VIP',
+      pleaseWaitSystemAnalyzing: 'กรุณารอสักครู่ ระบบกำลังวิเคราะห์ตลาด...',
+      moreDetails: 'รายละเอียดเพิ่มเติม',
+      tryAgainInCooldown: 'ลองอีกครั้งในคูลดาวน์',
+      // New localization keys
+      signalCount: '{count} สัญญาณ',
+      signalCountZero: 'ไม่มีสัญญาณ',
+      generatedSignal: 'สัญญาณที่สร้างขึ้น',
+      top3SignalsReady: 'สัญญาณ TOP-3 พร้อมแล้ว!',
+      sell: 'ขาย',
+      wait: 'รอ',
+      waiting: 'กำลังรอ',
+      minutesShort: 'นาที',
+      secondsShort: 'วินาที',
+      hoursShort: 'ชม.',
+      bearish: 'หมีลง',
+      bullish: 'วัวขึ้น',
+      neutral: 'เป็นกลาง',
+      notAvailable: 'ไม่มี',
+      notSpecified: 'ไม่ระบุ',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'AI วิเคราะห์',
+      selectSignalForAnalysis: 'เลือกสัญญาณสำหรับการวิเคราะห์',
+      aiWillAnalyze: 'AI จะวิเคราะห์การเทรดและให้คำแนะนำ',
+      marketStatus: 'สถานะตลาด',
+      selectPairForSignal: 'เลือกคู่สกุลเงินสำหรับสร้างสัญญาณ',
+      successfully: 'สำเร็จ',
+      sentiment: 'ความรู้สึก',
+      volatility: 'ความผันผวน',
+      recommendation: 'คำแนะนำ:',
+      clickToGenerateSignal: 'คลิกเพื่อสร้างสัญญาณ',
+      confidence: 'ความมั่นใจ',
+      signalGeneration: 'การสร้างสัญญาณ',
+      usingMLModel: 'ใช้โมเดล ML...',
+      analysis: 'การวิเคราะห์',
+      mlModel: 'โมเดล ML',
+      accuracy: 'ความแม่นยำ',
+      pleaseWait: 'กรุณารอสักครู่ ระบบกำลังวิเคราะห์ตลาด...',
+      howToReceiveSignals: 'คุณต้องการรับสัญญาณอย่างไร?',
+      top3Signals: 'สัญญาณ TOP-3',
+      popular: 'ยอดนิยม',
+      bestOpportunities: 'โอกาสที่ดีที่สุดของวัน',
+      threeBestSignals: 'สัญญาณที่ดีที่สุด 3 อัน',
+      simultaneously: 'พร้อมกัน',
+      highSuccessProbability: 'ความน่าจะเป็นของความสำเร็จสูง',
+      riskDiversification: 'การกระจายความเสี่ยง',
+      singleSignals: 'สัญญาณเดี่ยว',
+      oneSignalAtTime: 'สัญญาณเดียวในแต่ละครั้ง',
+      focusOnOneTrade: 'โฟกัสที่การเทรดเดียว',
+      simpleManagement: 'การจัดการง่าย',
+      idealForBeginners: 'เหมาะสำหรับผู้เริ่มต้น',
+      dealActivated: 'เปิดใช้งานการเทรดแล้ว',
+      navigationBlocked: 'การนำทางถูกบล็อก',
+      remainingUntilExpiration: 'เหลือเวลาจนหมดอายุ',
+      waitForExpiration: 'รอให้สัญญาณหมดอายุและให้ข้อเสนอแนะ',
+      back: 'กลับ'
     },
     es: {
       welcome: 'Bienvenido',
@@ -1930,6 +2152,7 @@ function App() {
       riskDiversification: 'Diversificación de riesgos',
       focusOnOneTrade: 'Enfócate en una operación',
       simpleManagement: 'Gestión simple',
+      availableIn: 'Disponible en: {minutes} min',
       idealForBeginners: 'Ideal para principiantes',
       analysis: 'Análisis',
       accuracy: 'Precisión',
@@ -1980,14 +2203,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Por favor espera. El sistema está analizando el mercado...',
       moreDetails: 'Más Detalles',
       tryAgainInCooldown: 'Inténtalo de nuevo en {seconds} segundos cuando el mercado se estabilice',
-      
       // Alert messages
       bulkUpdateSuccess: 'Actualizado {successful} de {total} usuarios',
       bulkUpdateError: 'Error de actualización masiva: {error}',
       bulkUpdateErrorGeneric: 'Error de actualización masiva: {message}',
       userDeletedSuccess: 'Usuario {userId} eliminado exitosamente del bot',
       userDeleteError: 'Error de eliminación: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Usuario agregado al sistema',
       errorOccurredWith: 'Ocurrió un error: {error}',
@@ -1995,7 +2216,6 @@ function App() {
       feedbackAcceptedFailure: 'Comentario aceptado: Operación perdedora',
       navigationBlockedMessage: '¡Tienes una señal activa!\n\nEspera la expiración y deja comentarios sobre el resultado de la operación.\n\nLa navegación se desbloqueará después de enviar comentarios.',
       modelRestrictedAlert: 'Este modelo está restringido y disponible solo por comando',
-      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'Señales precisas',
       successfulTradesPercent: '87% operaciones exitosas',
@@ -2007,14 +2227,10 @@ function App() {
       otc: 'OTC',
       top3: 'TOP-3',
       single: 'Individual',
-      
       // New keys for hardcoded texts
       hoursAgo: 'hace {count} hora{plural}',
       daysAgo: 'hace {count} día{plural}',
       selectLanguageDescription: 'Elige tu idioma preferido para continuar',
-<<<<<<< Updated upstream
-=======
-      
       // Keys for notifications interface
       notificationsBadge: 'NOTIFICACIONES',
       tradingSignals: 'Señales de Trading',
@@ -2040,7 +2256,6 @@ function App() {
       smartNotificationsDescription: 'Recibe notificaciones oportunas sobre eventos importantes. Puedes configurar cada tipo por separado.',
       enabled: 'Habilitado',
       disabled: 'Deshabilitado',
->>>>>>> Stashed changes
       forexMarketClosedWeekend: 'El mercado Forex está cerrado los fines de semana. Cambia al modo OTC.',
       forexMarketClosedLabel: 'Mercado Forex cerrado (fines de semana)',
       top3CooldownMessage: 'Las señales TOP-3 se pueden generar una vez cada 10 minutos. Restante: {minutes}:{seconds}',
@@ -2085,9 +2300,6 @@ function App() {
       tryAgainInSeconds: 'Intenta de nuevo en {seconds} segundos cuando el mercado se estabilice',
       modelReady: 'El modelo está entrenado y listo para trabajar',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Cerrar análisis'
-=======
       closeAnalysis: 'Cerrar análisis',
       apiError: 'Error de API',
       unknownError: 'Error desconocido',
@@ -2095,8 +2307,61 @@ function App() {
       timeoutError: '⏰ Tiempo agotado: El análisis tardó demasiado. Inténtalo de nuevo.',
       serverError: '❌ Error del servidor',
       networkError: '🌐 Error de red: Verifica tu conexión a internet.',
-      generalError: '❌ Error'
->>>>>>> Stashed changes
+      generalError: '❌ Error',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} señal(es)',
+      signalCountZero: 'Sin señales',
+      generatedSignal: 'Señal generada',
+      top3SignalsReady: '¡TOP-3 señales listas!',
+      sell: 'VENDER',
+      wait: 'Esperar',
+      waiting: 'Esperando',
+      minutesShort: 'min',
+      secondsShort: 'seg',
+      hoursShort: 'h',
+      bearish: 'Bajista',
+      bullish: 'Alcista',
+      neutral: 'Neutral',
+      notAvailable: 'N/D',
+      notSpecified: 'No especificado',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'Análisis AI',
+      selectSignalForAnalysis: 'Selecciona una señal para análisis',
+      aiWillAnalyze: 'AI analizará la operación y dará recomendaciones',
+      marketStatus: 'Estado del Mercado',
+      selectPairForSignal: 'Selecciona un par para generar señal',
+      successfully: 'Exitosamente',
+      sentiment: 'Sentimiento',
+      volatility: 'Volatilidad',
+      recommendation: 'Recomendación:',
+      clickToGenerateSignal: 'Haz clic para generar señal',
+      confidence: 'Confianza',
+      signalGeneration: 'Generación de Señales',
+      usingMLModel: 'Usando modelo ML...',
+      analysis: 'Análisis',
+      mlModel: 'Modelo ML',
+      accuracy: 'Precisión',
+      pleaseWait: 'Por favor espera. El sistema está analizando el mercado...',
+      howToReceiveSignals: '¿Cómo quieres recibir señales?',
+      top3Signals: 'Señales TOP-3',
+      popular: 'Popular',
+      bestOpportunities: 'Mejores oportunidades del día',
+      threeBestSignals: '3 mejores señales',
+      simultaneously: 'simultáneamente',
+      highSuccessProbability: 'Alta probabilidad de éxito',
+      riskDiversification: 'Diversificación de riesgos',
+      singleSignals: 'Señales Individuales',
+      oneSignalAtTime: 'Una señal a la vez',
+      focusOnOneTrade: 'Enfoque en una operación',
+      simpleManagement: 'Gestión simple',
+      idealForBeginners: 'Ideal para principiantes',
+      dealActivated: 'OPERACIÓN ACTIVADA',
+      navigationBlocked: 'Navegación bloqueada',
+      remainingUntilExpiration: 'Restante hasta expiración',
+      waitForExpiration: 'Espera la expiración de la señal y deja feedback',
+      back: 'Atrás'
     },
     fr: {
       welcome: 'Bienvenue',
@@ -2341,6 +2606,7 @@ function App() {
       riskDiversification: 'Diversification des risques',
       focusOnOneTrade: 'Focus sur un trade',
       simpleManagement: 'Gestion simple',
+      availableIn: 'Disponible dans: {minutes} min',
       idealForBeginners: 'Idéal pour les débutants',
       analysis: 'Analyse',
       accuracy: 'Précision',
@@ -2391,14 +2657,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Veuillez patienter. Le système analyse le marché...',
       moreDetails: 'Plus de Détails',
       tryAgainInCooldown: 'Réessayez dans {seconds} secondes quand le marché se stabilise',
-      
       // Alert messages
       bulkUpdateSuccess: 'Mis à jour {successful} sur {total} utilisateurs',
       bulkUpdateError: 'Erreur de mise à jour en masse: {error}',
       bulkUpdateErrorGeneric: 'Erreur de mise à jour en masse: {message}',
       userDeletedSuccess: 'Utilisateur {userId} supprimé avec succès du bot',
       userDeleteError: 'Erreur de suppression: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Utilisateur ajouté au système',
       errorOccurredWith: 'Une erreur s\'est produite: {error}',
@@ -2406,7 +2670,6 @@ function App() {
       feedbackAcceptedFailure: 'Commentaire accepté: Trade perdant',
       navigationBlockedMessage: 'Vous avez un signal actif!\n\nAttendez l\'expiration et laissez un commentaire sur le résultat du trade.\n\nLa navigation sera débloquée après l\'envoi du commentaire.',
       modelRestrictedAlert: 'Ce modèle est restreint et disponible uniquement sur commande',
-      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'Signaux précis',
       successfulTradesPercent: '87% de trades réussis',
@@ -2418,14 +2681,10 @@ function App() {
       otc: 'OTC',
       top3: 'TOP-3',
       single: 'Individuel',
-      
       // New keys for hardcoded texts
       hoursAgo: 'il y a {count} heure{plural}',
       daysAgo: 'il y a {count} jour{plural}',
       selectLanguageDescription: 'Choisissez votre langue préférée pour continuer',
-<<<<<<< Updated upstream
-=======
-      
       // Keys for notifications interface
       notificationsBadge: 'NOTIFICATIONS',
       tradingSignals: 'Signaux de Trading',
@@ -2451,7 +2710,6 @@ function App() {
       smartNotificationsDescription: 'Recevez des notifications opportunes sur les événements importants. Vous pouvez configurer chaque type séparément.',
       enabled: 'Activé',
       disabled: 'Désactivé',
->>>>>>> Stashed changes
       forexMarketClosedWeekend: 'Le marché Forex est fermé le week-end. Passez au mode OTC.',
       forexMarketClosedLabel: 'Marché Forex fermé (week-end)',
       top3CooldownMessage: 'Les signaux TOP-3 peuvent être générés une fois toutes les 10 minutes. Restant: {minutes}:{seconds}',
@@ -2496,9 +2754,6 @@ function App() {
       tryAgainInSeconds: 'Réessayez dans {seconds} secondes quand le marché se stabilise',
       modelReady: 'Le modèle est entraîné et prêt à fonctionner',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Fermer l\'analyse'
-=======
       closeAnalysis: 'Fermer l\'analyse',
       apiError: 'Erreur API',
       unknownError: 'Erreur inconnue',
@@ -2506,8 +2761,61 @@ function App() {
       timeoutError: '⏰ Délai d\'attente: L\'analyse a pris trop de temps. Veuillez réessayer.',
       serverError: '❌ Erreur du serveur',
       networkError: '🌐 Erreur réseau: Vérifiez votre connexion internet.',
-      generalError: '❌ Erreur'
->>>>>>> Stashed changes
+      generalError: '❌ Erreur',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} signal(aux)',
+      signalCountZero: 'Aucun signal',
+      generatedSignal: 'Signal généré',
+      top3SignalsReady: 'TOP-3 signaux prêts!',
+      sell: 'VENDRE',
+      wait: 'Attendre',
+      waiting: 'En attente',
+      minutesShort: 'min',
+      secondsShort: 'sec',
+      hoursShort: 'h',
+      bearish: 'Baissier',
+      bullish: 'Haussier',
+      neutral: 'Neutre',
+      notAvailable: 'N/D',
+      notSpecified: 'Non spécifié',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'Analytique IA',
+      selectSignalForAnalysis: 'Sélectionnez un signal pour analyse',
+      aiWillAnalyze: 'L\'IA analysera la transaction et donnera des recommandations',
+      marketStatus: 'État du Marché',
+      selectPairForSignal: 'Sélectionnez une paire pour générer un signal',
+      successfully: 'Avec succès',
+      sentiment: 'Sentiment',
+      volatility: 'Volatilité',
+      recommendation: 'Recommandation:',
+      clickToGenerateSignal: 'Cliquez pour générer un signal',
+      confidence: 'Confiance',
+      signalGeneration: 'Génération de Signaux',
+      usingMLModel: 'Utilisation du modèle ML...',
+      analysis: 'Analyse',
+      mlModel: 'Modèle ML',
+      accuracy: 'Précision',
+      pleaseWait: 'Veuillez patienter. Le système analyse le marché...',
+      howToReceiveSignals: 'Comment voulez-vous recevoir les signaux?',
+      top3Signals: 'Signaux TOP-3',
+      popular: 'Populaire',
+      bestOpportunities: 'Meilleures opportunités du jour',
+      threeBestSignals: '3 meilleurs signaux',
+      simultaneously: 'simultanément',
+      highSuccessProbability: 'Haute probabilité de succès',
+      riskDiversification: 'Diversification des risques',
+      singleSignals: 'Signaux Individuels',
+      oneSignalAtTime: 'Un signal à la fois',
+      focusOnOneTrade: 'Focus sur une transaction',
+      simpleManagement: 'Gestion simple',
+      idealForBeginners: 'Idéal pour les débutants',
+      dealActivated: 'TRANSACTION ACTIVÉE',
+      navigationBlocked: 'Navigation bloquée',
+      remainingUntilExpiration: 'Restant jusqu\'à expiration',
+      waitForExpiration: 'Attendez l\'expiration du signal et laissez un feedback',
+      back: 'Retour'
     },
     de: {
       welcome: 'Willkommen',
@@ -2752,6 +3060,7 @@ function App() {
       riskDiversification: 'Risikodiversifizierung',
       focusOnOneTrade: 'Fokus auf einen Trade',
       simpleManagement: 'Einfache Verwaltung',
+      availableIn: 'Verfügbar in: {minutes} Min',
       idealForBeginners: 'Ideal für Anfänger',
       analysis: 'Analyse',
       accuracy: 'Genauigkeit',
@@ -2802,14 +3111,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Bitte warten. Das System analysiert den Markt...',
       moreDetails: 'Weitere Details',
       tryAgainInCooldown: 'Versuchen Sie es in {seconds} Sekunden erneut, wenn sich der Markt stabilisiert',
-      
       // Alert messages
       bulkUpdateSuccess: 'Aktualisiert {successful} von {total} Benutzern',
       bulkUpdateError: 'Massenaktualisierungsfehler: {error}',
       bulkUpdateErrorGeneric: 'Massenaktualisierungsfehler: {message}',
       userDeletedSuccess: 'Benutzer {userId} erfolgreich aus Bot gelöscht',
       userDeleteError: 'Löschfehler: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Benutzer zum System hinzugefügt',
       errorOccurredWith: 'Ein Fehler ist aufgetreten: {error}',
@@ -2817,7 +3124,6 @@ function App() {
       feedbackAcceptedFailure: 'Feedback akzeptiert: Verlustreicher Trade',
       navigationBlockedMessage: 'Sie haben ein aktives Signal!\n\nWarten Sie auf das Ablaufen und hinterlassen Sie Feedback zum Trade-Ergebnis.\n\nDie Navigation wird nach dem Senden des Feedbacks entsperrt.',
       modelRestrictedAlert: 'Dieses Modell ist eingeschränkt und nur auf Befehl verfügbar',
-      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'Präzise Signale',
       successfulTradesPercent: '87% erfolgreiche Trades',
@@ -2829,14 +3135,10 @@ function App() {
       otc: 'OTC',
       top3: 'TOP-3',
       single: 'Einzel',
-      
       // New keys for hardcoded texts
       hoursAgo: 'vor {count} Stunde{plural}',
       daysAgo: 'vor {count} Tag{plural}',
       selectLanguageDescription: 'Wählen Sie Ihre bevorzugte Sprache zum Fortfahren',
-<<<<<<< Updated upstream
-=======
-      
       // Keys for notifications interface
       notificationsBadge: 'BENACHRICHTIGUNGEN',
       tradingSignals: 'Trading-Signale',
@@ -2862,7 +3164,6 @@ function App() {
       smartNotificationsDescription: 'Erhalten Sie rechtzeitige Benachrichtigungen über wichtige Ereignisse. Sie können jeden Typ separat konfigurieren.',
       enabled: 'Aktiviert',
       disabled: 'Deaktiviert',
->>>>>>> Stashed changes
       forexMarketClosedWeekend: 'Der Forex-Markt ist an Wochenenden geschlossen. Wechseln Sie zum OTC-Modus.',
       forexMarketClosedLabel: 'Forex-Markt geschlossen (Wochenende)',
       top3CooldownMessage: 'TOP-3-Signale können alle 10 Minuten generiert werden. Verbleibend: {minutes}:{seconds}',
@@ -2907,9 +3208,6 @@ function App() {
       tryAgainInSeconds: 'Versuchen Sie es in {seconds} Sekunden erneut, wenn sich der Markt stabilisiert',
       modelReady: 'Das Modell ist trainiert und einsatzbereit',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Analyse schließen'
-=======
       closeAnalysis: 'Analyse schließen',
       apiError: 'API-Fehler',
       unknownError: 'Unbekannter Fehler',
@@ -2917,8 +3215,61 @@ function App() {
       timeoutError: '⏰ Zeitüberschreitung: Analyse dauerte zu lange. Bitte versuchen Sie es erneut.',
       serverError: '❌ Serverfehler',
       networkError: '🌐 Netzwerkfehler: Überprüfen Sie Ihre Internetverbindung.',
-      generalError: '❌ Fehler'
->>>>>>> Stashed changes
+      generalError: '❌ Fehler',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} Signal(e)',
+      signalCountZero: 'Keine Signale',
+      generatedSignal: 'Generiertes Signal',
+      top3SignalsReady: 'TOP-3 Signale bereit!',
+      sell: 'VERKAUFEN',
+      wait: 'Warten',
+      waiting: 'Wartet',
+      minutesShort: 'Min',
+      secondsShort: 'Sek',
+      hoursShort: 'Std',
+      bearish: 'Bärisch',
+      bullish: 'Bullisch',
+      neutral: 'Neutral',
+      notAvailable: 'k.A.',
+      notSpecified: 'Nicht angegeben',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'KI-Analytik',
+      selectSignalForAnalysis: 'Wählen Sie ein Signal zur Analyse',
+      aiWillAnalyze: 'KI wird den Handel analysieren und Empfehlungen geben',
+      marketStatus: 'Marktstatus',
+      selectPairForSignal: 'Wählen Sie ein Paar zur Signalgenerierung',
+      successfully: 'Erfolgreich',
+      sentiment: 'Stimmung',
+      volatility: 'Volatilität',
+      recommendation: 'Empfehlung:',
+      clickToGenerateSignal: 'Klicken Sie, um ein Signal zu generieren',
+      confidence: 'Vertrauen',
+      signalGeneration: 'Signalgenerierung',
+      usingMLModel: 'ML-Modell verwenden...',
+      analysis: 'Analyse',
+      mlModel: 'ML-Modell',
+      accuracy: 'Genauigkeit',
+      pleaseWait: 'Bitte warten. Das System analysiert den Markt...',
+      howToReceiveSignals: 'Wie möchten Sie Signale erhalten?',
+      top3Signals: 'TOP-3 Signale',
+      popular: 'Beliebt',
+      bestOpportunities: 'Beste Möglichkeiten des Tages',
+      threeBestSignals: '3 beste Signale',
+      simultaneously: 'gleichzeitig',
+      highSuccessProbability: 'Hohe Erfolgswahrscheinlichkeit',
+      riskDiversification: 'Risikodiversifikation',
+      singleSignals: 'Einzelne Signale',
+      oneSignalAtTime: 'Ein Signal zur Zeit',
+      focusOnOneTrade: 'Fokus auf einen Handel',
+      simpleManagement: 'Einfache Verwaltung',
+      idealForBeginners: 'Ideal für Anfänger',
+      dealActivated: 'GESCHÄFT AKTIVIERT',
+      navigationBlocked: 'Navigation blockiert',
+      remainingUntilExpiration: 'Verbleibend bis Ablauf',
+      waitForExpiration: 'Warten Sie auf Signalablauf und geben Sie Feedback',
+      back: 'Zurück'
     },
     it: {
       welcome: 'Benvenuto',
@@ -3156,14 +3507,10 @@ function App() {
       userDeleteError: '❌ Errore nell\'eliminazione dell\'utente {name}',
       accessRequestApproved: '✅ Richiesta di accesso approvata per {name}',
       accessRequestError: '❌ Errore nell\'approvazione della richiesta per {name}',
-      
       // New keys for hardcoded texts
       hoursAgo: '{count} ora{plural} fa',
       daysAgo: '{count} giorno{plural} fa',
       selectLanguageDescription: 'Scegli la tua lingua preferita per continuare',
-<<<<<<< Updated upstream
-=======
-      
       // Keys for notifications interface
       notificationsBadge: 'NOTIFICHE',
       tradingSignals: 'Segnali di Trading',
@@ -3189,7 +3536,6 @@ function App() {
       smartNotificationsDescription: 'Ricevi notifiche tempestive su eventi importanti. Puoi configurare ogni tipo separatamente.',
       enabled: 'Abilitato',
       disabled: 'Disabilitato',
-      
       // Additional missing translations
       waitingForEntry: 'In attesa di entrata',
       vipFunction: 'Funzione VIP',
@@ -3197,14 +3543,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Attendere prego. Il sistema sta analizzando il mercato...',
       moreDetails: 'Più Dettagli',
       tryAgainInCooldown: 'Riprova tra {seconds} secondi quando il mercato si stabilizza',
-      
       // Alert messages
       bulkUpdateSuccess: 'Aggiornato {successful} di {total} utenti',
       bulkUpdateError: 'Errore aggiornamento di massa: {error}',
       bulkUpdateErrorGeneric: 'Errore aggiornamento di massa: {message}',
       userDeletedSuccess: 'Utente {userId} eliminato con successo dal bot',
       userDeleteError: 'Errore eliminazione: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Utente aggiunto al sistema',
       errorOccurredWith: 'Si è verificato un errore: {error}',
@@ -3212,8 +3556,6 @@ function App() {
       feedbackAcceptedFailure: 'Feedback accettato: Trade perdente',
       navigationBlockedMessage: 'Hai un segnale attivo!\n\nAspetta la scadenza e lascia un feedback sul risultato del trade.\n\nLa navigazione sarà sbloccata dopo l\'invio del feedback.',
       modelRestrictedAlert: 'Questo modello è limitato e disponibile solo su comando',
-      
->>>>>>> Stashed changes
       forexMarketClosedWeekend: 'Il mercato Forex è chiuso nei fine settimana. Passa alla modalità OTC.',
       forexMarketClosedLabel: 'Mercato Forex chiuso (fine settimana)',
       top3CooldownMessage: 'I segnali TOP-3 possono essere generati una volta ogni 10 minuti. Rimanente: {minutes}:{seconds}',
@@ -3258,9 +3600,6 @@ function App() {
       tryAgainInSeconds: 'Riprova tra {seconds} secondi quando il mercato si stabilizza',
       modelReady: 'Il modello è addestrato e pronto per funzionare',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Chiudi analisi'
-=======
       closeAnalysis: 'Chiudi analisi',
       apiError: 'Errore API',
       unknownError: 'Errore sconosciuto',
@@ -3268,8 +3607,61 @@ function App() {
       timeoutError: '⏰ Timeout: L\'analisi ha impiegato troppo tempo. Riprova.',
       serverError: '❌ Errore del server',
       networkError: '🌐 Errore di rete: Controlla la tua connessione internet.',
-      generalError: '❌ Errore'
->>>>>>> Stashed changes
+      generalError: '❌ Errore',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} segnale(i)',
+      signalCountZero: 'Nessun segnale',
+      generatedSignal: 'Segnale generato',
+      top3SignalsReady: 'TOP-3 segnali pronti!',
+      sell: 'VENDERE',
+      wait: 'Attendere',
+      waiting: 'In attesa',
+      minutesShort: 'min',
+      secondsShort: 'sec',
+      hoursShort: 'h',
+      bearish: 'Ribassista',
+      bullish: 'Rialzista',
+      neutral: 'Neutrale',
+      notAvailable: 'N/D',
+      notSpecified: 'Non specificato',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'Analisi IA',
+      selectSignalForAnalysis: 'Seleziona un segnale per analisi',
+      aiWillAnalyze: 'L\'IA analizzerà il trade e darà raccomandazioni',
+      marketStatus: 'Stato del Mercato',
+      selectPairForSignal: 'Seleziona una coppia per generare segnale',
+      successfully: 'Con successo',
+      sentiment: 'Sentimento',
+      volatility: 'Volatilità',
+      recommendation: 'Raccomandazione:',
+      clickToGenerateSignal: 'Clicca per generare segnale',
+      confidence: 'Fiducia',
+      signalGeneration: 'Generazione Segnali',
+      usingMLModel: 'Usando modello ML...',
+      analysis: 'Analisi',
+      mlModel: 'Modello ML',
+      accuracy: 'Precisione',
+      pleaseWait: 'Attendere prego. Il sistema sta analizzando il mercato...',
+      howToReceiveSignals: 'Come vuoi ricevere i segnali?',
+      top3Signals: 'Segnali TOP-3',
+      popular: 'Popolare',
+      bestOpportunities: 'Migliori opportunità del giorno',
+      threeBestSignals: '3 migliori segnali',
+      simultaneously: 'simultaneamente',
+      highSuccessProbability: 'Alta probabilità di successo',
+      riskDiversification: 'Diversificazione del rischio',
+      singleSignals: 'Segnali Singoli',
+      oneSignalAtTime: 'Un segnale alla volta',
+      focusOnOneTrade: 'Focus su un trade',
+      simpleManagement: 'Gestione semplice',
+      idealForBeginners: 'Ideale per principianti',
+      dealActivated: 'TRADE ATTIVATO',
+      navigationBlocked: 'Navigazione bloccata',
+      remainingUntilExpiration: 'Rimanente fino a scadenza',
+      waitForExpiration: 'Aspetta la scadenza del segnale e lascia feedback',
+      back: 'Indietro'
     },
     pt: {
       welcome: 'Bem-vindo',
@@ -3507,14 +3899,10 @@ function App() {
       userDeleteError: '❌ Erro ao excluir usuário {name}',
       accessRequestApproved: '✅ Solicitação de acesso aprovada para {name}',
       accessRequestError: '❌ Erro ao aprovar solicitação para {name}',
-      
       // New keys for hardcoded texts
       hoursAgo: 'há {count} hora{plural}',
       daysAgo: 'há {count} dia{plural}',
       selectLanguageDescription: 'Escolha seu idioma preferido para continuar',
-<<<<<<< Updated upstream
-=======
-      
       // Keys for notifications interface
       notificationsBadge: 'NOTIFICAÇÕES',
       tradingSignals: 'Sinais de Trading',
@@ -3540,7 +3928,6 @@ function App() {
       smartNotificationsDescription: 'Receba notificações oportunas sobre eventos importantes. Você pode configurar cada tipo separadamente.',
       enabled: 'Habilitado',
       disabled: 'Desabilitado',
-      
       // Additional missing translations
       waitingForEntry: 'Aguardando entrada',
       vipFunction: 'Função VIP',
@@ -3548,14 +3935,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Por favor aguarde. O sistema está analisando o mercado...',
       moreDetails: 'Mais Detalhes',
       tryAgainInCooldown: 'Tente novamente em {seconds} segundos quando o mercado se estabilizar',
-      
       // Alert messages
       bulkUpdateSuccess: 'Atualizado {successful} de {total} usuários',
       bulkUpdateError: 'Erro de atualização em massa: {error}',
       bulkUpdateErrorGeneric: 'Erro de atualização em massa: {message}',
       userDeletedSuccess: 'Usuário {userId} excluído com sucesso do bot',
       userDeleteError: 'Erro de exclusão: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Usuário adicionado ao sistema',
       errorOccurredWith: 'Ocorreu um erro: {error}',
@@ -3563,8 +3948,6 @@ function App() {
       feedbackAcceptedFailure: 'Feedback aceito: Trade perdedor',
       navigationBlockedMessage: 'Você tem um sinal ativo!\n\nAguarde a expiração e deixe feedback sobre o resultado do trade.\n\nA navegação será desbloqueada após enviar o feedback.',
       modelRestrictedAlert: 'Este modelo é restrito e disponível apenas sob comando',
-      
->>>>>>> Stashed changes
       forexMarketClosedWeekend: 'O mercado Forex está fechado nos fins de semana. Mude para o modo OTC.',
       forexMarketClosedLabel: 'Mercado Forex fechado (fins de semana)',
       top3CooldownMessage: 'Sinais TOP-3 podem ser gerados uma vez a cada 10 minutos. Restante: {minutes}:{seconds}',
@@ -3609,9 +3992,6 @@ function App() {
       tryAgainInSeconds: 'Tente novamente em {seconds} segundos quando o mercado se estabilizar',
       modelReady: 'O modelo está treinado e pronto para funcionar',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Fechar análise'
-=======
       closeAnalysis: 'Fechar análise',
       apiError: 'Erro de API',
       unknownError: 'Erro desconhecido',
@@ -3619,8 +3999,61 @@ function App() {
       timeoutError: '⏰ Timeout: A análise demorou muito. Tente novamente.',
       serverError: '❌ Erro do servidor',
       networkError: '🌐 Erro de rede: Verifique sua conexão com a internet.',
-      generalError: '❌ Erro'
->>>>>>> Stashed changes
+      generalError: '❌ Erro',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} sinal(is)',
+      signalCountZero: 'Sem sinais',
+      generatedSignal: 'Sinal gerado',
+      top3SignalsReady: 'TOP-3 sinais prontos!',
+      sell: 'VENDER',
+      wait: 'Esperar',
+      waiting: 'Aguardando',
+      minutesShort: 'min',
+      secondsShort: 'seg',
+      hoursShort: 'h',
+      bearish: 'Baixista',
+      bullish: 'Alta',
+      neutral: 'Neutro',
+      notAvailable: 'N/D',
+      notSpecified: 'Não especificado',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'Análise IA',
+      selectSignalForAnalysis: 'Selecione um sinal para análise',
+      aiWillAnalyze: 'IA analisará o trade e dará recomendações',
+      marketStatus: 'Status do Mercado',
+      selectPairForSignal: 'Selecione um par para gerar sinal',
+      successfully: 'Com sucesso',
+      sentiment: 'Sentimento',
+      volatility: 'Volatilidade',
+      recommendation: 'Recomendação:',
+      clickToGenerateSignal: 'Clique para gerar sinal',
+      confidence: 'Confiança',
+      signalGeneration: 'Geração de Sinais',
+      usingMLModel: 'Usando modelo ML...',
+      analysis: 'Análise',
+      mlModel: 'Modelo ML',
+      accuracy: 'Precisão',
+      pleaseWait: 'Por favor aguarde. O sistema está analisando o mercado...',
+      howToReceiveSignals: 'Como você quer receber sinais?',
+      top3Signals: 'Sinais TOP-3',
+      popular: 'Popular',
+      bestOpportunities: 'Melhores oportunidades do dia',
+      threeBestSignals: '3 melhores sinais',
+      simultaneously: 'simultaneamente',
+      highSuccessProbability: 'Alta probabilidade de sucesso',
+      riskDiversification: 'Diversificação de risco',
+      singleSignals: 'Sinais Individuais',
+      oneSignalAtTime: 'Um sinal por vez',
+      focusOnOneTrade: 'Foco em um trade',
+      simpleManagement: 'Gestão simples',
+      idealForBeginners: 'Ideal para iniciantes',
+      dealActivated: 'NEGÓCIO ATIVADO',
+      navigationBlocked: 'Navegação bloqueada',
+      remainingUntilExpiration: 'Restante até expiração',
+      waitForExpiration: 'Aguarde a expiração do sinal e deixe feedback',
+      back: 'Voltar'
     },
     zh: {
       welcome: '欢迎',
@@ -3806,7 +4239,6 @@ function App() {
       pushNotification: '推送',
       enabled: '已启用',
       disabled: '已禁用',
-      
       // Keys for notifications interface
       notificationsBadge: '通知',
       tradingSignals: '交易信号',
@@ -3830,7 +4262,6 @@ function App() {
       emailNotificationsDescription: '邮件通知',
       smartNotifications: '智能通知',
       smartNotificationsDescription: '及时接收重要事件通知。您可以单独配置每种类型。',
-      
       // Additional missing translations
       waitingForEntry: '等待入场',
       vipFunction: 'VIP功能',
@@ -3838,14 +4269,12 @@ function App() {
       pleaseWaitSystemAnalyzing: '请稍等。系统正在分析市场...',
       moreDetails: '更多详情',
       tryAgainInCooldown: '请在{seconds}秒后重试，当市场稳定时',
-      
       // Alert messages
       bulkUpdateSuccess: '已更新{successful}个用户，共{total}个',
       bulkUpdateError: '批量更新错误：{error}',
       bulkUpdateErrorGeneric: '批量更新错误：{message}',
       userDeletedSuccess: '用户{userId}已成功从机器人中删除',
       userDeleteError: '删除错误：{error}',
-      
       // Additional alert messages
       userAddedSuccess: '用户已添加到系统',
       errorOccurredWith: '发生错误：{error}',
@@ -3853,7 +4282,6 @@ function App() {
       feedbackAcceptedFailure: '反馈已接受：亏损交易',
       navigationBlockedMessage: '您有一个活跃信号！\n\n等待到期并留下交易结果的反馈。\n\n发送反馈后导航将解锁。',
       modelRestrictedAlert: '此模型受限，仅按命令可用',
-      
       // Аналитика
       aiAnalytics: 'AI分析',
       successfulTradesHistory: '成功交易历史',
@@ -3914,6 +4342,7 @@ function App() {
       riskDiversification: '风险分散',
       focusOnOneTrade: '专注于一笔交易',
       simpleManagement: '简单管理',
+      availableIn: '可用时间: {minutes} 分钟',
       idealForBeginners: '适合初学者',
       analysis: '分析',
       accuracy: '准确性',
@@ -3973,7 +4402,6 @@ function App() {
       otc: 'OTC',
       top3: '前3',
       single: '单一',
-      
       // New keys for hardcoded texts
       hoursAgo: '{count}小时前',
       daysAgo: '{count}天前',
@@ -4022,9 +4450,6 @@ function App() {
       tryAgainInSeconds: '在{seconds}秒后重试，当市场稳定时',
       modelReady: '模型已训练并准备就绪',
       aiAnalytics: 'AI分析',
-<<<<<<< Updated upstream
-      closeAnalysis: '关闭分析'
-=======
       closeAnalysis: '关闭分析',
       apiError: 'API错误',
       unknownError: '未知错误',
@@ -4032,8 +4457,59 @@ function App() {
       timeoutError: '⏰ 超时：分析耗时过长。请重试。',
       serverError: '❌ 服务器错误',
       networkError: '🌐 网络错误：请检查您的互联网连接。',
-      generalError: '❌ 错误'
->>>>>>> Stashed changes
+      generalError: '❌ 错误',
+      // New localization keys
+      signalCount: '{count} 个信号',
+      signalCountZero: '没有信号',
+      generatedSignal: '生成的信号',
+      top3SignalsReady: 'TOP-3 信号准备好了！',
+      sell: '卖出',
+      wait: '等待',
+      waiting: '等待中',
+      minutesShort: '分钟',
+      secondsShort: '秒',
+      hoursShort: '小时',
+      bearish: '看跌',
+      bullish: '看涨',
+      neutral: '中性',
+      notAvailable: '不适用',
+      notSpecified: '未指定',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'AI 分析',
+      selectSignalForAnalysis: '选择信号进行分析',
+      aiWillAnalyze: 'AI 将分析交易并给出建议',
+      marketStatus: '市场状态',
+      selectPairForSignal: '选择货币对生成信号',
+      successfully: '成功',
+      sentiment: '情绪',
+      volatility: '波动率',
+      recommendation: '建议:',
+      clickToGenerateSignal: '点击生成信号',
+      confidence: '信心',
+      signalGeneration: '信号生成',
+      usingMLModel: '使用 ML 模型...',
+      analysis: '分析',
+      mlModel: 'ML 模型',
+      accuracy: '准确性',
+      pleaseWait: '请稍等。系统正在分析市场...',
+      howToReceiveSignals: '您想如何接收信号？',
+      top3Signals: 'TOP-3 信号',
+      popular: '热门',
+      bestOpportunities: '当日最佳机会',
+      threeBestSignals: '3 个最佳信号',
+      simultaneously: '同时',
+      highSuccessProbability: '高成功率',
+      riskDiversification: '风险分散',
+      singleSignals: '单一信号',
+      oneSignalAtTime: '一次一个信号',
+      focusOnOneTrade: '专注于一个交易',
+      simpleManagement: '简单管理',
+      idealForBeginners: '适合初学者',
+      dealActivated: '交易已激活',
+      navigationBlocked: '导航被阻止',
+      remainingUntilExpiration: '剩余到期时间',
+      waitForExpiration: '等待信号到期并留下反馈',
+      back: '返回'
     },
     ja: {
       welcome: 'ようこそ',
@@ -4057,7 +4533,7 @@ function App() {
       buy: '購入',
       monthly: '毎月',
       lifetime: '生涯',
-      welcomeTo: 'ようこそ',
+      welcomeTo: 'ようこそ、',
       premiumSignals: 'プロフェッショナルトレーディング用プレミアムシグナル',
       accurateSignals: '正確なシグナル',
       successfulTradesPercent: '87%の成功取引',
@@ -4131,7 +4607,6 @@ function App() {
       pushNotification: 'プッシュ',
       enabled: '有効',
       disabled: '無効',
-      
       // Keys for notifications interface
       notificationsBadge: '通知',
       tradingSignals: 'トレーディングシグナル',
@@ -4155,7 +4630,6 @@ function App() {
       emailNotificationsDescription: 'メール通知',
       smartNotifications: 'スマート通知',
       smartNotificationsDescription: '重要なイベントについて適時に通知を受け取ります。各タイプを個別に設定できます。',
-      
       // Additional missing translations
       waitingForEntry: '入場待機中',
       vipFunction: 'VIP機能',
@@ -4163,14 +4637,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'お待ちください。システムが市場を分析しています...',
       moreDetails: '詳細',
       tryAgainInCooldown: '市場が安定したら{seconds}秒後に再試行してください',
-      
       // Alert messages
       bulkUpdateSuccess: '{total}人中{successful}人を更新しました',
       bulkUpdateError: '一括更新エラー：{error}',
       bulkUpdateErrorGeneric: '一括更新エラー：{message}',
       userDeletedSuccess: 'ユーザー{userId}をボットから正常に削除しました',
       userDeleteError: '削除エラー：{error}',
-      
       // Additional alert messages
       userAddedSuccess: 'ユーザーがシステムに追加されました',
       errorOccurredWith: 'エラーが発生しました：{error}',
@@ -4178,7 +4650,6 @@ function App() {
       feedbackAcceptedFailure: 'フィードバック受付：損失取引',
       navigationBlockedMessage: 'アクティブなシグナルがあります！\n\n有効期限を待ち、取引結果についてフィードバックを残してください。\n\nフィードバック送信後、ナビゲーションがロック解除されます。',
       modelRestrictedAlert: 'このモデルは制限されており、コマンドでのみ利用可能です',
-      
       // Аналитика
       aiAnalytics: 'AI分析',
       successfulTradesHistory: '成功取引履歴',
@@ -4237,7 +4708,61 @@ function App() {
       timeoutError: '⏰ タイムアウト：分析に時間がかかりすぎました。再試行してください。',
       serverError: '❌ サーバーエラー',
       networkError: '🌐 ネットワークエラー：インターネット接続を確認してください。',
-      generalError: '❌ エラー'
+      generalError: '❌ エラー',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} シグナル',
+      signalCountZero: 'シグナルなし',
+      generatedSignal: '生成されたシグナル',
+      top3SignalsReady: 'TOP-3シグナル準備完了！',
+      sell: '売る',
+      wait: '待つ',
+      waiting: '待機中',
+      minutesShort: '分',
+      secondsShort: '秒',
+      hoursShort: '時',
+      bearish: '弱気',
+      bullish: '強気',
+      neutral: '中立',
+      notAvailable: 'なし',
+      notSpecified: '未指定',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'AI 分析',
+      selectSignalForAnalysis: '分析するシグナルを選択',
+      aiWillAnalyze: 'AI が取引を分析し、推奨事項を提供します',
+      marketStatus: '市場状況',
+      selectPairForSignal: 'シグナル生成のためのペアを選択',
+      successfully: '成功',
+      sentiment: 'センチメント',
+      volatility: 'ボラティリティ',
+      recommendation: '推奨:',
+      clickToGenerateSignal: 'クリックしてシグナルを生成',
+      confidence: '信頼度',
+      signalGeneration: 'シグナル生成',
+      usingMLModel: 'ML モデルを使用中...',
+      analysis: '分析',
+      mlModel: 'ML モデル',
+      accuracy: '精度',
+      pleaseWait: 'お待ちください。システムが市場を分析しています...',
+      howToReceiveSignals: 'シグナルをどのように受け取りたいですか？',
+      top3Signals: 'TOP-3 シグナル',
+      popular: '人気',
+      bestOpportunities: '今日のベストオポチュニティ',
+      threeBestSignals: '3つのベストシグナル',
+      simultaneously: '同時に',
+      highSuccessProbability: '高い成功確率',
+      riskDiversification: 'リスク分散',
+      singleSignals: '単一シグナル',
+      oneSignalAtTime: '一度に1つのシグナル',
+      focusOnOneTrade: '1つの取引に集中',
+      simpleManagement: 'シンプルな管理',
+      idealForBeginners: '初心者に理想的',
+      dealActivated: '取引がアクティベートされました',
+      navigationBlocked: 'ナビゲーションがブロックされました',
+      remainingUntilExpiration: '有効期限まで残り',
+      waitForExpiration: 'シグナルの有効期限を待ち、フィードバックを残してください',
+      back: '戻る'
     },
     ko: {
       welcome: '환영합니다',
@@ -4261,7 +4786,7 @@ function App() {
       buy: '구매',
       monthly: '월간',
       lifetime: '평생',
-      welcomeTo: '환영합니다',
+      welcomeTo: '환영합니다,',
       premiumSignals: '전문 트레이딩을 위한 프리미엄 신호',
       accurateSignals: '정확한 신호',
       successfulTradesPercent: '87% 성공적인 거래',
@@ -4335,7 +4860,6 @@ function App() {
       pushNotification: '푸시',
       enabled: '활성화됨',
       disabled: '비활성화됨',
-      
       // Keys for notifications interface
       notificationsBadge: '알림',
       tradingSignals: '트레이딩 신호',
@@ -4359,7 +4883,6 @@ function App() {
       emailNotificationsDescription: '이메일 알림',
       smartNotifications: '스마트 알림',
       smartNotificationsDescription: '중요한 이벤트에 대한 적시 알림을 받으세요. 각 유형을 개별적으로 구성할 수 있습니다.',
-      
       // Additional missing translations
       waitingForEntry: '진입 대기 중',
       vipFunction: 'VIP 기능',
@@ -4367,14 +4890,12 @@ function App() {
       pleaseWaitSystemAnalyzing: '잠시 기다려주세요. 시스템이 시장을 분석하고 있습니다...',
       moreDetails: '자세히',
       tryAgainInCooldown: '시장이 안정되면 {seconds}초 후에 다시 시도하세요',
-      
       // Alert messages
       bulkUpdateSuccess: '{total}명 중 {successful}명 업데이트됨',
       bulkUpdateError: '대량 업데이트 오류: {error}',
       bulkUpdateErrorGeneric: '대량 업데이트 오류: {message}',
       userDeletedSuccess: '사용자 {userId}가 봇에서 성공적으로 삭제됨',
       userDeleteError: '삭제 오류: {error}',
-      
       // Additional alert messages
       userAddedSuccess: '사용자가 시스템에 추가되었습니다',
       errorOccurredWith: '오류가 발생했습니다: {error}',
@@ -4382,7 +4903,6 @@ function App() {
       feedbackAcceptedFailure: '피드백 수락: 손실 거래',
       navigationBlockedMessage: '활성 신호가 있습니다!\n\n만료를 기다리고 거래 결과에 대한 피드백을 남겨주세요.\n\n피드백 전송 후 탐색이 잠금 해제됩니다.',
       modelRestrictedAlert: '이 모델은 제한되어 있으며 명령에 의해서만 사용 가능합니다',
-      
       // Аналитика
       aiAnalytics: 'AI 분석',
       successfulTradesHistory: '성공한 거래 기록',
@@ -4435,7 +4955,6 @@ function App() {
       userDeleteError: '❌ 사용자 {name} 삭제 오류',
       accessRequestApproved: '✅ 사용자 {name}의 액세스 요청이 승인되었습니다',
       accessRequestError: '❌ 사용자 {name} 요청 승인 오류',
-      
       // New keys for hardcoded texts
       hoursAgo: '{count}시간 전',
       daysAgo: '{count}일 전',
@@ -4484,9 +5003,6 @@ function App() {
       tryAgainInSeconds: '시장이 안정되면 {seconds}초 후에 다시 시도하세요',
       modelReady: '모델이 훈련되어 작업 준비가 완료되었습니다',
       aiAnalytics: 'AI 분석',
-<<<<<<< Updated upstream
-      closeAnalysis: '분석 닫기'
-=======
       closeAnalysis: '분석 닫기',
       apiError: 'API 오류',
       unknownError: '알 수 없는 오류',
@@ -4494,8 +5010,61 @@ function App() {
       timeoutError: '⏰ 시간 초과: 분석에 너무 오래 걸렸습니다. 다시 시도해주세요.',
       serverError: '❌ 서버 오류',
       networkError: '🌐 네트워크 오류: 인터넷 연결을 확인해주세요.',
-      generalError: '❌ 오류'
->>>>>>> Stashed changes
+      generalError: '❌ 오류',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} 신호',
+      signalCountZero: '신호 없음',
+      generatedSignal: '생성된 신호',
+      top3SignalsReady: 'TOP-3 신호 준비 완료!',
+      sell: '매도',
+      wait: '대기',
+      waiting: '대기 중',
+      minutesShort: '분',
+      secondsShort: '초',
+      hoursShort: '시간',
+      bearish: '약세',
+      bullish: '강세',
+      neutral: '중립',
+      notAvailable: '해당 없음',
+      notSpecified: '지정되지 않음',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'AI 분석',
+      selectSignalForAnalysis: '분석할 신호 선택',
+      aiWillAnalyze: 'AI가 거래를 분석하고 추천을 제공합니다',
+      marketStatus: '시장 상태',
+      selectPairForSignal: '신호 생성을 위한 페어 선택',
+      successfully: '성공적으로',
+      sentiment: '감정',
+      volatility: '변동성',
+      recommendation: '추천:',
+      clickToGenerateSignal: '신호 생성을 위해 클릭',
+      confidence: '신뢰도',
+      signalGeneration: '신호 생성',
+      usingMLModel: 'ML 모델 사용 중...',
+      analysis: '분석',
+      mlModel: 'ML 모델',
+      accuracy: '정확도',
+      pleaseWait: '잠시만 기다려주세요. 시스템이 시장을 분석하고 있습니다...',
+      howToReceiveSignals: '신호를 어떻게 받고 싶으신가요?',
+      top3Signals: 'TOP-3 신호',
+      popular: '인기',
+      bestOpportunities: '오늘의 최고 기회',
+      threeBestSignals: '3개의 최고 신호',
+      simultaneously: '동시에',
+      highSuccessProbability: '높은 성공 확률',
+      riskDiversification: '위험 분산',
+      singleSignals: '단일 신호',
+      oneSignalAtTime: '한 번에 하나의 신호',
+      focusOnOneTrade: '하나의 거래에 집중',
+      simpleManagement: '간단한 관리',
+      idealForBeginners: '초보자에게 이상적',
+      dealActivated: '거래 활성화됨',
+      navigationBlocked: '네비게이션 차단됨',
+      remainingUntilExpiration: '만료까지 남은 시간',
+      waitForExpiration: '신호 만료를 기다리고 피드백을 남겨주세요',
+      back: '뒤로'
     },
     ar: {
       welcome: 'مرحبا',
@@ -4593,7 +5162,6 @@ function App() {
       pushNotification: 'دفع',
       enabled: 'مفعل',
       disabled: 'معطل',
-      
       // Keys for notifications interface
       notificationsBadge: 'الإشعارات',
       tradingSignals: 'إشارات التداول',
@@ -4617,7 +5185,6 @@ function App() {
       emailNotificationsDescription: 'إشعارات عبر البريد الإلكتروني',
       smartNotifications: 'الإشعارات الذكية',
       smartNotificationsDescription: 'احصل على إشعارات في الوقت المناسب حول الأحداث المهمة. يمكنك تكوين كل نوع بشكل منفصل.',
-      
       // Additional missing translations
       waitingForEntry: 'في انتظار الدخول',
       vipFunction: 'وظيفة VIP',
@@ -4625,14 +5192,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'يرجى الانتظار. النظام يحلل السوق...',
       moreDetails: 'المزيد من التفاصيل',
       tryAgainInCooldown: 'حاول مرة أخرى خلال {seconds} ثانية عندما يستقر السوق',
-      
       // Alert messages
       bulkUpdateSuccess: 'تم تحديث {successful} من {total} مستخدم',
       bulkUpdateError: 'خطأ في التحديث الجماعي: {error}',
       bulkUpdateErrorGeneric: 'خطأ في التحديث الجماعي: {message}',
       userDeletedSuccess: 'تم حذف المستخدم {userId} بنجاح من البوت',
       userDeleteError: 'خطأ في الحذف: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'تم إضافة المستخدم إلى النظام',
       errorOccurredWith: 'حدث خطأ: {error}',
@@ -4640,7 +5205,6 @@ function App() {
       feedbackAcceptedFailure: 'تم قبول التعليق: صفقة خاسرة',
       navigationBlockedMessage: 'لديك إشارة نشطة!\n\nانتظر انتهاء الصلاحية واترك تعليقاً حول نتيجة الصفقة.\n\nسيتم إلغاء قفل التنقل بعد إرسال التعليق.',
       modelRestrictedAlert: 'هذا النموذج مقيد ومتاح فقط عند الطلب',
-      
       // Аналитика
       aiAnalytics: 'تحليل AI',
       successfulTradesHistory: 'تاريخ الصفقات الناجحة',
@@ -4693,7 +5257,6 @@ function App() {
       userDeleteError: '❌ خطأ في حذف المستخدم {name}',
       accessRequestApproved: '✅ تم الموافقة على طلب الوصول للمستخدم {name}',
       accessRequestError: '❌ خطأ في الموافقة على طلب المستخدم {name}',
-      
       // New keys for hardcoded texts
       hoursAgo: 'منذ {count} ساعة{plural}',
       daysAgo: 'منذ {count} يوم{plural}',
@@ -4742,9 +5305,6 @@ function App() {
       tryAgainInSeconds: 'حاول مرة أخرى خلال {seconds} ثانية عندما يستقر السوق',
       modelReady: 'النموذج مدرب وجاهز للعمل',
       aiAnalytics: 'تحليلات AI',
-<<<<<<< Updated upstream
-      closeAnalysis: 'إغلاق التحليل'
-=======
       closeAnalysis: 'إغلاق التحليل',
       apiError: 'خطأ في API',
       unknownError: 'خطأ غير معروف',
@@ -4752,8 +5312,61 @@ function App() {
       timeoutError: '⏰ انتهت المهلة: استغرق التحليل وقتاً طويلاً. يرجى المحاولة مرة أخرى.',
       serverError: '❌ خطأ في الخادم',
       networkError: '🌐 خطأ في الشبكة: تحقق من اتصالك بالإنترنت.',
-      generalError: '❌ خطأ'
->>>>>>> Stashed changes
+      generalError: '❌ خطأ',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} إشارة',
+      signalCountZero: 'لا توجد إشارات',
+      generatedSignal: 'إشارة تم إنشاؤها',
+      top3SignalsReady: 'إشارات TOP-3 جاهزة!',
+      sell: 'بيع',
+      wait: 'انتظر',
+      waiting: 'في انتظار',
+      minutesShort: 'د',
+      secondsShort: 'ث',
+      hoursShort: 'س',
+      bearish: 'هبوطي',
+      bullish: 'صعودي',
+      neutral: 'محايد',
+      notAvailable: 'غير متوفر',
+      notSpecified: 'غير محدد',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'تحليل الذكاء الاصطناعي',
+      selectSignalForAnalysis: 'اختر إشارة للتحليل',
+      aiWillAnalyze: 'الذكاء الاصطناعي سيقوم بتحليل الصفقة وإعطاء التوصيات',
+      marketStatus: 'حالة السوق',
+      selectPairForSignal: 'اختر زوج عملات لإنشاء إشارة',
+      successfully: 'بنجاح',
+      sentiment: 'المشاعر',
+      volatility: 'التقلب',
+      recommendation: 'التوصية:',
+      clickToGenerateSignal: 'انقر لإنشاء إشارة',
+      confidence: 'الثقة',
+      signalGeneration: 'إنشاء الإشارات',
+      usingMLModel: 'استخدام نموذج ML...',
+      analysis: 'التحليل',
+      mlModel: 'نموذج ML',
+      accuracy: 'الدقة',
+      pleaseWait: 'يرجى الانتظار. النظام يحلل السوق...',
+      howToReceiveSignals: 'كيف تريد تلقي الإشارات؟',
+      top3Signals: 'إشارات TOP-3',
+      popular: 'شائع',
+      bestOpportunities: 'أفضل الفرص اليوم',
+      threeBestSignals: '3 أفضل إشارات',
+      simultaneously: 'بالتزامن',
+      highSuccessProbability: 'احتمالية نجاح عالية',
+      riskDiversification: 'تنويع المخاطر',
+      singleSignals: 'إشارات فردية',
+      oneSignalAtTime: 'إشارة واحدة في المرة',
+      focusOnOneTrade: 'التركيز على صفقة واحدة',
+      simpleManagement: 'إدارة بسيطة',
+      idealForBeginners: 'مثالي للمبتدئين',
+      dealActivated: 'تم تفعيل الصفقة',
+      navigationBlocked: 'التنقل محظور',
+      remainingUntilExpiration: 'المتبقي حتى انتهاء الصلاحية',
+      waitForExpiration: 'انتظر انتهاء صلاحية الإشارة واترك تعليقاً',
+      back: 'رجوع'
     },
     hi: {
       welcome: 'स्वागत है',
@@ -4851,7 +5464,6 @@ function App() {
       pushNotification: 'पुश',
       enabled: 'सक्षम',
       disabled: 'अक्षम',
-      
       // Keys for notifications interface
       notificationsBadge: 'सूचनाएं',
       tradingSignals: 'ट्रेडिंग सिग्नल',
@@ -4875,7 +5487,6 @@ function App() {
       emailNotificationsDescription: 'ईमेल सूचनाएं',
       smartNotifications: 'स्मार्ट सूचनाएं',
       smartNotificationsDescription: 'महत्वपूर्ण घटनाओं के बारे में समय पर सूचनाएं प्राप्त करें। आप प्रत्येक प्रकार को अलग से कॉन्फ़िगर कर सकते हैं।',
-      
       // Additional missing translations
       waitingForEntry: 'प्रवेश की प्रतीक्षा',
       vipFunction: 'VIP फंक्शन',
@@ -4883,14 +5494,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'कृपया प्रतीक्षा करें। सिस्टम बाजार का विश्लेषण कर रहा है...',
       moreDetails: 'अधिक विवरण',
       tryAgainInCooldown: 'बाजार स्थिर होने पर {seconds} सेकंड में फिर से कोशिश करें',
-      
       // Alert messages
       bulkUpdateSuccess: '{total} में से {successful} उपयोगकर्ता अपडेट किए गए',
       bulkUpdateError: 'बल्क अपडेट त्रुटि: {error}',
       bulkUpdateErrorGeneric: 'बल्क अपडेट त्रुटि: {message}',
       userDeletedSuccess: 'उपयोगकर्ता {userId} को बॉट से सफलतापूर्वक हटा दिया गया',
       userDeleteError: 'हटाने की त्रुटि: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'उपयोगकर्ता को सिस्टम में जोड़ा गया',
       errorOccurredWith: 'एक त्रुटि हुई: {error}',
@@ -4898,7 +5507,6 @@ function App() {
       feedbackAcceptedFailure: 'फीडबैक स्वीकार: हानिकारक ट्रेड',
       navigationBlockedMessage: 'आपके पास एक सक्रिय सिग्नल है!\n\nसमाप्ति की प्रतीक्षा करें और ट्रेड परिणाम के बारे में फीडबैक दें।\n\nफीडबैक भेजने के बाद नेविगेशन अनलॉक हो जाएगा।',
       modelRestrictedAlert: 'यह मॉडल प्रतिबंधित है और केवल कमांड पर उपलब्ध है',
-      
       // Аналитика
       aiAnalytics: 'AI विश्लेषण',
       successfulTradesHistory: 'सफल ट्रेड इतिहास',
@@ -4951,7 +5559,6 @@ function App() {
       userDeleteError: '❌ उपयोगकर्ता {name} को हटाने में त्रुटि',
       accessRequestApproved: '✅ उपयोगकर्ता {name} की पहुंच अनुरोध मंजूर हो गया',
       accessRequestError: '❌ उपयोगकर्ता {name} के अनुरोध को मंजूर करने में त्रुटि',
-      
       // New keys for hardcoded texts
       hoursAgo: '{count} घंटे पहले',
       daysAgo: '{count} दिन पहले',
@@ -5000,9 +5607,6 @@ function App() {
       tryAgainInSeconds: 'बाजार स्थिर होने पर {seconds} सेकंड में फिर से कोशिश करें',
       modelReady: 'मॉडल प्रशिक्षित है और काम करने के लिए तैयार है',
       aiAnalytics: 'AI एनालिटिक्स',
-<<<<<<< Updated upstream
-      closeAnalysis: 'विश्लेषण बंद करें'
-=======
       closeAnalysis: 'विश्लेषण बंद करें',
       apiError: 'API त्रुटि',
       unknownError: 'अज्ञात त्रुटि',
@@ -5010,8 +5614,61 @@ function App() {
       timeoutError: '⏰ टाइमआउट: विश्लेषण में बहुत समय लगा। कृपया पुनः प्रयास करें।',
       serverError: '❌ सर्वर त्रुटि',
       networkError: '🌐 नेटवर्क त्रुटि: अपना इंटरनेट कनेक्शन जांचें।',
-      generalError: '❌ त्रुटि'
->>>>>>> Stashed changes
+      generalError: '❌ त्रुटि',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      // New localization keys
+      signalCount: '{count} सिग्नल',
+      signalCountZero: 'कोई सिग्नल नहीं',
+      generatedSignal: 'उत्पन्न सिग्नल',
+      top3SignalsReady: 'TOP-3 सिग्नल तैयार!',
+      sell: 'बेचें',
+      wait: 'प्रतीक्षा करें',
+      waiting: 'प्रतीक्षा में',
+      minutesShort: 'मिनट',
+      secondsShort: 'सेकंड',
+      hoursShort: 'घंटे',
+      bearish: 'मंदी',
+      bullish: 'तेजी',
+      neutral: 'तटस्थ',
+      notAvailable: 'उपलब्ध नहीं',
+      notSpecified: 'निर्दिष्ट नहीं',
+      // Additional missing keys from screenshots
+      aiAnalytics: 'AI विश्लेषण',
+      selectSignalForAnalysis: 'विश्लेषण के लिए सिग्नल चुनें',
+      aiWillAnalyze: 'AI व्यापार का विश्लेषण करेगा और सिफारिशें देगा',
+      marketStatus: 'बाजार की स्थिति',
+      selectPairForSignal: 'सिग्नल उत्पन्न करने के लिए जोड़ी चुनें',
+      successfully: 'सफलतापूर्वक',
+      sentiment: 'भावना',
+      volatility: 'अस्थिरता',
+      recommendation: 'सिफारिश:',
+      clickToGenerateSignal: 'सिग्नल उत्पन्न करने के लिए क्लिक करें',
+      confidence: 'आत्मविश्वास',
+      signalGeneration: 'सिग्नल उत्पादन',
+      usingMLModel: 'ML मॉडल का उपयोग...',
+      analysis: 'विश्लेषण',
+      mlModel: 'ML मॉडल',
+      accuracy: 'सटीकता',
+      pleaseWait: 'कृपया प्रतीक्षा करें। सिस्टम बाजार का विश्लेषण कर रहा है...',
+      howToReceiveSignals: 'आप सिग्नल कैसे प्राप्त करना चाहते हैं?',
+      top3Signals: 'TOP-3 सिग्नल',
+      popular: 'लोकप्रिय',
+      bestOpportunities: 'दिन के सर्वोत्तम अवसर',
+      threeBestSignals: '3 सर्वोत्तम सिग्नल',
+      simultaneously: 'एक साथ',
+      highSuccessProbability: 'उच्च सफलता की संभावना',
+      riskDiversification: 'जोखिम विविधीकरण',
+      singleSignals: 'एकल सिग्नल',
+      oneSignalAtTime: 'एक समय में एक सिग्नल',
+      focusOnOneTrade: 'एक व्यापार पर ध्यान केंद्रित करें',
+      simpleManagement: 'सरल प्रबंधन',
+      idealForBeginners: 'शुरुआती के लिए आदर्श',
+      dealActivated: 'डील सक्रिय',
+      navigationBlocked: 'नेविगेशन अवरुद्ध',
+      remainingUntilExpiration: 'समाप्ति तक शेष',
+      waitForExpiration: 'सिग्नल की समाप्ति का इंतजार करें और फीडबैक दें',
+      back: 'वापस'
     },
     tr: {
       welcome: 'Hoş geldiniz',
@@ -5035,7 +5692,7 @@ function App() {
       buy: 'Satın al',
       monthly: 'Aylık',
       lifetime: 'Ömür boyu',
-      welcomeTo: 'Hoş geldiniz',
+      welcomeTo: 'Hoş geldiniz,',
       premiumSignals: 'Profesyonel alım satım için premium sinyaller',
       accurateSignals: 'Doğru sinyaller',
       successfulTradesPercent: '87% başarılı işlem',
@@ -5109,7 +5766,6 @@ function App() {
       pushNotification: 'Push',
       enabled: 'Etkin',
       disabled: 'Devre dışı',
-      
       // Keys for notifications interface
       notificationsBadge: 'BİLDİRİMLER',
       tradingSignals: 'Trading Sinyalleri',
@@ -5133,7 +5789,6 @@ function App() {
       emailNotificationsDescription: 'E-posta bildirimleri',
       smartNotifications: 'Akıllı Bildirimler',
       smartNotificationsDescription: 'Önemli olaylar hakkında zamanında bildirimler alın. Her türü ayrı ayrı yapılandırabilirsiniz.',
-      
       // Additional missing translations
       waitingForEntry: 'Giriş bekleniyor',
       vipFunction: 'VIP Fonksiyon',
@@ -5141,14 +5796,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Lütfen bekleyin. Sistem piyasayı analiz ediyor...',
       moreDetails: 'Daha Fazla Detay',
       tryAgainInCooldown: 'Piyasa stabilize olduğunda {seconds} saniye sonra tekrar deneyin',
-      
       // Alert messages
       bulkUpdateSuccess: '{total} kullanıcıdan {successful} tanesi güncellendi',
       bulkUpdateError: 'Toplu güncelleme hatası: {error}',
       bulkUpdateErrorGeneric: 'Toplu güncelleme hatası: {message}',
       userDeletedSuccess: 'Kullanıcı {userId} bot\'tan başarıyla silindi',
       userDeleteError: 'Silme hatası: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Kullanıcı sisteme eklendi',
       errorOccurredWith: 'Bir hata oluştu: {error}',
@@ -5156,7 +5809,6 @@ function App() {
       feedbackAcceptedFailure: 'Geri bildirim kabul edildi: Kayıplı işlem',
       navigationBlockedMessage: 'Aktif bir sinyaliniz var!\n\nVade sonunu bekleyin ve işlem sonucu hakkında geri bildirim bırakın.\n\nGeri bildirim gönderdikten sonra navigasyon kilidi açılacak.',
       modelRestrictedAlert: 'Bu model kısıtlıdır ve sadece komutla kullanılabilir',
-      
       // Аналитика
       aiAnalytics: 'AI Analitiği',
       successfulTradesHistory: 'Başarılı işlemler geçmişi',
@@ -5215,7 +5867,17 @@ function App() {
       timeoutError: '⏰ Zaman aşımı: Analiz çok uzun sürdü. Lütfen tekrar deneyin.',
       serverError: '❌ Sunucu hatası',
       networkError: '🌐 Ağ hatası: İnternet bağlantınızı kontrol edin.',
-      generalError: '❌ Hata'
+      generalError: '❌ Hata',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      marketState: 'Piyasa durumu',
+      mood: 'Ruh hali',
+      volatility: 'Oynaklık',
+      accuracy: 'Doğruluk',
+      analysis: 'Analiz',
+      idealForBeginners: 'Yeni başlayanlar için ideal',
+      recommendation: 'Öneri:',
+      clickToGenerateSignal: 'Sinyal oluşturmak için tıklayın'
     },
     vi: {
       welcome: 'Chào mừng',
@@ -5313,7 +5975,6 @@ function App() {
       pushNotification: 'Đẩy',
       enabled: 'Đã bật',
       disabled: 'Đã tắt',
-      
       // Keys for notifications interface
       notificationsBadge: 'THÔNG BÁO',
       tradingSignals: 'Tín Hiệu Giao Dịch',
@@ -5337,7 +5998,6 @@ function App() {
       emailNotificationsDescription: 'Thông báo qua email',
       smartNotifications: 'Thông Báo Thông Minh',
       smartNotificationsDescription: 'Nhận thông báo kịp thời về các sự kiện quan trọng. Bạn có thể cấu hình từng loại riêng biệt.',
-      
       // Additional missing translations
       waitingForEntry: 'Chờ vào lệnh',
       vipFunction: 'Chức năng VIP',
@@ -5345,14 +6005,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Vui lòng chờ. Hệ thống đang phân tích thị trường...',
       moreDetails: 'Chi tiết',
       tryAgainInCooldown: 'Thử lại sau {seconds} giây khi thị trường ổn định',
-      
       // Alert messages
       bulkUpdateSuccess: 'Đã cập nhật {successful} trong {total} người dùng',
       bulkUpdateError: 'Lỗi cập nhật hàng loạt: {error}',
       bulkUpdateErrorGeneric: 'Lỗi cập nhật hàng loạt: {message}',
       userDeletedSuccess: 'Người dùng {userId} đã được xóa thành công khỏi bot',
       userDeleteError: 'Lỗi xóa: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Người dùng đã được thêm vào hệ thống',
       errorOccurredWith: 'Đã xảy ra lỗi: {error}',
@@ -5360,7 +6018,6 @@ function App() {
       feedbackAcceptedFailure: 'Phản hồi được chấp nhận: Giao dịch thua lỗ',
       navigationBlockedMessage: 'Bạn có một tín hiệu đang hoạt động!\n\nChờ hết hạn và để lại phản hồi về kết quả giao dịch.\n\nĐiều hướng sẽ được mở khóa sau khi gửi phản hồi.',
       modelRestrictedAlert: 'Mô hình này bị hạn chế và chỉ khả dụng theo lệnh',
-      
       // Аналитика
       aiAnalytics: 'Phân tích AI',
       successfulTradesHistory: 'Lịch sử giao dịch thành công',
@@ -5413,7 +6070,6 @@ function App() {
       userDeleteError: '❌ Lỗi xóa người dùng {name}',
       accessRequestApproved: '✅ Yêu cầu truy cập của người dùng {name} đã được phê duyệt',
       accessRequestError: '❌ Lỗi phê duyệt yêu cầu của người dùng {name}',
-      
       // New keys for hardcoded texts
       hoursAgo: '{count} giờ trước',
       daysAgo: '{count} ngày trước',
@@ -5462,9 +6118,6 @@ function App() {
       tryAgainInSeconds: 'Thử lại sau {seconds} giây khi thị trường ổn định',
       modelReady: 'Mô hình đã được huấn luyện và sẵn sàng hoạt động',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Đóng phân tích'
-=======
       closeAnalysis: 'Đóng phân tích',
       apiError: 'Lỗi API',
       unknownError: 'Lỗi không xác định',
@@ -5472,8 +6125,17 @@ function App() {
       timeoutError: '⏰ Hết thời gian: Phân tích mất quá nhiều thời gian. Vui lòng thử lại.',
       serverError: '❌ Lỗi máy chủ',
       networkError: '🌐 Lỗi mạng: Kiểm tra kết nối internet của bạn.',
-      generalError: '❌ Lỗi'
->>>>>>> Stashed changes
+      generalError: '❌ Lỗi',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      marketState: 'Trạng thái thị trường',
+      mood: 'Tâm trạng',
+      volatility: 'Biến động',
+      accuracy: 'Độ chính xác',
+      analysis: 'Phân tích',
+      idealForBeginners: 'Lý tưởng cho người mới bắt đầu',
+      recommendation: 'Khuyến nghị:',
+      clickToGenerateSignal: 'Nhấp để tạo tín hiệu'
     },
     id: {
       welcome: 'Selamat datang',
@@ -5571,7 +6233,6 @@ function App() {
       pushNotification: 'Push',
       enabled: 'Diaktifkan',
       disabled: 'Dinonaktifkan',
-      
       // Keys for notifications interface
       notificationsBadge: 'NOTIFIKASI',
       tradingSignals: 'Sinyal Trading',
@@ -5595,7 +6256,6 @@ function App() {
       emailNotificationsDescription: 'Notifikasi melalui email',
       smartNotifications: 'Notifikasi Cerdas',
       smartNotificationsDescription: 'Terima notifikasi tepat waktu tentang peristiwa penting. Anda dapat mengonfigurasi setiap jenis secara terpisah.',
-      
       // Additional missing translations
       waitingForEntry: 'Menunggu masuk',
       vipFunction: 'Fungsi VIP',
@@ -5603,14 +6263,12 @@ function App() {
       pleaseWaitSystemAnalyzing: 'Silakan tunggu. Sistem sedang menganalisis pasar...',
       moreDetails: 'Detail Lebih',
       tryAgainInCooldown: 'Coba lagi dalam {seconds} detik ketika pasar stabil',
-      
       // Alert messages
       bulkUpdateSuccess: 'Diperbarui {successful} dari {total} pengguna',
       bulkUpdateError: 'Kesalahan pembaruan massal: {error}',
       bulkUpdateErrorGeneric: 'Kesalahan pembaruan massal: {message}',
       userDeletedSuccess: 'Pengguna {userId} berhasil dihapus dari bot',
       userDeleteError: 'Kesalahan penghapusan: {error}',
-      
       // Additional alert messages
       userAddedSuccess: 'Pengguna ditambahkan ke sistem',
       errorOccurredWith: 'Terjadi kesalahan: {error}',
@@ -5618,7 +6276,6 @@ function App() {
       feedbackAcceptedFailure: 'Umpan balik diterima: Perdagangan rugi',
       navigationBlockedMessage: 'Anda memiliki sinyal aktif!\n\nTunggu kedaluwarsa dan berikan umpan balik tentang hasil perdagangan.\n\nNavigasi akan dibuka kunci setelah mengirim umpan balik.',
       modelRestrictedAlert: 'Model ini dibatasi dan hanya tersedia berdasarkan perintah',
-      
       // Аналитика
       aiAnalytics: 'Analitik AI',
       successfulTradesHistory: 'Riwayat perdagangan berhasil',
@@ -5671,7 +6328,6 @@ function App() {
       userDeleteError: '❌ Kesalahan menghapus pengguna {name}',
       accessRequestApproved: '✅ Permintaan akses pengguna {name} telah disetujui',
       accessRequestError: '❌ Kesalahan menyetujui permintaan pengguna {name}',
-      
       // New keys for hardcoded texts
       hoursAgo: '{count} jam yang lalu',
       daysAgo: '{count} hari yang lalu',
@@ -5720,9 +6376,6 @@ function App() {
       tryAgainInSeconds: 'Coba lagi dalam {seconds} detik ketika pasar stabil',
       modelReady: 'Model telah dilatih dan siap bekerja',
       aiAnalytics: 'AI Analytics',
-<<<<<<< Updated upstream
-      closeAnalysis: 'Tutup analisis'
-=======
       closeAnalysis: 'Tutup analisis',
       apiError: 'Kesalahan API',
       unknownError: 'Kesalahan tidak diketahui',
@@ -5730,29 +6383,32 @@ function App() {
       timeoutError: '⏰ Waktu habis: Analisis memakan waktu terlalu lama. Silakan coba lagi.',
       serverError: '❌ Kesalahan server',
       networkError: '🌐 Kesalahan jaringan: Periksa koneksi internet Anda.',
-      generalError: '❌ Kesalahan'
->>>>>>> Stashed changes
+      generalError: '❌ Kesalahan',
+      // Additional keys
+      forexSignalsPro: 'Forex Signals Pro',
+      marketState: 'Status pasar',
+      mood: 'Suasana hati',
+      volatility: 'Volatilitas',
+      accuracy: 'Akurasi',
+      analysis: 'Analisis',
+      idealForBeginners: 'Ideal untuk pemula',
+      recommendation: 'Rekomendasi:',
+      clickToGenerateSignal: 'Klik untuk menghasilkan sinyal'
     }
   }
-
   const t = (key, params = {}) => {
-    const lang = selectedLanguage || 'ru'
-<<<<<<< Updated upstream
+    // Сначала проверяем сохраненный язык в localStorage
+    const savedLang = localStorage.getItem('selectedLanguage')
+    const lang = selectedLanguage || savedLang || 'ru'
     let text = translations[lang]?.[key] || translations.ru[key] || key
-=======
-    let text = translations[lang]?.[key] || key
->>>>>>> Stashed changes
-    
     // Поддержка параметризации
     if (params && Object.keys(params).length > 0) {
       Object.keys(params).forEach(param => {
         text = text.replace(new RegExp(`{${param}}`, 'g'), params[param])
       })
     }
-    
     return text
   }
-
   // Mock data for signals
   const activeSignals = [
     {
@@ -5792,7 +6448,6 @@ function App() {
       confidence: 0.79
     }
   ]
-
   const historySignals = [
     {
       signal_id: "otc_EUR_USD_1758239200",
@@ -5903,12 +6558,10 @@ function App() {
       time: t('hoursAgo', {count: 6, plural: ''})
     }
   ]
-
   const copyToClipboard = (signal) => {
     const text = `${signal.pair} ${signal.type}`
     navigator.clipboard.writeText(text)
   }
-
   // Language data
   const languages = [
     { code: 'ru', name: 'Русский', flag: '🇷🇺' },
@@ -5928,7 +6581,6 @@ function App() {
     { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
     { code: 'id', name: 'Bahasa Indonesia', flag: '🇮🇩' }
   ]
-
   // ML Models data
   const mlModels = [
     {
@@ -6003,15 +6655,12 @@ function App() {
       lifetimePrice: '$999'
     }
   ]
-
   const deleteUser = async (userIdToDelete) => {
     try {
       // Подтверждение удаления
       const confirmed = confirm(`${t('confirmDeleteUser')} ${userIdToDelete}? ${t('actionCannotBeUndone')}`)
       if (!confirmed) return
-
       console.log(`🗑️ Удаление пользователя ${userIdToDelete}`)
-      
       // Отправляем запрос на удаление
       const response = await fetch(`${getApiUrl(5000)}/api/admin/delete-user`, {
         method: 'POST',
@@ -6023,13 +6672,10 @@ function App() {
           admin_user_id: userId  // ID текущего пользователя (админа)
         })
       })
-
       const result = await response.json()
-
       if (result.success) {
         console.log('✅ Пользователь успешно удален')
         alert(t('userDeletedSuccess', {userId: userIdToDelete}))
-        
         // Обновляем список пользователей в админ панели
         loadAdminStats()
       } else {
@@ -6041,11 +6687,9 @@ function App() {
       alert(t('userDeleteError', {error: error.message}))
     }
   }
-
   // Функция отправки активности пользователя
   const sendUserActivity = async () => {
     if (!userId) return
-    
     try {
       await fetch(`${getApiUrl(5000)}/api/user/activity`, {
         method: 'POST',
@@ -6061,18 +6705,13 @@ function App() {
       console.log('⚠️ Не удалось отправить активность:', error)
     }
   }
-
   // Функция анализа сигнала через OpenRouter GPT-4o mini
   const analyzeSignal = async (signal) => {
     setIsAnalyzing(true)
     setAnalysisResult(null)
-    
     const isLoss = signal.result === 'loss' || signal.feedback === 'failure'
-    
     const prompt = `Ты строгий профессиональный аналитик Forex/OTC рынка. Проанализируй ${isLoss ? 'УБЫТОЧНУЮ' : 'успешную'} сделку трейдера.
-
 ⚠️ КРИТИЧЕСКИ ВАЖНО: ${isLoss ? 'Всегда указывай что это ВИНА ТРЕЙДЕРА (неправильный вход, плохое управление рисками, эмоциональное решение), а НЕ рынка или сигнала!' : 'Покажи что трейдер правильно применил стратегию.'}
-
 📊 ДАННЫЕ СДЕЛКИ:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ID сигнала: ${signal.signal_id}
@@ -6088,55 +6727,42 @@ Stop Loss: ${signal.sl}
 Время сделки: ${signal.timestamp}
 Результат: ${isLoss ? '❌ УБЫТОК' : '✅ ПРИБЫЛЬ'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ${isLoss ? `
 🔴 АНАЛИЗ УБЫТОЧНОЙ СДЕЛКИ:
-
 1️⃣ ЧТО ТРЕЙДЕР СДЕЛАЛ НЕПРАВИЛЬНО:
 - Опиши конкретные ошибки трейдера при входе
 - Почему трейдер не дождался лучшего момента
 - Какие признаки разворота тренда проигнорировал
-
 2️⃣ ОШИБКИ УПРАВЛЕНИЯ РИСКАМИ:
 - Как трейдер должен был защитить депозит
 - Проблемы с размером позиции
-
 3️⃣ ПСИХОЛОГИЧЕСКИЕ ОШИБКИ:
 - Эмоциональное принятие решений
 - FOMO (страх упустить прибыль)
 - Жадность или паника при закрытии
-
 4️⃣ РЕКОМЕНДАЦИИ:
 - Что трейдер ОБЯЗАН изменить в своём подходе
 - Как избежать таких ошибок в будущем
 - Чему нужно научиться
-
 ⚠️ ВАЖНО: Покажи что сигнал был качественным (${(signal.confidence * 100).toFixed(1)}% уверенности), но ТРЕЙДЕР не смог его правильно использовать!
 ` : `
 ✅ АНАЛИЗ УСПЕШНОЙ СДЕЛКИ:
-
 1️⃣ ЧТО ТРЕЙДЕР СДЕЛАЛ ПРАВИЛЬНО:
 - Правильный вход по тренду
 - Грамотное управление рисками
 - Дисциплина в следовании стратегии
-
 2️⃣ КЛЮЧЕВЫЕ ФАКТОРЫ УСПЕХА:
 - Правильный анализ рынка
 - Терпение при входе
-
-
 3️⃣ РЕКОМЕНДАЦИИ:
 - Продолжать использовать этот подход
 - Масштабировать успешные стратегии
 `}
-
 Тон: СТРОГИЙ, ПРЯМОЙ, ПРОФЕССИОНАЛЬНЫЙ. Минимум воды, максимум конкретики!`
-
     try {
       // Создаем AbortController для таймаута
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 секунд таймаут
-      
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -6156,15 +6782,11 @@ ${isLoss ? `
         }),
         signal: controller.signal
       })
-
       clearTimeout(timeoutId)
-      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
-
       const data = await response.json()
-      
       if (data.choices && data.choices[0] && data.choices[0].message) {
         setAnalysisResult(data.choices[0].message.content)
       } else if (data.error) {
@@ -6174,7 +6796,6 @@ ${isLoss ? `
       }
     } catch (error) {
       console.error('Ошибка анализа:', error)
-      
       if (error.name === 'AbortError') {
         setAnalysisResult(t('timeoutError'))
       } else if (error.message.includes('HTTP')) {
@@ -6188,20 +6809,17 @@ ${isLoss ? `
       setIsAnalyzing(false)
     }
   }
-
   const toggleNotification = (key) => {
     setNotificationSettings(prev => ({
       ...prev,
       [key]: !prev[key]
     }))
   }
-
   // Авторизация через бэкенд API
   const authorizeUser = async (userData, initData = '') => {
     try {
       // Показываем процесс авторизации минимум 2 секунды
       const startTime = Date.now()
-      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -6212,12 +6830,9 @@ ${isLoss ? `
           userData: userData
         })
       })
-      
       const result = await response.json()
-      
       if (result.success) {
         const user = result.user
-        
         // Сохраняем данные пользователя
         setUserId(user.telegram_id)
         setUserData({
@@ -6228,50 +6843,39 @@ ${isLoss ? `
           languageCode: user.language_code,
           isPremium: user.is_premium
         })
-        
         // Устанавливаем админские права
         setIsAdmin(user.is_admin)
-        
         // Загружаем подписки
         setUserSubscriptions(user.subscriptions || ['logistic-spy'])
-        
         // Успешная авторизация
         setIsAuthorized(true)
-        
         console.log('✅ Авторизация через API успешна:', user.first_name)
-        
         if (user.is_new_user) {
           console.log('🆕 Новый пользователь зарегистрирован!')
         }
-        
         // Ждем минимум 2 секунды для показа экрана авторизации
         const elapsed = Date.now() - startTime
         const remainingTime = Math.max(2000 - elapsed, 0)
-        
         await new Promise(resolve => setTimeout(resolve, remainingTime))
-        
         // Проверяем сохраненный язык
         const savedLanguage = localStorage.getItem('selectedLanguage')
         if (savedLanguage) {
           setSelectedLanguage(savedLanguage)
           setCurrentScreen('welcome')
         } else {
+          // Если нет сохраненного языка - показываем выбор языка
           setCurrentScreen('language-select')
         }
-        
         // Проверяем активный сигнал после авторизации
         const savedSignal = localStorage.getItem('pendingSignal')
         if (savedSignal) {
           const signal = JSON.parse(savedSignal)
           const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
           const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-          
           // Восстанавливаем время начала
           signal.startTime = startTime
-          
           // Рассчитываем оставшееся время на основе реального времени
           const remainingTime = calculateRemainingTime(signal)
-          
           if (remainingTime > 0) {
           setPendingSignal(signal)
             setSignalTimer(remainingTime)
@@ -6295,12 +6899,9 @@ ${isLoss ? `
       console.error('❌ Ошибка подключения к API:', error)
       // В режиме разработки разрешаем доступ без бэкенда
       console.warn('⚠️ Работа без бэкенда (режим разработки)')
-      
       // Показываем экран авторизации минимум 2 секунды
       await new Promise(resolve => setTimeout(resolve, 2000))
-      
       setIsAuthorized(true)
-      
       const savedLanguage = localStorage.getItem('selectedLanguage')
       if (savedLanguage) {
         setSelectedLanguage(savedLanguage)
@@ -6308,20 +6909,16 @@ ${isLoss ? `
       } else {
         setCurrentScreen('language-select')
       }
-      
       // Проверяем активный сигнал после авторизации
       const savedSignal = localStorage.getItem('pendingSignal')
       if (savedSignal) {
         const signal = JSON.parse(savedSignal)
         const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
         const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-        
         // Восстанавливаем время начала
         signal.startTime = startTime
-        
         // Рассчитываем оставшееся время на основе реального времени
         const remainingTime = calculateRemainingTime(signal)
-        
         if (remainingTime > 0) {
         setPendingSignal(signal)
           setSignalTimer(remainingTime)
@@ -6339,50 +6936,41 @@ ${isLoss ? `
       }
     }
   }
-
   // Получение Telegram User ID и авторизация
   // ОТКЛЮЧЕНО: Логика перенесена в компонент TelegramAuth
   /*
   useEffect(() => {
     console.log('🔍 Проверка Telegram WebApp...')
-    
     // Ждем загрузки Telegram SDK
     const initTelegramAuth = () => {
       // Проверяем, запущено ли приложение в Telegram WebApp
       if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp
-        
         console.log('✅ Telegram WebApp SDK загружен')
         console.log('📱 Platform:', tg.platform)
         console.log('🎨 Theme:', tg.colorScheme)
-        
         tg.ready()
         tg.expand() // Разворачиваем приложение на весь экран
-        
         // Получаем данные пользователя
         const user = tg.initDataUnsafe?.user
         const initData = tg.initData
-        
         console.log('👤 User data:', user)
         console.log('🔐 Init data length:', initData?.length || 0)
-        
         if (user) {
           console.log(`✅ Пользователь найден: ${user.first_name} (ID: ${user.id})`)
-          
           // Авторизуемся через бэкенд
           authorizeUser({
             id: user.id,
             first_name: user.first_name,
             last_name: user.last_name || '',
             username: user.username || '',
-            language_code: null, // Игнорируем язык из Telegram - принудительный выбор
+            language_code: user.language_code || 'ru',
             is_premium: user.is_premium || false
           }, initData)
         } else {
           // Нет данных пользователя
           console.error('❌ Не удалось получить данные пользователя из Telegram')
           console.log('initDataUnsafe:', tg.initDataUnsafe)
-          
           // Пробуем режим разработки
           console.warn('⚠️ Переход в режим разработки...')
           const testUserData = {
@@ -6399,7 +6987,6 @@ ${isLoss ? `
         // Для тестирования вне Telegram (в браузере)
         console.warn('⚠️ Приложение не запущено в Telegram WebApp')
         console.warn('🧪 Режим разработки активирован')
-        
         // Тестовые данные пользователя
         const testUserData = {
           id: 123456789,
@@ -6409,12 +6996,10 @@ ${isLoss ? `
           language_code: 'ru',
           is_premium: false
         }
-        
         // Авторизуемся через бэкенд с тестовыми данными
         authorizeUser(testUserData)
       }
     }
-    
     // Ждем загрузку Telegram SDK
     if (document.readyState === 'complete') {
       initTelegramAuth()
@@ -6424,7 +7009,6 @@ ${isLoss ? `
     }
   }, [ADMIN_TELEGRAM_ID])
   */
-
   // Загрузка сохраненного языка при старте приложения
   useEffect(() => {
     const savedLanguage = localStorage.getItem('selectedLanguage')
@@ -6433,14 +7017,12 @@ ${isLoss ? `
       setSelectedLanguage(savedLanguage)
     }
   }, [])
-
   // Загрузка статистики при переходе на экран user-stats
   useEffect(() => {
     if (currentScreen === 'user-stats') {
       loadUserStats()
     }
   }, [currentScreen])
-
   // Обновляем таймер cooldown для топ-3 каждую секунду
   useEffect(() => {
     if (!canGenerateTop3()) {
@@ -6451,22 +7033,18 @@ ${isLoss ? `
       return () => clearInterval(interval)
     }
   }, [lastTop3Generation])
-
   // Отправляем активность пользователя при загрузке и каждые 2 минуты
   useEffect(() => {
     if (userId && isAuthorized) {
       // Отправляем сразу
       sendUserActivity()
-      
       // Отправляем каждые 2 минуты
       const interval = setInterval(() => {
         sendUserActivity()
       }, 2 * 60 * 1000) // 2 минуты
-      
       return () => clearInterval(interval)
     }
   }, [userId, isAuthorized])
-
   // Загрузка метрик рынка при переходе на экран выбора пар
   useEffect(() => {
     if (currentScreen === 'signal-selection') {
@@ -6474,20 +7052,17 @@ ${isLoss ? `
       loadMarketMetrics()
     }
   }, [currentScreen])
-
   // Предзагрузка метрик при инициализации приложения
   useEffect(() => {
     console.log('📊 Предзагружаем метрики при инициализации')
       loadMarketMetrics()
   }, [])
-
   // Загрузка истории сигналов при переходе на экран аналитики
   useEffect(() => {
     if (currentScreen === 'analytics') {
       loadUserSignalsHistory()
     }
   }, [currentScreen])
-
   // Сохранение активного сигнала в localStorage
   useEffect(() => {
     if (pendingSignal) {
@@ -6504,7 +7079,6 @@ ${isLoss ? `
       localStorage.removeItem('signalStartTime')
     }
   }, [pendingSignal, signalTimer, isWaitingFeedback])
-
   // Таймер для сигнала
   useEffect(() => {
     let interval = null
@@ -6512,7 +7086,6 @@ ${isLoss ? `
       interval = setInterval(() => {
         // Рассчитываем оставшееся время на основе реального времени
         const remainingTime = calculateRemainingTime(pendingSignal)
-        
         if (remainingTime <= 0) {
           setSignalTimer(0)
             setIsWaitingFeedback(true)
@@ -6523,7 +7096,6 @@ ${isLoss ? `
     }
     return () => clearInterval(interval)
   }, [pendingSignal, signalTimer, isWaitingFeedback])
-
   // Таймер cooldown для ТОП-3
   useEffect(() => {
     let interval = null
@@ -6534,7 +7106,6 @@ ${isLoss ? `
     }
     return () => clearInterval(interval)
   }, [top3Cooldown])
-
   // Таймер cooldown для одиночного сигнала
   useEffect(() => {
     let interval = null
@@ -6545,7 +7116,6 @@ ${isLoss ? `
     }
     return () => clearInterval(interval)
   }, [signalCooldown])
-
   // Автоскрытие уведомления "Нет подходящего сигнала"
   useEffect(() => {
     if (noSignalAvailable) {
@@ -6555,16 +7125,12 @@ ${isLoss ? `
       return () => clearTimeout(timeout)
     }
   }, [noSignalAvailable])
-
-
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
   const generateTop3Signals = async () => {
     setIsGenerating(true)
     setCurrentScreen('generating')
-    
     // Сохраняем время последней генерации топ-3
     setLastTop3Generation(new Date().toISOString())
-    
     // Этапы генерации
     const stages = [
       { stage: t('connectingToMarket'), delay: 800 },
@@ -6574,12 +7140,10 @@ ${isLoss ? `
       { stage: t('applyingMLModels'), delay: 1100 },
       { stage: t('formingTop3Signals'), delay: 1000 }
     ]
-    
     for (const { stage, delay } of stages) {
       setGenerationStage(stage)
       await new Promise(resolve => setTimeout(resolve, delay))
     }
-    
     try {
       // РЕАЛЬНЫЙ запрос к Signal API
       const response = await fetch(`${getApiUrl(5002)}/api/signal/generate`, {
@@ -6593,9 +7157,7 @@ ${isLoss ? `
           mode: 'top3'
         })
       })
-      
       const result = await response.json()
-      
       if (result.success && result.signals) {
         // Преобразуем реальные сигналы в формат для UI
         const signals = result.signals.map((signal, index) => ({
@@ -6604,12 +7166,10 @@ ${isLoss ? `
           status: 'generated',
           time: 'Только что'
         }))
-        
         setGeneratedSignals(signals)
         setLastTop3Generation(Date.now())
         setTop3Cooldown(600)
         setIsGenerating(false)
-        
         // Автоматически активируем первый сигнал из ТОП-3
         if (signals.length > 0) {
           activateSignal(signals[0])
@@ -6618,7 +7178,6 @@ ${isLoss ? `
         } else {
           setCurrentScreen('signal-selection')
         }
-        
         console.log('✅ Получены РЕАЛЬНЫЕ сигналы:', signals)
       } else {
         // Нет подходящих сигналов
@@ -6629,13 +7188,11 @@ ${isLoss ? `
       }
     } catch (error) {
       console.error('❌ Ошибка получения сигналов:', error)
-      
       // Fallback: генерируем моковые сигналы если API недоступен
       console.warn('⚠️ Используем mock сигналы (API недоступен)')
       const pairs = selectedMarket === 'forex' 
         ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
         : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)']
-      
       const signals = []
       for (let i = 0; i < 3; i++) {
         signals.push({
@@ -6653,7 +7210,6 @@ ${isLoss ? `
           time: 'Только что'
         })
       }
-      
       setGeneratedSignals(signals)
       setLastTop3Generation(Date.now())
       setTop3Cooldown(600)
@@ -6661,12 +7217,10 @@ ${isLoss ? `
       setCurrentScreen('signal-selection')
     }
   }
-
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
   const generateSignalForPair = async (pair) => {
     setIsGenerating(true)
     setCurrentScreen('generating')
-    
     // Этапы генерации
     const stages = [
       { stage: t('connectingToMarket'), delay: 600 },
@@ -6675,12 +7229,10 @@ ${isLoss ? `
       { stage: t('applyingMLModel'), delay: 900 },
       { stage: t('determiningEntryPoint'), delay: 700 }
     ]
-    
     for (const { stage, delay } of stages) {
       setGenerationStage(stage)
       await new Promise(resolve => setTimeout(resolve, delay))
     }
-    
     try {
       // РЕАЛЬНЫЙ запрос к Signal API
       const response = await fetch('/api/signal/generate', {
@@ -6695,9 +7247,7 @@ ${isLoss ? `
           pair: pair
         })
       })
-      
       const result = await response.json()
-      
       if (result.success && result.signals && result.signals.length > 0) {
         // Получили РЕАЛЬНЫЙ сигнал
         const signal = {
@@ -6706,14 +7256,11 @@ ${isLoss ? `
           status: 'generated',
           time: 'Только что'
         }
-        
         setGeneratedSignals([signal])
         setIsGenerating(false)
-        
         // Автоматически активируем сигнал
         activateSignal(signal)
         setCurrentScreen('main')
-        
         console.log('✅ Получен и активирован РЕАЛЬНЫЙ сигнал:', signal)
       } else {
         // Нет подходящего сигнала
@@ -6724,10 +7271,8 @@ ${isLoss ? `
       }
     } catch (error) {
       console.error('❌ Ошибка получения сигнала:', error)
-      
       // Fallback: генерируем моковый сигнал если API недоступен
       console.warn('⚠️ Используем mock сигнал (API недоступен)')
-      
       const mockSignal = {
         signal_id: `mock_${pair.replace('/', '_')}_${Date.now()}`,
         id: Date.now(),
@@ -6742,26 +7287,21 @@ ${isLoss ? `
         status: 'generated',
         time: 'Только что'
       }
-      
       setGeneratedSignals([mockSignal])
       setIsGenerating(false)
       setCurrentScreen('signal-selection')
     }
   }
-
   // Функция для расчета оставшегося времени на основе реального времени
   const calculateRemainingTime = (signal) => {
     if (!signal || !signal.startTime) return 0
-    
     const startTime = signal.startTime
     const expirationSeconds = signal.expiration * 60
     const currentTime = Date.now()
     const elapsedSeconds = Math.floor((currentTime - startTime) / 1000)
     const remainingSeconds = Math.max(0, expirationSeconds - elapsedSeconds)
-    
     return remainingSeconds
   }
-
   // Функция для очистки состояния сигналов
   const clearSignalState = () => {
     setGeneratedSignals([])
@@ -6774,27 +7314,22 @@ ${isLoss ? `
     localStorage.removeItem('isWaitingFeedback')
     localStorage.removeItem('signalStartTime')
   }
-
   // Активация сигнала
   const activateSignal = (signal) => {
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
     const startTime = Date.now() // Время начала сигнала
-    
     setPendingSignal({
       ...signal,
       startTime: startTime
     })
     setSignalTimer(expirationSeconds)
     setIsWaitingFeedback(false)
-    
     // Сохраняем время начала в localStorage
     localStorage.setItem('signalStartTime', startTime.toString())
   }
-
   // Отправка фидбека на бэкенд
   const submitFeedback = async (isSuccess) => {
     if (!pendingSignal) return
-    
     const feedbackData = {
       user_id: userId,
       signal_id: pendingSignal.signal_id,
@@ -6803,7 +7338,6 @@ ${isLoss ? `
       direction: pendingSignal.direction,
       confidence: pendingSignal.confidence
     }
-    
     try {
       // Отправляем фидбек на бэкенд
       const response = await fetch(`${getApiUrl(5000)}/api/signal/feedback`, {
@@ -6813,9 +7347,7 @@ ${isLoss ? `
         },
         body: JSON.stringify(feedbackData)
       })
-      
       const result = await response.json()
-      
       if (result.success) {
         console.log('✅ Фидбек сохранен в базу:', result.user_stats)
       }
@@ -6823,24 +7355,18 @@ ${isLoss ? `
       console.error('❌ Ошибка отправки фидбека:', error)
       console.warn('⚠️ Фидбек не сохранен на бэкенде (работа без API)')
     }
-    
     // Локально сохраняем результат
     console.log(`📊 Фидбек: ${isSuccess ? 'success' : 'failure'} для сигнала ${pendingSignal.signal_id}`)
-    
     // Очищаем состояние
     clearSignalState()
-    
     alert(t(isSuccess ? 'feedbackAcceptedSuccess' : 'feedbackAcceptedFailure'))
-    
     // Переходим в статистику пользователя
     setCurrentScreen('user-stats')
   }
-
   // Проверка блокировки навигации
   const isNavigationBlocked = () => {
     return pendingSignal !== null
   }
-
   // Навигация с проверкой блокировки
   const navigateWithCheck = (screen) => {
     if (isNavigationBlocked()) {
@@ -6850,7 +7376,6 @@ ${isLoss ? `
     setCurrentScreen(screen)
     return true
   }
-
   // Обработчик успешной авторизации
   const handleAuthSuccess = (authData) => {
     setUserId(authData.userId)
@@ -6858,7 +7383,6 @@ ${isLoss ? `
     setUserData(authData.userData)
     setUserSubscriptions(authData.subscriptions)
     setIsAuthorized(true)
-    
     // Проверяем сохраненный язык
     const savedLanguage = localStorage.getItem('selectedLanguage')
     if (savedLanguage) {
@@ -6867,20 +7391,16 @@ ${isLoss ? `
     } else {
       setCurrentScreen('language-select')
     }
-    
     // Проверяем активный сигнал после авторизации
     const savedSignal = localStorage.getItem('pendingSignal')
     if (savedSignal) {
       const signal = JSON.parse(savedSignal)
       const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
       const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-      
       // Восстанавливаем время начала
       signal.startTime = startTime
-      
       // Рассчитываем оставшееся время на основе реального времени
       const remainingTime = calculateRemainingTime(signal)
-      
       if (remainingTime > 0) {
       setPendingSignal(signal)
         setSignalTimer(remainingTime)
@@ -6897,12 +7417,10 @@ ${isLoss ? `
       }
     }
   }
-
   // Обработчик ошибки авторизации
   const handleAuthError = (error) => {
     console.error('❌ Ошибка авторизации:', error)
   }
-
   // Authorization Screen
   if (currentScreen === 'auth') {
     return (
@@ -6912,7 +7430,6 @@ ${isLoss ? `
       />
     )
   }
-
   // Language Selection Screen
   if (currentScreen === 'language-select') {
     return (
@@ -6923,7 +7440,6 @@ ${isLoss ? `
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-glow-pulse" style={{animationDelay: '1s'}}></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl animate-glow-pulse" style={{animationDelay: '2s'}}></div>
         </div>
-
         <div className="max-w-4xl w-full space-y-8 animate-fade-in relative z-10 perspective-container">
           {/* Logo with enhanced animation */}
           <div className="flex justify-center">
@@ -6935,7 +7451,6 @@ ${isLoss ? `
               <div className="absolute -inset-2 bg-gradient-to-br from-emerald-400/20 to-cyan-500/20 rounded-3xl blur-lg animate-pulse"></div>
             </div>
           </div>
-
           {/* Enhanced Header */}
           <div className="text-center space-y-6">
             <div className="relative">
@@ -6943,7 +7458,7 @@ ${isLoss ? `
                 {t('selectLanguage')}
               </h1>
               <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
-                Select Language
+                {t('selectLanguage')}
               </h2>
               <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-2xl blur-xl"></div>
             </div>
@@ -6951,7 +7466,6 @@ ${isLoss ? `
               {t('selectLanguageDescription')}
             </p>
           </div>
-
           {/* Language Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {languages.map((language, index) => (
@@ -6959,6 +7473,8 @@ ${isLoss ? `
                 key={language.code}
                 onClick={() => {
                   setSelectedLanguage(language.code)
+                  localStorage.setItem('selectedLanguage', language.code)
+                  setCurrentScreen('welcome')
                 }}
                 className={`glass-effect p-6 backdrop-blur-sm cursor-pointer transition-all duration-500 group card-3d border-slate-700/50 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/20 hover:scale-110 hover:-translate-y-2 ${
                   selectedLanguage === language.code 
@@ -6999,7 +7515,6 @@ ${isLoss ? `
               </Card>
             ))}
           </div>
-
           {/* Continue Button */}
           {selectedLanguage && (
             <div className="flex justify-center">
@@ -7021,7 +7536,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Welcome Screen
   if (currentScreen === 'welcome') {
     return (
@@ -7031,7 +7545,6 @@ ${isLoss ? `
           <div className="absolute top-20 left-20 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl animate-glow-pulse"></div>
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-glow-pulse" style={{animationDelay: '1s'}}></div>
         </div>
-
         <div className="max-w-md w-full space-y-8 animate-fade-in relative z-10 perspective-container">
           {/* Logo */}
           <div className="flex justify-center">
@@ -7042,7 +7555,6 @@ ${isLoss ? `
               </div>
             </div>
           </div>
-
           {/* Welcome Text */}
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold text-white">
@@ -7055,7 +7567,6 @@ ${isLoss ? `
               {t('premiumSignals')}
             </p>
           </div>
-
           {/* Features */}
           <div className="space-y-4">
             <Card className="glass-effect p-4 backdrop-blur-sm card-3d border-slate-700/50 shadow-xl">
@@ -7069,7 +7580,6 @@ ${isLoss ? `
                 </div>
               </div>
             </Card>
-
             <Card className="glass-effect p-4 backdrop-blur-sm card-3d border-slate-700/50 shadow-xl">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center icon-3d shadow-lg shadow-cyan-500/20">
@@ -7081,7 +7591,6 @@ ${isLoss ? `
                 </div>
               </div>
             </Card>
-
             <Card className="glass-effect p-4 backdrop-blur-sm card-3d border-slate-700/50 shadow-xl">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center icon-3d shadow-lg shadow-amber-500/20">
@@ -7094,7 +7603,6 @@ ${isLoss ? `
               </div>
             </Card>
           </div>
-
           {/* Start Button */}
           <Button 
             onClick={() => {
@@ -7112,7 +7620,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Main Menu Screen
   if (currentScreen === 'menu') {
     return (
@@ -7122,14 +7629,12 @@ ${isLoss ? `
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-glow-pulse" style={{animationDelay: '1.5s'}}></div>
         </div>
-
         <div className="max-w-md w-full space-y-8 animate-fade-in relative z-10 perspective-container">
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-white">{t('menu')}</h2>
             <p className="text-slate-400">{t('chooseAction')}</p>
           </div>
-
           {/* Menu Options */}
           <div className="space-y-4">
             <Card 
@@ -7149,7 +7654,6 @@ ${isLoss ? `
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
             <Card 
               onClick={() => setCurrentScreen('analytics')}
               className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-cyan-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
@@ -7167,7 +7671,6 @@ ${isLoss ? `
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
             <Card 
               onClick={() => window.open('https://t.me/NeKnopkaBabl0', '_blank')}
               className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-purple-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
@@ -7185,7 +7688,6 @@ ${isLoss ? `
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
             <Card 
               className="glass-effect p-6 backdrop-blur-sm cursor-not-allowed opacity-60 border-yellow-500/30 shadow-xl"
             >
@@ -7209,7 +7711,6 @@ ${isLoss ? `
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
             <Card 
               onClick={() => {
                 if (userData?.id) {
@@ -7233,7 +7734,6 @@ ${isLoss ? `
               </div>
             </Card>
           </div>
-
           {/* Back Button */}
           <Button 
             onClick={() => setCurrentScreen('welcome')}
@@ -7246,7 +7746,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Generating Screen - Анимация процесса генерации
   if (currentScreen === 'generating') {
     return (
@@ -7256,7 +7755,6 @@ ${isLoss ? `
           <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-glow-pulse"></div>
           <div className="absolute bottom-1/3 right-1/3 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-glow-pulse" style={{animationDelay: '1s'}}></div>
         </div>
-
         <div className="max-w-2xl w-full space-y-8 animate-fade-in relative z-10">
           {/* Animated Brain Icon */}
           <div className="flex justify-center">
@@ -7267,7 +7765,6 @@ ${isLoss ? `
               </div>
             </div>
           </div>
-
           {/* Generation Status */}
           <Card className="glass-effect border-cyan-500/30 p-8 card-3d shadow-2xl text-center">
             <h2 className="text-3xl font-bold text-white mb-4">🧠 {t('signalGeneration')}</h2>
@@ -7278,12 +7775,10 @@ ${isLoss ? `
                   {generationStage}
                 </p>
               </div>
-              
               {/* Progress bar */}
               <div className="w-full bg-slate-800/50 rounded-full h-3 overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full animate-pulse"></div>
               </div>
-
               <div className="grid grid-cols-3 gap-4 mt-6">
                 <div className="p-4 bg-slate-800/50 rounded-lg border border-cyan-500/30">
                   <BarChart3 className="w-6 h-6 text-cyan-400 mx-auto mb-2 animate-bounce" />
@@ -7300,7 +7795,6 @@ ${isLoss ? `
               </div>
             </div>
           </Card>
-
           <p className="text-slate-400 text-center text-sm">
             {t('pleaseWaitSystemAnalyzing')}
           </p>
@@ -7308,7 +7802,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Signal Selection Screen - Выбор сигнала из сгенерированных
   if (currentScreen === 'signal-selection') {
     return (
@@ -7323,10 +7816,10 @@ ${isLoss ? `
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-white">
-                    {selectedMode === 'top3' ? 'ТОП-3 Сигнала' : 'Сгенерированный сигнал'}
+                    {selectedMode === 'top3' ? t('top3Signals') : t('generatedSignal')}
                   </h1>
                   <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs">
-                    {generatedSignals.length} сигнал{generatedSignals.length > 1 ? 'а' : ''}
+                    {generatedSignals.length === 0 ? t('signalCountZero') : t('signalCount', {count: generatedSignals.length})}
                   </Badge>
                 </div>
               </div>
@@ -7344,7 +7837,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* Content based on mode */}
         <div className="container mx-auto px-4 py-6">
           {selectedMode === 'top3' ? (
@@ -7352,11 +7844,10 @@ ${isLoss ? `
             <>
               <div className="mb-6 text-center">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  🏆 ТОП-3 сигнала готовы!
+                  🏆 {t('top3SignalsReady')}
                 </h2>
                 <p className="text-slate-400">{t('selectSignalForActivation')}</p>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {generatedSignals.map((signal, index) => (
                   <Card 
@@ -7381,7 +7872,6 @@ ${isLoss ? `
                           )}
                         </div>
                       </div>
-
                       {/* Signal Type */}
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400 text-sm">{t('direction')}:</span>
@@ -7390,18 +7880,16 @@ ${isLoss ? `
                             ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                             : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                         }`}>
-                          {signal.type}
+                          {signal.type === 'BUY' ? t('buy') : t('sell')}
                         </Badge>
                       </div>
-
                       {/* Expiration Time */}
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400 text-sm">{t('expiration')}:</span>
                         <span className="text-white font-semibold">
-                          {signal.expiration} мин
+                          {signal.expiration} {t('minutesShort')}
                         </span>
                       </div>
-
                       {/* Confidence Score */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
@@ -7429,7 +7917,6 @@ ${isLoss ? `
                           />
                         </div>
                       </div>
-
                       {/* Click to Activate */}
                       <div className="text-center pt-2">
                         <span className="text-emerald-400 text-sm font-semibold">{t('clickToActivate')}</span>
@@ -7448,7 +7935,6 @@ ${isLoss ? `
                 </h2>
                 <p className="text-slate-400">{t('activateSignalForTrading')}</p>
               </div>
-
               <div className="max-w-md mx-auto">
                 {generatedSignals.map((signal, index) => (
                   <Card 
@@ -7473,7 +7959,6 @@ ${isLoss ? `
                           )}
                         </div>
                       </div>
-
                       {/* Signal Type */}
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400 text-sm">{t('direction')}:</span>
@@ -7482,18 +7967,16 @@ ${isLoss ? `
                             ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                             : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                         }`}>
-                          {signal.type}
+                          {signal.type === 'BUY' ? t('buy') : t('sell')}
                         </Badge>
                       </div>
-
                       {/* Expiration Time */}
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400 text-sm">{t('expiration')}:</span>
                         <span className="text-white font-semibold">
-                          {signal.expiration} мин
+                          {signal.expiration} {t('minutesShort')}
                         </span>
                       </div>
-
                       {/* Confidence Score */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
@@ -7521,7 +8004,6 @@ ${isLoss ? `
                           />
                         </div>
                       </div>
-
                       {/* Click to Activate */}
                       <div className="text-center pt-2">
                         <span className="text-emerald-400 text-sm font-semibold">{t('clickToActivate')}</span>
@@ -7540,20 +8022,19 @@ ${isLoss ? `
                 </h2>
                 <p className="text-slate-400">{t('selectPairForSignalGeneration')}</p>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(marketMetrics[selectedMarket]?.length > 0
                   ? marketMetrics[selectedMarket]
                   : (selectedMarket === 'forex' ? [
-                      { pair: 'EUR/USD', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'GBP/USD', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'USD/JPY', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'USD/CHF', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' }
+                      { pair: 'EUR/USD', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'GBP/USD', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'USD/JPY', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'USD/CHF', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' }
                     ] : [
-                      { pair: 'EUR/USD (OTC)', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'NZD/USD (OTC)', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'USD/CHF (OTC)', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'GBP/USD (OTC)', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' }
+                      { pair: 'EUR/USD (OTC)', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'NZD/USD (OTC)', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'USD/CHF (OTC)', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'GBP/USD (OTC)', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' }
                     ])
                 ).map((market, index) => (
                   <Card 
@@ -7582,17 +8063,16 @@ ${isLoss ? `
                       )}
                     </div>
                   </div>
-
                   {/* Market Status */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
                       <span className="text-slate-400 text-xs block mb-1">{t('mood')}</span>
                       <Badge className={`${
-                        market.sentiment === 'Бычий' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' :
-                        market.sentiment === 'Медвежий' ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' :
+                        market.sentiment === t('bullish') ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' :
+                        market.sentiment === t('bearish') ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' :
                         'bg-amber-500/20 text-amber-400 border-amber-500/50'
                       }`}>
-                        {market.sentiment}
+                        {market.sentiment === t('bullish') ? t('bullish') : market.sentiment === t('bearish') ? t('bearish') : t('neutral')}
                       </Badge>
                     </div>
                     <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
@@ -7600,7 +8080,6 @@ ${isLoss ? `
                       <span className="text-white font-bold">{market.volatility}%</span>
                     </div>
                   </div>
-
                   {/* Trend Indicator */}
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-sm">{t('recommendation')}</span>
@@ -7609,10 +8088,9 @@ ${isLoss ? `
                       market.trend === 'SELL' ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' :
                       'bg-amber-500/20 text-amber-400 border-amber-500/50'
                     }`}>
-                      {market.trend === 'HOLD' ? 'ОЖИДАНИЕ' : market.trend}
+                      {market.trend === 'HOLD' ? t('waiting') : market.trend}
                     </Badge>
                   </div>
-
                   {/* Click to Generate */}
                   <div className="text-center pt-2">
                     <span className="text-emerald-400 text-sm font-semibold">{t('clickToGenerateSignal')}</span>
@@ -7621,7 +8099,6 @@ ${isLoss ? `
               </Card>
             ))}
           </div>
-
           {/* Info */}
           <Card className="glass-effect border-cyan-500/30 p-6 mt-6 card-3d shadow-2xl">
             <div className="flex items-center gap-3">
@@ -7642,12 +8119,10 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Analytics Screen - List of completed signals for AI analysis
   if (currentScreen === 'analytics') {
     // Проверка VIP доступа к AI Аналитике
     const hasVipAccess = userSubscriptions && userSubscriptions.length > 0
-    
     if (!hasVipAccess) {
       return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -7682,7 +8157,6 @@ ${isLoss ? `
               </div>
             </div>
           </header>
-
           {/* VIP Lock Screen */}
           <div className="container mx-auto px-4 py-12">
             <div className="max-w-md mx-auto text-center">
@@ -7691,7 +8165,6 @@ ${isLoss ? `
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center icon-3d shadow-xl shadow-amber-500/20">
                     <Crown className="w-10 h-10 text-amber-400" />
                   </div>
-                  
                   <div>
                     <h2 className="text-2xl font-bold text-white mb-2">{t('vipFeature')}</h2>
                     <p className="text-slate-400 mb-4">
@@ -7702,7 +8175,6 @@ ${isLoss ? `
                       {t('subscriptionRequired')}
                     </Badge>
                   </div>
-
                   <div className="space-y-4 w-full">
                     <Button 
                       onClick={() => setCurrentScreen('premium')}
@@ -7711,7 +8183,6 @@ ${isLoss ? `
                       <Crown className="w-5 h-5 mr-2" />
                       {t('getSubscription')}
                     </Button>
-                    
                     <Button 
                       onClick={() => {
                         if (userData?.id) {
@@ -7732,7 +8203,6 @@ ${isLoss ? `
         </div>
       )
     }
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -7744,7 +8214,7 @@ ${isLoss ? `
                   <BarChart3 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">AI Аналитика</h1>
+                  <h1 className="text-xl font-bold text-white">{t('aiAnalytics')}</h1>
                   <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50 text-xs">
                     GPT-4O MINI
                   </Badge>
@@ -7766,7 +8236,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* Analytics Content */}
         <div className="container mx-auto px-4 py-6">
           {!selectedSignalForAnalysis ? (
@@ -7776,7 +8245,6 @@ ${isLoss ? `
                 <h2 className="text-2xl font-bold text-white mb-2">{t('selectSignalForAnalysis')}</h2>
                 <p className="text-slate-400">{t('aiWillAnalyzeAndGiveRecommendations')}</p>
               </div>
-
               <div className="space-y-4">
                 {userSignalsHistory.length > 0 ? (
                   userSignalsHistory
@@ -7820,7 +8288,7 @@ ${isLoss ? `
                                   ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                                   : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                               } text-xs`}>
-                                {signal.direction || 'SELL'}
+                                {signal.direction === 'BUY' ? t('buy') : t('sell')}
                               </Badge>
                               <Badge className={`${
                                 signal.signal_type === 'forex' 
@@ -7848,7 +8316,7 @@ ${isLoss ? `
                               ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                               : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                           }`}>
-                            {signal.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
+                            {signal.feedback === 'success' ? t('success') : t('failure')}
                           </Badge>
                           <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-cyan-400 mt-2" />
                         </div>
@@ -7883,7 +8351,6 @@ ${isLoss ? `
                   Назад к списку
                 </Button>
               </div>
-
               {/* Signal Details Card */}
               <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl mb-6">
                 <div className="flex items-center gap-4 mb-6">
@@ -7917,7 +8384,7 @@ ${isLoss ? `
                           ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                           : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                       }`}>
-                   {selectedSignalForAnalysis.direction || 'SELL'}
+                   {selectedSignalForAnalysis.direction === 'BUY' ? t('buy') : t('sell')}
                       </Badge>
                       <Badge className={`${
                    selectedSignalForAnalysis.signal_type === 'forex' 
@@ -7931,7 +8398,7 @@ ${isLoss ? `
                           ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                           : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                       }`}>
-                   {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
+                   {selectedSignalForAnalysis.feedback === 'success' ? t('success') : t('failure')}
                       </Badge>
                  <span className="text-xs text-slate-500">
                    {new Date(selectedSignalForAnalysis.timestamp).toLocaleString('ru-RU')}
@@ -7946,7 +8413,6 @@ ${isLoss ? `
                )}
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
                     <span className="text-slate-400 text-xs block mb-1">{t('signalType')}</span>
@@ -7955,7 +8421,7 @@ ${isLoss ? `
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
                     <span className="text-slate-400 text-xs block mb-1">{t('direction')}</span>
                     <span className={`font-bold ${(selectedSignalForAnalysis.direction || 'SELL') === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {selectedSignalForAnalysis.direction || 'SELL'}
+                      {selectedSignalForAnalysis.direction === 'BUY' ? t('buy') : t('sell')}
                     </span>
                   </div>
                   <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
@@ -7984,7 +8450,6 @@ ${isLoss ? `
                   )}
                 </div>
               </Card>
-
               {/* Analyze Button */}
               {!analysisResult && !isAnalyzing && (
                 <Button
@@ -7995,7 +8460,6 @@ ${isLoss ? `
                   {t('runAIAnalysis')}
                 </Button>
               )}
-
               {/* Loading state */}
               {isAnalyzing && (
                 <Card className="glass-effect border-cyan-500/30 p-8 card-3d shadow-2xl text-center mb-6">
@@ -8017,7 +8481,6 @@ ${isLoss ? `
                   </div>
                 </Card>
               )}
-
               {/* Analysis Result */}
               {analysisResult && (
                 <Card className="glass-effect border-cyan-500/30 p-6 card-3d shadow-2xl">
@@ -8032,13 +8495,11 @@ ${isLoss ? `
                       </Badge>
                     </div>
                   </div>
-
                   <div className="prose prose-invert max-w-none">
                     <div className="text-slate-300 whitespace-pre-wrap leading-relaxed">
                       {analysisResult}
                     </div>
                   </div>
-
                   <Button
                     onClick={() => {
                       setSelectedSignalForAnalysis(null)
@@ -8057,7 +8518,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Main Screen - активный сигнал с блокировкой навигации
   if (currentScreen === 'main') {
     return (
@@ -8078,7 +8538,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* Main Content */}
         <div className="container mx-auto px-4 py-6">
           {pendingSignal && (
@@ -8107,7 +8566,6 @@ ${isLoss ? `
                   </div>
                 </div>
               </Card>
-
               {/* Таймер */}
               <Card className="glass-effect backdrop-blur-sm border-amber-500/50 p-6 mb-6 shadow-xl shadow-amber-500/20">
                 <div className="text-center">
@@ -8126,7 +8584,6 @@ ${isLoss ? `
                   </div>
                 </div>
               </Card>
-
               {/* Предупреждение о блокировке */}
               <Card className="glass-effect backdrop-blur-sm border-red-500/50 p-6 mb-6 shadow-xl shadow-red-500/20">
                 <div className="flex items-center gap-3 mb-3">
@@ -8139,7 +8596,6 @@ ${isLoss ? `
                   Дождитесь экспирации сигнала и оставьте фидбек
                 </p>
               </Card>
-
               {/* Кнопки фидбека */}
               {isWaitingFeedback && (
                 <Card className="glass-effect backdrop-blur-sm border-cyan-500/50 p-6 shadow-xl shadow-cyan-500/20">
@@ -8168,7 +8624,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Notifications Settings Screen
   if (currentScreen === 'notifications') {
     return (
@@ -8199,7 +8654,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* Notification Settings */}
         <div className="container mx-auto px-4 py-6 max-w-2xl">
           <div className="space-y-6">
@@ -8209,7 +8663,6 @@ ${isLoss ? `
                 <Sparkles className="w-5 h-5 text-emerald-400" />
                 {t('tradingSignals')}
               </h3>
-              
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                   <div className="flex items-center gap-3">
@@ -8235,7 +8688,6 @@ ${isLoss ? `
                     {notificationSettings.newSignals ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
-
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -8260,7 +8712,6 @@ ${isLoss ? `
                     {notificationSettings.signalResults ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
-
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -8287,14 +8738,12 @@ ${isLoss ? `
                 </div>
               </div>
             </Card>
-
             {/* System Notifications */}
             <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Newspaper className="w-5 h-5 text-amber-400" />
                 {t('systemNotifications')}
               </h3>
-              
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                   <div className="flex items-center gap-3">
@@ -8320,7 +8769,6 @@ ${isLoss ? `
                     {notificationSettings.marketNews ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
-
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -8347,14 +8795,12 @@ ${isLoss ? `
                 </div>
               </div>
             </Card>
-
             {/* Sound & Vibration */}
             <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Volume2 className="w-5 h-5 text-purple-400" />
                 {t('soundAndVibration')}
               </h3>
-              
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                   <div className="flex items-center gap-3">
@@ -8384,7 +8830,6 @@ ${isLoss ? `
                     {notificationSettings.soundEnabled ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
-
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -8409,7 +8854,6 @@ ${isLoss ? `
                     {notificationSettings.vibrationEnabled ? t('enabled') : t('disabled')}
                   </Button>
                 </div>
-
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -8436,7 +8880,6 @@ ${isLoss ? `
                 </div>
               </div>
             </Card>
-
             {/* Info Card */}
             <Card className="glass-effect border-cyan-500/30 p-6 card-3d shadow-2xl">
               <div className="flex items-center gap-3">
@@ -8456,7 +8899,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Market Selection Screen
   if (currentScreen === 'market-select') {
     return (
@@ -8466,14 +8908,12 @@ ${isLoss ? `
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-glow-pulse" style={{animationDelay: '1.5s'}}></div>
         </div>
-
         <div className="max-w-md w-full space-y-8 animate-fade-in relative z-10 perspective-container">
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-white">{t('selectMarket')}</h2>
             <p className="text-slate-400">{t('whatSignals')}</p>
           </div>
-
           {/* Market Options */}
           <div className="space-y-4">
             <Card 
@@ -8504,7 +8944,6 @@ ${isLoss ? `
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
             <Card 
               onClick={() => {
                 setSelectedMarket('otc')
@@ -8526,7 +8965,6 @@ ${isLoss ? `
               </div>
             </Card>
           </div>
-
           {/* Back Button */}
           <Button 
             onClick={() => {
@@ -8544,7 +8982,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Mode Selection Screen
   if (currentScreen === 'mode-select') {
     return (
@@ -8554,14 +8991,12 @@ ${isLoss ? `
           <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
           <div className="absolute bottom-1/3 right-1/3 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-glow-pulse" style={{animationDelay: '1s'}}></div>
         </div>
-
         <div className="max-w-md w-full space-y-8 animate-fade-in relative z-10 perspective-container">
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-white">{t('generationMode')}</h2>
             <p className="text-slate-400">{t('howDoYouWantToReceiveSignals')}</p>
           </div>
-
           {/* Mode Options */}
           <div className="space-y-4">
             <Card 
@@ -8571,7 +9006,6 @@ ${isLoss ? `
                   alert(t('forexMarketClosedWeekend'))
                   return
                 }
-                
                 if (!canGenerateTop3()) {
                   // Показываем уведомление о cooldown
                   const remainingTime = Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000)
@@ -8604,7 +9038,7 @@ ${isLoss ? `
                     <p className="text-slate-400 text-sm mb-3">{t('bestOpportunitiesOfDay')}</p>
                     {!canGenerateTop3() && (
                       <p className="text-xs text-amber-400 mb-2">
-                        Доступно через: {Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)} мин
+                        {t('availableIn', {minutes: Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)})}
                       </p>
                     )}
                     <div className="space-y-1">
@@ -8626,7 +9060,6 @@ ${isLoss ? `
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
             <Card 
               onClick={() => {
                 // Проверяем статус форекс рынка только для форекс режима
@@ -8674,7 +9107,6 @@ ${isLoss ? `
               </div>
             </Card>
           </div>
-
           {/* Back Button */}
           <Button 
             onClick={() => setCurrentScreen('market-select')}
@@ -8687,7 +9119,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Settings Screen
   if (currentScreen === 'settings') {
     return (
@@ -8697,14 +9128,12 @@ ${isLoss ? `
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-glow-pulse" style={{animationDelay: '1.5s'}}></div>
         </div>
-
         <div className="max-w-md w-full space-y-8 animate-fade-in relative z-10 perspective-container">
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-white">{t('settings')}</h2>
             <p className="text-slate-400">{t('manageAppSettings')}</p>
           </div>
-
           {/* Settings Options */}
           <div className="space-y-4">
             <Card 
@@ -8730,8 +9159,6 @@ ${isLoss ? `
                 <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
-
             <Card 
               onClick={() => setCurrentScreen('user-stats')}
               className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-cyan-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
@@ -8749,7 +9176,6 @@ ${isLoss ? `
                 <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
             <Card 
               onClick={() => setCurrentScreen('notifications')}
               className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-amber-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
@@ -8767,7 +9193,6 @@ ${isLoss ? `
                 <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all duration-300" />
               </div>
             </Card>
-
             {/* Admin Panel - Only visible for admins */}
             {isAdmin && (
               <Card 
@@ -8798,7 +9223,6 @@ ${isLoss ? `
               </Card>
             )}
           </div>
-
           {/* Back Button */}
           <Button 
             onClick={() => {
@@ -8816,7 +9240,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // ML Model Selector Screen
   if (currentScreen === 'ml-selector') {
     return (
@@ -8847,7 +9270,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* ML Models List */}
         <div className="container mx-auto px-3 py-4">
           <div className="space-y-3">
@@ -8855,7 +9277,6 @@ ${isLoss ? `
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
               const isRestricted = model.status === 'restricted'
-              
               return (
                 <Card 
                   key={model.id}
@@ -8911,7 +9332,6 @@ ${isLoss ? `
                           )}
                         </div>
                     </div>
-                    
                     {/* Stats row */}
                     <div className="flex items-center gap-4 text-sm">
                           <div className="flex items-center gap-1">
@@ -8921,14 +9341,11 @@ ${isLoss ? `
                           <span className="text-slate-600">•</span>
                           <span className="text-slate-400">{model.style}</span>
                         </div>
-                    
                     {/* Description */}
                     <p className="text-slate-400 text-sm italic">💬 {model.description}</p>
-                    
                         {model.warning && (
                       <p className="text-red-400 text-sm font-semibold">⚠️ {model.warning}</p>
                         )}
-                    
                     {/* Bottom row: Pricing and button */}
                     <div className="flex items-center justify-between">
                         {!isOwned && !isRestricted && (
@@ -8974,7 +9391,6 @@ ${isLoss ? `
               )
             })}
           </div>
-
           {/* Info */}
           <Card className="glass-effect border-cyan-500/30 p-4 mt-4 card-3d shadow-2xl">
             <div className="flex items-center gap-3">
@@ -8993,7 +9409,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Purchase Modal
   if (showPurchaseModal && selectedModelForPurchase) {
     return (
@@ -9007,26 +9422,21 @@ ${isLoss ? `
             <h2 className="text-2xl font-bold text-white mb-2">{t('purchaseModel', {name: selectedModelForPurchase.name})}</h2>
             <p className="text-slate-400 text-sm">{selectedModelForPurchase.algorithm}</p>
           </div>
-
           <div className="space-y-4 mb-6">
             <div className="text-center">
                  <h3 className="text-lg font-semibold text-white mb-4">{t('selectSubscriptionType')}</h3>
             </div>
-            
             {/* Ежемесячная подписка */}
             <Card 
               onClick={() => {
                 const message = `🔔 Запрос на покупку ML модели
-
 📋 Модель: ${selectedModelForPurchase.name} (${selectedModelForPurchase.emoji})
 💰 Тип: Ежемесячная подписка
 💵 Цена: ${selectedModelForPurchase.monthlyPrice}
 👤 Пользователь: ${userData?.first_name} ${userData?.last_name}
 🆔 ID: ${userData?.id}
 📱 Username: @${userData?.username || 'не указан'}
-
 Пожалуйста, свяжитесь с пользователем для оформления подписки.`
-                
                 // Отправляем сообщение админу
                 window.open(`https://t.me/${ADMIN_TELEGRAM_ID}?text=${encodeURIComponent(message)}`, '_blank')
                 setShowPurchaseModal(false)
@@ -9044,21 +9454,17 @@ ${isLoss ? `
                 </div>
               </div>
             </Card>
-
             {/* Пожизненная покупка */}
             <Card 
               onClick={() => {
                 const message = `🔔 Запрос на покупку ML модели
-
 📋 Модель: ${selectedModelForPurchase.name} (${selectedModelForPurchase.emoji})
 💰 Тип: Пожизненная покупка
 💵 Цена: ${selectedModelForPurchase.lifetimePrice}
 👤 Пользователь: ${userData?.first_name} ${userData?.last_name}
 🆔 ID: ${userData?.id}
 📱 Username: @${userData?.username || 'не указан'}
-
 Пожалуйста, свяжитесь с пользователем для оформления покупки.`
-                
                 // Отправляем сообщение админу
                 window.open(`https://t.me/${ADMIN_TELEGRAM_ID}?text=${encodeURIComponent(message)}`, '_blank')
                 setShowPurchaseModal(false)
@@ -9077,7 +9483,6 @@ ${isLoss ? `
               </div>
             </Card>
           </div>
-
           <div className="flex gap-3">
             <Button 
               onClick={() => {
@@ -9094,7 +9499,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // User Statistics Screen
   if (currentScreen === 'user-stats') {
     return (
@@ -9125,7 +9529,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* User Stats Content */}
         <div className="container mx-auto px-4 py-6">
           {/* Main Stats Grid */}
@@ -9155,7 +9558,6 @@ ${isLoss ? `
               </div>
             </Card>
           </div>
-
           {/* Detailed Stats */}
           <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl mb-8">
             <div className="flex items-center gap-3 mb-6">
@@ -9164,7 +9566,6 @@ ${isLoss ? `
               </div>
               <h3 className="text-lg font-bold text-white">{t('detailedInformation')}</h3>
             </div>
-            
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
                 <span className="text-slate-400 text-xs block mb-2">{t('tradingDays')}</span>
@@ -9176,15 +9577,14 @@ ${isLoss ? `
               </div>
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
                 <span className="text-slate-400 text-xs block mb-2">{t('bestPair')}</span>
-                <span className="text-emerald-400 font-bold text-xl">{userStats.bestPair}</span>
+                <span className="text-emerald-400 font-bold text-xl">{userStats.bestPair || t('notAvailable')}</span>
               </div>
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
                 <span className="text-slate-400 text-xs block mb-2">{t('worstPair')}</span>
-                <span className="text-rose-400 font-bold text-xl">{userStats.worstPair}</span>
+                <span className="text-rose-400 font-bold text-xl">{userStats.worstPair || t('notAvailable')}</span>
               </div>
             </div>
           </Card>
-
           {/* Signals Chart */}
           <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
@@ -9193,12 +9593,10 @@ ${isLoss ? `
               </div>
               <h3 className="text-lg font-bold text-white">{t('signalsChartByMonth')}</h3>
             </div>
-            
             <div className="space-y-4">
               {userStats.signalsByMonth.map((item, index) => {
                 const totalSignals = item.successful + item.failed
                 const successPercentage = (item.successful / totalSignals) * 100
-                
                 return (
                   <div key={index} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
@@ -9206,7 +9604,7 @@ ${isLoss ? `
                       <div className="flex items-center gap-3">
                         <span className="text-emerald-400 font-bold">{item.successful} {t('successful')}</span>
                         <span className="text-slate-600">•</span>
-                        <span className="text-rose-400 font-bold">{item.failed} проигрышных</span>
+                        <span className="text-rose-400 font-bold">{item.failed} {t('failed')}</span>
                       </div>
                     </div>
                     <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden border border-slate-700/30 flex">
@@ -9236,7 +9634,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Admin Panel Screen
   if (currentScreen === 'admin') {
     return (
@@ -9267,7 +9664,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* Admin Stats */}
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 perspective-container mb-8">
@@ -9302,7 +9698,6 @@ ${isLoss ? `
               </div>
             </Card>
           </div>
-
           {/* Top Users */}
           <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
@@ -9311,7 +9706,6 @@ ${isLoss ? `
               </div>
               <h3 className="text-lg font-bold text-white">{t('topUsers')}</h3>
             </div>
-            
             <div className="space-y-3">
               {adminStats.topUsers.map((user, index) => (
                 <div 
@@ -9375,7 +9769,6 @@ ${isLoss ? `
               ))}
             </div>
           </Card>
-
           {/* Заявки на доступ */}
           <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
             <div className="flex items-center justify-between mb-6">
@@ -9391,7 +9784,6 @@ ${isLoss ? `
                 )}
               </div>
             </div>
-            
             <div className="space-y-3">
               {accessRequests.length > 0 ? (
                 accessRequests.map((request) => (
@@ -9442,7 +9834,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Admin User Detail Screen
   if (currentScreen === 'admin-user-detail' && selectedUser) {
     return (
@@ -9473,7 +9864,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* User Stats Content */}
         <div className="container mx-auto px-4 py-6">
           {/* Main Stats Grid */}
@@ -9503,7 +9893,6 @@ ${isLoss ? `
               </div>
             </Card>
           </div>
-
           {/* Detailed Stats */}
           <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl mb-8">
             <div className="flex items-center gap-3 mb-6">
@@ -9512,7 +9901,6 @@ ${isLoss ? `
               </div>
               <h3 className="text-lg font-bold text-white">{t('detailedInformation')}</h3>
             </div>
-            
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 text-center">
                 <span className="text-slate-400 text-xs block mb-2">{t('tradingDays')}</span>
@@ -9532,7 +9920,6 @@ ${isLoss ? `
               </div>
             </div>
           </Card>
-
           {/* Signals Chart */}
           <Card className="glass-effect border-slate-700/50 p-6 card-3d shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
@@ -9541,12 +9928,10 @@ ${isLoss ? `
               </div>
               <h3 className="text-lg font-bold text-white">{t('signalsChartByMonth')}</h3>
             </div>
-            
             <div className="space-y-4">
               {selectedUser.signalsByMonth.map((item, index) => {
                 const totalSignals = item.successful + item.failed
                 const successPercentage = (item.successful / totalSignals) * 100
-                
                 return (
                   <div key={index} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
@@ -9554,7 +9939,7 @@ ${isLoss ? `
                       <div className="flex items-center gap-3">
                         <span className="text-emerald-400 font-bold">{item.successful} {t('successful')}</span>
                         <span className="text-slate-600">•</span>
-                        <span className="text-rose-400 font-bold">{item.failed} проигрышных</span>
+                        <span className="text-rose-400 font-bold">{item.failed} {t('failed')}</span>
                       </div>
                     </div>
                     <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden border border-slate-700/30 flex">
@@ -9580,7 +9965,6 @@ ${isLoss ? `
               })}
             </div>
           </Card>
-
           {/* Subscription Templates */}
           <Card className="glass-effect border-blue-500/30 p-6 card-3d shadow-2xl mb-6">
             <div className="flex items-center gap-3 mb-6">
@@ -9589,7 +9973,6 @@ ${isLoss ? `
               </div>
               <h3 className="text-lg font-bold text-white">{t('quickTemplates')}</h3>
             </div>
-            
             <div className="grid grid-cols-2 gap-3">
               {subscriptionTemplates.map(template => (
                 <Button
@@ -9613,7 +9996,6 @@ ${isLoss ? `
               ))}
             </div>
           </Card>
-
           {/* Subscription Management */}
           <Card className="glass-effect border-amber-500/30 p-6 card-3d shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
@@ -9622,16 +10004,14 @@ ${isLoss ? `
               </div>
               <h3 className="text-lg font-bold text-white">{t('subscriptionManagement')}</h3>
             </div>
-            
             <div className="space-y-4">
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-slate-300 font-medium">{t('mlModel')}</span>
                   <Badge className={`${selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-slate-500/20 text-slate-400 border-slate-500/50'}`}>
-                    {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? 'Активна' : 'Неактивна'}
+                    {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? t('active') : t('inactive')}
                   </Badge>
                 </div>
-                
                 <div className="space-y-4">
                   {/* Выбор ML моделей */}
                   <div>
@@ -9663,17 +10043,14 @@ ${isLoss ? `
                       ))}
                     </div>
                   </div>
-                  
                   {/* Кнопки управления */}
                   <div className="grid grid-cols-2 gap-3">
                     <Button
                       onClick={async () => {
                         // Сохраняем изменения
                         console.log('Сохранение подписки для пользователя:', selectedUser.id, selectedUser.subscriptions)
-                        
                         // Обновляем подписку пользователя через API
                         const success = await updateUserSubscription(selectedUser.id, selectedUser.subscriptions)
-                        
                         if (success) {
                           alert(t('subscriptionUpdated').replace('{name}', selectedUser.name))
                         } else {
@@ -9686,7 +10063,6 @@ ${isLoss ? `
                       <Check className="w-4 h-4 mr-2" />
                       Сохранить
                     </Button>
-                    
                     <Button
                       onClick={async () => {
                         // Отключаем все подписки
@@ -9695,10 +10071,8 @@ ${isLoss ? `
                           subscriptions: []
                         }
                         setSelectedUser(updatedUser)
-                        
                         // Обновляем через API
                         const success = await updateUserSubscription(selectedUser.id, [])
-                        
                         if (success) {
                           alert(t('subscriptionDisabled').replace('{name}', selectedUser.name))
                         } else {
@@ -9714,7 +10088,6 @@ ${isLoss ? `
                     </Button>
                   </div>
                 </div>
-                
                 {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 && (
                   <div className="mt-4 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
                     <div className="flex items-center gap-2 mb-2">
@@ -9737,7 +10110,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Premium ML Models Screen
   if (currentScreen === 'premium') {
     return (
@@ -9773,7 +10145,6 @@ ${isLoss ? `
             </div>
           </div>
         </header>
-
         {/* Premium Content */}
         <div className="container mx-auto px-4 py-6">
           {/* Header Section */}
@@ -9788,7 +10159,6 @@ ${isLoss ? `
               💀 Только для своих. Доступ по рукам. Каждый вход — осознанный риск.
             </p>
           </div>
-
           {/* Active Model Status */}
           <Card className="glass-effect border-emerald-500/30 p-6 mb-8 card-3d shadow-2xl">
             <div className="flex items-center justify-between">
@@ -9800,7 +10170,7 @@ ${isLoss ? `
                   <h3 className="text-xl font-bold text-white mb-1">
                     🎯 АКТИВНАЯ МОДЕЛЬ: {mlModels.find(m => m.status === 'active')?.emoji} {mlModels.find(m => m.status === 'active')?.name}
                   </h3>
-                  <p className="text-emerald-400 text-sm">✅ Модель обучена и готова к работе</p>
+                  <p className="text-emerald-400 text-sm">✅ {t('modelReady')}</p>
                 </div>
               </div>
               <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
@@ -9808,7 +10178,6 @@ ${isLoss ? `
               </Badge>
             </div>
           </Card>
-
           {/* ML Models Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {mlModels.sort((a, b) => {
@@ -9853,10 +10222,8 @@ ${isLoss ? `
                       </div>
                     </div>
                   </div>
-
                   {/* Algorithm */}
                   <p className="text-slate-300 text-xs mb-3 line-clamp-2">{model.algorithm}</p>
-
                   {/* Stats */}
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex items-center gap-1">
@@ -9866,15 +10233,12 @@ ${isLoss ? `
                     <span className="text-slate-600">•</span>
                     <span className="text-slate-400 text-xs">{model.style}</span>
                   </div>
-
                   {/* Description */}
                   <p className="text-slate-400 text-xs mb-3 italic line-clamp-2">💬 {model.description}</p>
-
                   {/* Warning */}
                   {model.warning && (
                     <p className="text-red-400 text-xs mb-3 font-semibold">⚠️ {model.warning}</p>
                   )}
-
                   {/* Pricing */}
                   <div className="mt-auto">
                     {model.status === 'restricted' ? (
@@ -9909,7 +10273,6 @@ ${isLoss ? `
       </div>
     )
   }
-
   // Main App Screen
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -9950,7 +10313,6 @@ ${isLoss ? `
           </div>
         </div>
       </header>
-
       {/* Stats Bar */}
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-2 gap-3 perspective-container">
@@ -9968,7 +10330,6 @@ ${isLoss ? `
           </Card>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -9980,7 +10341,6 @@ ${isLoss ? `
               История
             </TabsTrigger>
           </TabsList>
-
           {/* Active Signals */}
           <TabsContent value="active" className="mt-6 space-y-4 perspective-container">
             {(selectedMode === 'top3' ? activeSignals : [activeSignals[0]]).map((signal) => (
@@ -10011,14 +10371,13 @@ ${isLoss ? `
                                 : 'border-rose-500/50 text-rose-400'
                             } text-xs`}
                           >
-                            {signal.type}
+                            {signal.type === 'BUY' ? t('buy') : t('sell')}
                           </Badge>
                           <span className="text-xs text-slate-500 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {signal.time}
                           </span>
                         </div>
-                        
                         {/* Confidence Score Bar */}
                         <div className="mt-3">
                           <div className="flex items-center justify-between text-xs mb-1">
@@ -10057,8 +10416,6 @@ ${isLoss ? `
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
-
-
                   {/* Progress Bar */}
                   {signal.status === 'active' && (
                     <div className="space-y-2">
@@ -10074,14 +10431,12 @@ ${isLoss ? `
                       </div>
                     </div>
                   )}
-
                   {signal.status === 'pending' && (
                     <div className="flex items-center gap-2 text-amber-400 text-sm">
                       <Clock className="w-4 h-4" />
                       <span>{t('waitingForEntry')}</span>
                     </div>
                   )}
-
                   {/* View Details Button */}
                   <Button 
                     variant="ghost" 
@@ -10093,7 +10448,6 @@ ${isLoss ? `
                 </div>
               </Card>
             ))}
-
             {/* Single Mode Generation Buttons */}
             {selectedMode === 'single' && (
               <div className="mt-6">
@@ -10173,7 +10527,6 @@ ${isLoss ? `
               </div>
             )}
           </TabsContent>
-
           {/* History Signals */}
           <TabsContent value="history" className="mt-6 space-y-4 perspective-container">
             {historySignals.map((signal) => (
@@ -10207,7 +10560,7 @@ ${isLoss ? `
                           ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                           : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                       }`}>
-                        {signal.result === 'profit' ? 'Успешно' : 'Проигрыш'}
+                        {signal.result === 'profit' ? t('success') : t('failure')}
                       </Badge>
                       <div className="text-xs text-slate-500 mt-2">
                         {signal.entry} → {signal.closePrice}
@@ -10217,7 +10570,6 @@ ${isLoss ? `
                 </div>
               </Card>
             ))}
-
             {/* Stats Summary */}
             <Card className="glass-effect border-slate-700/50 p-6 mt-6 card-3d shadow-2xl">
               <div className="flex items-center gap-3 mb-4">
@@ -10247,7 +10599,6 @@ ${isLoss ? `
             </Card>
           </TabsContent>
         </Tabs>
-
         {/* Back Button */}
         <Button 
           onClick={() => {
@@ -10263,7 +10614,6 @@ ${isLoss ? `
           {t('back')}
         </Button>
       </div>
-
       {/* Pending Signal Overlay - Блокировка навигации */}
       {pendingSignal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -10276,7 +10626,6 @@ ${isLoss ? `
                   <Lock className="w-8 h-8 text-red-400" />
                   <h1 className="text-2xl font-bold text-white">{t('tradeActivated')}</h1>
                 </div>
-
                 <div className="flex items-center justify-center gap-4 mb-6">
                   <div className={`w-20 h-20 rounded-xl flex items-center justify-center icon-3d shadow-xl ${
                     pendingSignal.type === 'BUY'
@@ -10300,7 +10649,6 @@ ${isLoss ? `
                     </Badge>
                   </div>
                 </div>
-
                 {/* Timer */}
                 <Card className="glass-effect border-amber-500/30 p-6 mb-6 card-3d shadow-xl text-center">
                   <div className="flex items-center justify-center gap-4 mb-3">
@@ -10319,7 +10667,6 @@ ${isLoss ? `
                     ></div>
                   </div>
                 </Card>
-
                 <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
@@ -10340,7 +10687,6 @@ ${isLoss ? `
                   <h2 className="text-2xl font-bold text-white mb-2">{t('timeExpired')}</h2>
                   <p className="text-slate-400">{t('leaveFeedback')}</p>
                 </div>
-
                 <Card className="glass-effect border-slate-700/50 p-6 mb-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -10350,12 +10696,11 @@ ${isLoss ? `
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400">{t('direction')}:</span>
                       <Badge className={pendingSignal.type === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}>
-                        {pendingSignal.type}
+                        {pendingSignal.type === 'BUY' ? t('buy') : t('sell')}
                       </Badge>
                     </div>
                   </div>
                 </Card>
-
                 {/* Instructions */}
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
                   <div className="flex items-center gap-2 mb-2">
@@ -10366,7 +10711,6 @@ ${isLoss ? `
                   </div>
                   <p className="text-slate-400 text-sm">{t('indicateTradeResult')}</p>
                 </div>
-
                 <div className="space-y-4">
                   <Button
                     onClick={() => submitFeedback(true)}
@@ -10391,7 +10735,6 @@ ${isLoss ? `
                     </span>
                   </Button>
                 </div>
-
                 <p className="text-amber-400 text-sm text-center mt-4">
                   {t('leaveFeedbackToUnlock')}
                 </p>
@@ -10400,7 +10743,6 @@ ${isLoss ? `
           </Card>
         </div>
       )}
-
       {/* No Signal Available Notification */}
       {noSignalAvailable && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
@@ -10417,7 +10759,6 @@ ${isLoss ? `
                 {t('analysisCompleted')}
               </Badge>
             </div>
-
             <Card className="glass-effect border-slate-700/50 p-6 mb-6 bg-slate-900/50">
               <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Target className="w-5 h-5 text-cyan-400" />
@@ -10444,7 +10785,6 @@ ${isLoss ? `
                 </div>
               </div>
             </Card>
-
             <Button
               onClick={() => {
                 setNoSignalAvailable(false)
@@ -10455,14 +10795,12 @@ ${isLoss ? `
               <ChevronRight className="w-5 h-5 mr-2 rotate-180" />
               {t('returnToPairSelection')}
             </Button>
-
             <p className="text-slate-400 text-xs text-center mt-4">
               {t('patienceIsKey')}
             </p>
           </Card>
         </div>
       )}
-
       {/* Reload Warning Modal */}
       {showReloadWarning && pendingSignal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
@@ -10479,7 +10817,6 @@ ${isLoss ? `
                 {t('activeSignalRequiresCompletion')}
               </p>
             </div>
-
             <Card className="glass-effect border-slate-700/50 p-6 mb-6 bg-slate-900/50">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-cyan-400" />
@@ -10497,7 +10834,7 @@ ${isLoss ? `
                       ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                       : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                   }`}>
-                    {pendingSignal.type === 'BUY' ? '📈 BUY' : '📉 SELL'}
+                    {pendingSignal.type === 'BUY' ? `📈 ${t('buy')}` : `📉 ${t('sell')}`}
                   </Badge>
                 </div>
                 {!isWaitingFeedback && (
@@ -10515,7 +10852,6 @@ ${isLoss ? `
                 )}
               </div>
             </Card>
-
             <Button
               onClick={() => {
                 setShowReloadWarning(false)
@@ -10526,7 +10862,6 @@ ${isLoss ? `
               <ArrowRight className="w-5 h-5 mr-2" />
               {t('returnToOpenTrade')}
             </Button>
-
             <p className="text-slate-500 text-xs text-center mt-4">
               {t('bypassProtectionActive')}
             </p>
@@ -10536,13 +10871,8 @@ ${isLoss ? `
     </div>
   )
 }
-
 // Глобальная обёртка для проверки блокировки навигации на ВСЕХ экранах
 function AppWrapper() {
   return <App />
 }
-
 export default AppWrapper
-
-
-
