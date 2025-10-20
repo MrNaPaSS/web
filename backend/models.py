@@ -46,3 +46,5 @@ class SubscriptionTemplate(Base):
     is_active = Column(Boolean, default=True)
 
 
+
+

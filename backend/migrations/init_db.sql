@@ -42,3 +42,5 @@ CREATE INDEX idx_subscription_history_user_id ON subscription_history(user_id);
 CREATE INDEX idx_subscription_history_created_at ON subscription_history(created_at);
 
 
+
+
