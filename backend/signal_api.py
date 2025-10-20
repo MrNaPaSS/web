@@ -356,7 +356,6 @@ async def generate_signal():
                             print(f'[MOCK] Добавлен mock сигнал {mock_pair}')
                             break
                 
-                print(f'[SUCCESS] Сгенерировано {len(signals)} сигналов для user {user_id}')
             else:
                 # Одиночный ОТС сигнал
                 if not pair:
