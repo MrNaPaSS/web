@@ -38,20 +38,20 @@ function App() {
   // Функция для загрузки подписок пользователя
   const loadUserSubscriptions = async (userId) => {
     try {
-      console.log('🔄 Загружаем подписки для пользователя:', userId)
+      console.log('🔄 Loading subscriptions for user:', userId)
       const response = await fetch(`${getApiUrl()}/api/user/subscriptions?user_id=${userId}`)
       const data = await response.json()
       
       if (data.success) {
         setUserSubscriptions(data.subscriptions)
-        console.log('✅ Подписки пользователя загружены:', data.subscriptions)
+        console.log('✅ User subscriptions loaded:', data.subscriptions)
         
         // Обновляем выбранную ML модель на первую доступную из подписок
         if (data.subscriptions && data.subscriptions.length > 0) {
           const firstAvailableModel = data.subscriptions[0]
           if (firstAvailableModel !== selectedMLModel) {
             setSelectedMLModel(firstAvailableModel)
-            console.log('🔄 ML модель обновлена на:', firstAvailableModel)
+            console.log('🔄 ML model updated to:', firstAvailableModel)
           }
         }
       } else {
@@ -83,14 +83,14 @@ function App() {
         if (userId === userData?.id) {
           setUserSubscriptions(subscriptions)
         }
-        console.log('Подписка пользователя обновлена:', subscriptions)
+        console.log('User subscription updated:', subscriptions)
         return true
       } else {
-        console.error('Ошибка обновления подписки:', data.error)
+        console.error('Subscription update error:', data.error)
         return false
       }
     } catch (error) {
-      console.error('Ошибка обновления подписки:', error)
+      console.error('Subscription update error:', error)
       return false
     }
   }
@@ -101,7 +101,7 @@ function App() {
   // Автоматическая загрузка подписок при возврате в меню
   useEffect(() => {
     if (currentScreen === 'menu' && userData?.id) {
-      console.log('🔄 Возврат в меню - загружаем подписки')
+      console.log('🔄 Returning to menu - loading subscriptions')
       loadUserSubscriptions(userData.id)
     }
   }, [currentScreen, userData?.id])
@@ -111,7 +111,7 @@ function App() {
     if (currentScreen === 'menu' && userData?.id) {
       // Небольшая задержка для гарантии загрузки
       const timer = setTimeout(() => {
-        console.log('🔄 Принудительная загрузка подписок в меню')
+        console.log('🔄 Force loading subscriptions in menu')
         loadUserSubscriptions(userData.id)
       }, 100)
       
@@ -124,7 +124,7 @@ function App() {
     if (!userData?.id) return
 
     const interval = setInterval(() => {
-      console.log('🔄 Периодическая проверка подписок')
+      console.log('🔄 Periodic subscription check')
       loadUserSubscriptions(userData.id)
     }, 2000) // 2 секунды для очень быстрого обновления
 
@@ -134,7 +134,7 @@ function App() {
   // Загрузка подписок при инициализации пользователя
   useEffect(() => {
     if (userData?.id) {
-      console.log('🔄 Инициализация пользователя - загружаем подписки')
+      console.log('🔄 User initialization - loading subscriptions')
       loadUserSubscriptions(userData.id)
     }
   }, [userData?.id])
@@ -142,7 +142,7 @@ function App() {
   // Загрузка подписок при переходе на экран настроек
   useEffect(() => {
     if (currentScreen === 'settings' && userData?.id) {
-      console.log('🔄 Переход в настройки - загружаем подписки')
+      console.log('🔄 Going to settings - loading subscriptions')
       loadUserSubscriptions(userData.id)
     }
   }, [currentScreen, userData?.id])
@@ -150,7 +150,7 @@ function App() {
   // Загрузка подписок при переходе на экран выбора ML модели
   useEffect(() => {
     if (currentScreen === 'ml-selector' && userData?.id) {
-      console.log('🔄 Переход в выбор ML модели - загружаем подписки')
+      console.log('🔄 Going to ML model selection - loading subscriptions')
       loadUserSubscriptions(userData.id)
     }
   }, [currentScreen, userData?.id])
@@ -158,7 +158,7 @@ function App() {
   // Загрузка шаблонов при переходе в админ-панель
   useEffect(() => {
     if (currentScreen === 'admin' && isAdmin) {
-      console.log('🔄 Переход в админ-панель - загружаем шаблоны')
+      console.log('🔄 Going to admin panel - loading templates')
       loadSubscriptionTemplates()
     }
   }, [currentScreen, isAdmin])
@@ -166,7 +166,7 @@ function App() {
   // Глобальное обновление подписок при всех переходах между экранами
   useEffect(() => {
     if (userData?.id && currentScreen !== 'auth' && currentScreen !== 'language-select') {
-      console.log('🔄 Глобальное обновление подписок при переходе на экран:', currentScreen)
+      console.log('🔄 Global subscription update when switching to screen:', currentScreen)
       // Принудительное обновление с задержкой
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
@@ -177,19 +177,19 @@ function App() {
   // WebSocket для real-time обновлений подписок
   useWebSocket(userData?.id, (newSubscriptions) => {
     setUserSubscriptions(newSubscriptions);
-    console.log('🔄 Подписки обновлены через WebSocket:', newSubscriptions);
+    console.log('🔄 Subscriptions updated via WebSocket:', newSubscriptions);
   });
 
   // Функция для загрузки шаблонов подписок
   const loadSubscriptionTemplates = async () => {
     try {
-      console.log('🔄 Загружаем шаблоны подписок...')
+      console.log('🔄 Loading subscription templates...')
       const response = await fetch(`${getApiUrl()}/api/admin/subscription-templates`)
       const data = await response.json()
       
       if (data.success) {
         setSubscriptionTemplates(data.templates)
-        console.log('✅ Шаблоны подписок загружены:', data.templates)
+        console.log('✅ Subscription templates loaded:', data.templates)
       } else {
         console.error('❌ Ошибка загрузки шаблонов:', data.error)
       }
@@ -201,7 +201,7 @@ function App() {
   // Функция для массового обновления подписок
   const bulkUpdateSubscriptions = async (userIds, subscriptions) => {
     try {
-      console.log('🔄 Массовое обновление подписок для пользователей:', userIds)
+      console.log('🔄 Bulk subscription update for users:', userIds)
       const response = await fetch(`${getApiUrl()}/api/admin/bulk-subscription-update`, {
         method: 'POST',
         headers: {
@@ -217,17 +217,17 @@ function App() {
       const data = await response.json()
       
       if (data.success) {
-        console.log('✅ Массовое обновление завершено:', data)
-        alert(`✅ Обновлено ${data.successful_updates} из ${data.total_users} пользователей`)
+        console.log('✅ Bulk update completed:', data)
+        alert(t('bulkUpdateSuccess', {successful: data.successful_updates, total: data.total_users}))
         return true
       } else {
         console.error('❌ Ошибка массового обновления:', data.error)
-        alert(`❌ Ошибка массового обновления: ${data.error}`)
+        alert(t('bulkUpdateError', {error: data.error}))
         return false
       }
     } catch (error) {
       console.error('❌ Ошибка массового обновления:', error)
-      alert(`❌ Ошибка массового обновления: ${error.message}`)
+      alert(t('bulkUpdateErrorGeneric', {message: error.message}))
       return false
     }
   }
@@ -321,7 +321,7 @@ function App() {
   // Загрузка метрик рынка
   const loadMarketMetrics = async () => {
     try {
-      console.log('📊 Загружаем метрики рынка...')
+      console.log('📊 Loading market metrics...')
       
       const response = await fetch(`${getApiUrl(5002)}/api/signal/market-metrics`)
       
@@ -478,7 +478,7 @@ function App() {
         const usersData = await usersResponse.json()
         users = usersData.users || []
         onlineUsers = usersData.online_users || 0  // Количество онлайн пользователей
-        console.log('✅ Получены пользователи:', users.length, 'онлайн:', onlineUsers)
+        console.log('✅ Users loaded:', users.length, 'online:', onlineUsers)
       }
       
       setAdminStats({
@@ -541,18 +541,18 @@ function App() {
       
       if (data.success) {
         console.log('✅ Заявка одобрена')
-        alert(`✅ ${t('userAdded')}`)
+        alert(t('userAddedSuccess'))
         
         // Обновляем данные
         loadAdminStats()
         loadAccessRequests()
       } else {
         console.error('❌ Ошибка одобрения:', data.error)
-        alert(`❌ ${t('errorOccurred')}: ${data.error}`)
+        alert(t('errorOccurredWith', {error: data.error}))
       }
     } catch (error) {
       console.error('❌ Ошибка при одобрении заявки:', error)
-      alert(`❌ ${t('errorOccurred')}: ${error.message}`)
+      alert(t('errorOccurredWith', {error: error.message}))
     }
   }
 
@@ -850,6 +850,24 @@ function App() {
       vipFunction: 'VIP Функция',
       winRate: 'Win Rate',
       pleaseWaitSystemAnalyzing: 'Пожалуйста, подождите. Система анализирует рынок...',
+      moreDetails: 'Подробнее',
+      tryAgainInCooldown: 'Попробуйте снова через {seconds} секунд, когда рынок стабилизируется',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Обновлено {successful} из {total} пользователей',
+      bulkUpdateError: 'Ошибка массового обновления: {error}',
+      bulkUpdateErrorGeneric: 'Ошибка массового обновления: {message}',
+      userDeletedSuccess: 'Пользователь {userId} успешно удален из бота',
+      userDeleteError: 'Ошибка удаления: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Пользователь добавлен в систему',
+      errorOccurredWith: 'Произошла ошибка: {error}',
+      feedbackAcceptedSuccess: 'Фидбек принят: Успешная сделка',
+      feedbackAcceptedFailure: 'Фидбек принят: Убыточная сделка',
+      navigationBlockedMessage: 'У вас есть активный сигнал!\n\nДождитесь завершения экспирации и оставьте фидбек о результате сделки.\n\nНавигация разблокируется после отправки фидбека.',
+      modelRestrictedAlert: 'Эта модель заблокирована и доступна только по команде',
+      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'Точные сигналы',
       successfulTradesPercent: '87% успешных сделок',
@@ -866,6 +884,35 @@ function App() {
       hoursAgo: '{count} час{plural} назад',
       daysAgo: '{count} дн{plural} назад',
       selectLanguageDescription: 'Выберите предпочитаемый язык для продолжения / Choose your preferred language to continue',
+<<<<<<< Updated upstream
+=======
+      
+      // Ключи для интерфейса уведомлений
+      notificationsBadge: 'УВЕДОМЛЕНИЯ',
+      tradingSignals: 'Торговые сигналы',
+      newSignals: 'Новые сигналы',
+      newSignalsDescription: 'Уведомления о новых сигналах',
+      signalResults: 'Результаты сигналов',
+      signalResultsDescription: 'Уведомления о закрытии сделок',
+      dailySummary: 'Ежедневная сводка',
+      dailySummaryDescription: 'Итоги дня в 21:00',
+      systemNotifications: 'Системные уведомления',
+      marketNews: 'Новости рынка',
+      marketNewsDescription: 'Важные события на рынке',
+      systemUpdates: 'Обновления системы',
+      systemUpdatesDescription: 'Новые функции и исправления',
+      soundAndVibration: 'Звук и вибрация',
+      soundNotification: 'Звук',
+      soundNotificationsDescription: 'Звуковые уведомления',
+      vibration: 'Вибрация',
+      vibrationDescription: 'Вибро-сигнал при уведомлениях',
+      emailNotifications: 'Почтовые уведомления',
+      emailNotificationsDescription: 'Уведомления на email',
+      smartNotifications: 'Умные уведомления',
+      smartNotificationsDescription: 'Своевременно получайте уведомления о важных событиях. Вы можете настроить каждый тип отдельно.',
+      enabled: 'Включено',
+      disabled: 'Отключено',
+>>>>>>> Stashed changes
       forexMarketClosedWeekend: 'Форекс рынок закрыт в выходные дни. Переключитесь на OTC режим.',
       forexMarketClosedLabel: 'Форекс рынок закрыт (выходные)',
       top3CooldownMessage: 'Топ-3 сигналы можно генерировать раз в 10 минут. Осталось: {minutes}:{seconds}',
@@ -910,7 +957,18 @@ function App() {
       tryAgainInSeconds: 'Попробуйте снова через {seconds} секунд, когда рынок стабилизируется',
       modelReady: 'Модель обучена и готова к работе',
       aiAnalytics: 'AI Аналитика',
+<<<<<<< Updated upstream
       closeAnalysis: 'Закрыть анализ'
+=======
+      closeAnalysis: 'Закрыть анализ',
+      apiError: 'Ошибка API',
+      unknownError: 'Неизвестная ошибка',
+      analysisError: 'Ошибка получения анализа. Неверный формат ответа.',
+      timeoutError: '⏰ Таймаут: Анализ занял слишком много времени. Попробуйте еще раз.',
+      serverError: '❌ Ошибка сервера',
+      networkError: '🌐 Ошибка сети: Проверьте подключение к интернету.',
+      generalError: '❌ Ошибка'
+>>>>>>> Stashed changes
     },
     en: {
       welcome: 'Welcome',
@@ -1161,6 +1219,24 @@ function App() {
       vipFunction: 'VIP Function',
       winRate: 'Win Rate',
       pleaseWaitSystemAnalyzing: 'Please wait. The system is analyzing the market...',
+      moreDetails: 'More Details',
+      tryAgainInCooldown: 'Try again in {seconds} seconds when the market stabilizes',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Updated {successful} of {total} users',
+      bulkUpdateError: 'Bulk update error: {error}',
+      bulkUpdateErrorGeneric: 'Bulk update error: {message}',
+      userDeletedSuccess: 'User {userId} successfully deleted from bot',
+      userDeleteError: 'Delete error: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'User added to system',
+      errorOccurredWith: 'An error occurred: {error}',
+      feedbackAcceptedSuccess: 'Feedback accepted: Successful trade',
+      feedbackAcceptedFailure: 'Feedback accepted: Losing trade',
+      navigationBlockedMessage: 'You have an active signal!\n\nWait for expiration and leave feedback about the trade result.\n\nNavigation will be unlocked after sending feedback.',
+      modelRestrictedAlert: 'This model is restricted and available only on command',
+      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'Accurate signals',
       successfulTradesPercent: '87% successful trades',
@@ -1177,6 +1253,35 @@ function App() {
       hoursAgo: '{count} hour{plural} ago',
       daysAgo: '{count} day{plural} ago',
       selectLanguageDescription: 'Choose your preferred language to continue',
+<<<<<<< Updated upstream
+=======
+      
+      // Keys for notifications interface
+      notificationsBadge: 'NOTIFICATIONS',
+      tradingSignals: 'Trading Signals',
+      newSignals: 'New Signals',
+      newSignalsDescription: 'Notifications about new signals',
+      signalResults: 'Signal Results',
+      signalResultsDescription: 'Notifications about closed trades',
+      dailySummary: 'Daily Summary',
+      dailySummaryDescription: 'Day results at 21:00',
+      systemNotifications: 'System Notifications',
+      marketNews: 'Market News',
+      marketNewsDescription: 'Important market events',
+      systemUpdates: 'System Updates',
+      systemUpdatesDescription: 'New features and fixes',
+      soundAndVibration: 'Sound & Vibration',
+      soundNotification: 'Sound',
+      soundNotificationsDescription: 'Sound notifications',
+      vibration: 'Vibration',
+      vibrationDescription: 'Vibration signal for notifications',
+      emailNotifications: 'Email Notifications',
+      emailNotificationsDescription: 'Email notifications',
+      smartNotifications: 'Smart Notifications',
+      smartNotificationsDescription: 'Get timely notifications about important events. You can configure each type separately.',
+      enabled: 'Enabled',
+      disabled: 'Disabled',
+>>>>>>> Stashed changes
       forexMarketClosedWeekend: 'Forex market is closed on weekends. Switch to OTC mode.',
       forexMarketClosedLabel: 'Forex market closed (weekends)',
       top3CooldownMessage: 'TOP-3 signals can be generated once every 10 minutes. Remaining: {minutes}:{seconds}',
@@ -1221,7 +1326,18 @@ function App() {
       tryAgainInSeconds: 'Try again in {seconds} seconds when the market stabilizes',
       modelReady: 'Model is trained and ready to work',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'Close analysis'
+=======
+      closeAnalysis: 'Close analysis',
+      apiError: 'API Error',
+      unknownError: 'Unknown error',
+      analysisError: 'Analysis error. Invalid response format.',
+      timeoutError: '⏰ Timeout: Analysis took too long. Please try again.',
+      serverError: '❌ Server error',
+      networkError: '🌐 Network error: Check your internet connection.',
+      generalError: '❌ Error'
+>>>>>>> Stashed changes
     },
     th: {
       welcome: 'ยินดีต้อนรับ',
@@ -1390,6 +1506,30 @@ function App() {
       pushNotification: 'Push',
       enabled: 'เปิดใช้งาน',
       disabled: 'ปิดใช้งาน',
+      
+      // Keys for notifications interface
+      notificationsBadge: 'การแจ้งเตือน',
+      tradingSignals: 'สัญญาณการซื้อขาย',
+      newSignals: 'สัญญาณใหม่',
+      newSignalsDescription: 'การแจ้งเตือนเกี่ยวกับสัญญาณใหม่',
+      signalResults: 'ผลลัพธ์สัญญาณ',
+      signalResultsDescription: 'การแจ้งเตือนเกี่ยวกับการปิดการซื้อขาย',
+      dailySummary: 'สรุปรายวัน',
+      dailySummaryDescription: 'ผลลัพธ์ของวันในเวลา 21:00',
+      systemNotifications: 'การแจ้งเตือนระบบ',
+      marketNews: 'ข่าวตลาด',
+      marketNewsDescription: 'เหตุการณ์สำคัญในตลาด',
+      systemUpdates: 'อัปเดตระบบ',
+      systemUpdatesDescription: 'ฟีเจอร์ใหม่และการแก้ไข',
+      soundAndVibration: 'เสียงและการสั่น',
+      soundNotification: 'เสียง',
+      soundNotificationsDescription: 'การแจ้งเตือนด้วยเสียง',
+      vibration: 'การสั่น',
+      vibrationDescription: 'สัญญาณสั่นสำหรับการแจ้งเตือน',
+      emailNotifications: 'การแจ้งเตือนทางอีเมล',
+      emailNotificationsDescription: 'การแจ้งเตือนทางอีเมล',
+      smartNotifications: 'การแจ้งเตือนอัจฉริยะ',
+      smartNotificationsDescription: 'รับการแจ้งเตือนทันเวลาสำหรับเหตุการณ์สำคัญ คุณสามารถกำหนดค่าแต่ละประเภทแยกกัน',
       // Аналитика
       aiAnalytics: 'การวิเคราะห์ AI',
       successfulTradesHistory: 'ประวัติการเทรดที่สำเร็จ',
@@ -1456,6 +1596,24 @@ function App() {
       vipFunction: 'ฟังก์ชัน VIP',
       winRate: 'อัตราชนะ',
       pleaseWaitSystemAnalyzing: 'โปรดรอ ระบบกำลังวิเคราะห์ตลาด...',
+      moreDetails: 'รายละเอียดเพิ่มเติม',
+      tryAgainInCooldown: 'ลองอีกครั้งใน {seconds} วินาที เมื่อตลาดเสถียร',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'อัปเดต {successful} จาก {total} ผู้ใช้',
+      bulkUpdateError: 'ข้อผิดพลาดการอัปเดตจำนวนมาก: {error}',
+      bulkUpdateErrorGeneric: 'ข้อผิดพลาดการอัปเดตจำนวนมาก: {message}',
+      userDeletedSuccess: 'ผู้ใช้ {userId} ถูกลบออกจากบอทเรียบร้อยแล้ว',
+      userDeleteError: 'ข้อผิดพลาดการลบ: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'เพิ่มผู้ใช้เข้าสู่ระบบแล้ว',
+      errorOccurredWith: 'เกิดข้อผิดพลาด: {error}',
+      feedbackAcceptedSuccess: 'รับฟีดแบ็ก: การเทรดที่สำเร็จ',
+      feedbackAcceptedFailure: 'รับฟีดแบ็ก: การเทรดที่ขาดทุน',
+      navigationBlockedMessage: 'คุณมีสัญญาณที่ใช้งานอยู่!\n\nรอการหมดอายุและให้ฟีดแบ็กเกี่ยวกับผลการเทรด\n\nการนำทางจะปลดล็อกหลังจากส่งฟีดแบ็ก',
+      modelRestrictedAlert: 'โมเดลนี้ถูกจำกัดและใช้ได้เฉพาะตามคำสั่ง',
+      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'สัญญาณที่แม่นยำ',
       successfulTradesPercent: '87% การเทรดที่สำเร็จ',
@@ -1516,7 +1674,18 @@ function App() {
       tryAgainInSeconds: 'ลองอีกครั้งใน {seconds} วินาทีเมื่อตลาดเสถียร',
       modelReady: 'โมเดลได้รับการฝึกอบรมและพร้อมใช้งาน',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'ปิดการวิเคราะห์'
+=======
+      closeAnalysis: 'ปิดการวิเคราะห์',
+      apiError: 'ข้อผิดพลาด API',
+      unknownError: 'ข้อผิดพลาดที่ไม่ทราบ',
+      analysisError: 'ข้อผิดพลาดในการรับการวิเคราะห์ รูปแบบการตอบสนองไม่ถูกต้อง',
+      timeoutError: '⏰ หมดเวลา: การวิเคราะห์ใช้เวลานานเกินไป กรุณาลองใหม่',
+      serverError: '❌ ข้อผิดพลาดเซิร์ฟเวอร์',
+      networkError: '🌐 ข้อผิดพลาดเครือข่าย: ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต',
+      generalError: '❌ ข้อผิดพลาด'
+>>>>>>> Stashed changes
     },
     es: {
       welcome: 'Bienvenido',
@@ -1809,6 +1978,24 @@ function App() {
       vipFunction: 'Función VIP',
       winRate: 'Tasa de ganancia',
       pleaseWaitSystemAnalyzing: 'Por favor espera. El sistema está analizando el mercado...',
+      moreDetails: 'Más Detalles',
+      tryAgainInCooldown: 'Inténtalo de nuevo en {seconds} segundos cuando el mercado se estabilice',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Actualizado {successful} de {total} usuarios',
+      bulkUpdateError: 'Error de actualización masiva: {error}',
+      bulkUpdateErrorGeneric: 'Error de actualización masiva: {message}',
+      userDeletedSuccess: 'Usuario {userId} eliminado exitosamente del bot',
+      userDeleteError: 'Error de eliminación: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Usuario agregado al sistema',
+      errorOccurredWith: 'Ocurrió un error: {error}',
+      feedbackAcceptedSuccess: 'Comentario aceptado: Operación exitosa',
+      feedbackAcceptedFailure: 'Comentario aceptado: Operación perdedora',
+      navigationBlockedMessage: '¡Tienes una señal activa!\n\nEspera la expiración y deja comentarios sobre el resultado de la operación.\n\nLa navegación se desbloqueará después de enviar comentarios.',
+      modelRestrictedAlert: 'Este modelo está restringido y disponible solo por comando',
+      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'Señales precisas',
       successfulTradesPercent: '87% operaciones exitosas',
@@ -1825,6 +2012,35 @@ function App() {
       hoursAgo: 'hace {count} hora{plural}',
       daysAgo: 'hace {count} día{plural}',
       selectLanguageDescription: 'Elige tu idioma preferido para continuar',
+<<<<<<< Updated upstream
+=======
+      
+      // Keys for notifications interface
+      notificationsBadge: 'NOTIFICACIONES',
+      tradingSignals: 'Señales de Trading',
+      newSignals: 'Nuevas Señales',
+      newSignalsDescription: 'Notificaciones sobre nuevas señales',
+      signalResults: 'Resultados de Señales',
+      signalResultsDescription: 'Notificaciones sobre cierres de operaciones',
+      dailySummary: 'Resumen Diario',
+      dailySummaryDescription: 'Resultados del día a las 21:00',
+      systemNotifications: 'Notificaciones del Sistema',
+      marketNews: 'Noticias del Mercado',
+      marketNewsDescription: 'Eventos importantes del mercado',
+      systemUpdates: 'Actualizaciones del Sistema',
+      systemUpdatesDescription: 'Nuevas funciones y correcciones',
+      soundAndVibration: 'Sonido y Vibración',
+      soundNotification: 'Sonido',
+      soundNotificationsDescription: 'Notificaciones de sonido',
+      vibration: 'Vibración',
+      vibrationDescription: 'Señal de vibración para notificaciones',
+      emailNotifications: 'Notificaciones por Email',
+      emailNotificationsDescription: 'Notificaciones por correo electrónico',
+      smartNotifications: 'Notificaciones Inteligentes',
+      smartNotificationsDescription: 'Recibe notificaciones oportunas sobre eventos importantes. Puedes configurar cada tipo por separado.',
+      enabled: 'Habilitado',
+      disabled: 'Deshabilitado',
+>>>>>>> Stashed changes
       forexMarketClosedWeekend: 'El mercado Forex está cerrado los fines de semana. Cambia al modo OTC.',
       forexMarketClosedLabel: 'Mercado Forex cerrado (fines de semana)',
       top3CooldownMessage: 'Las señales TOP-3 se pueden generar una vez cada 10 minutos. Restante: {minutes}:{seconds}',
@@ -1869,7 +2085,18 @@ function App() {
       tryAgainInSeconds: 'Intenta de nuevo en {seconds} segundos cuando el mercado se estabilice',
       modelReady: 'El modelo está entrenado y listo para trabajar',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'Cerrar análisis'
+=======
+      closeAnalysis: 'Cerrar análisis',
+      apiError: 'Error de API',
+      unknownError: 'Error desconocido',
+      analysisError: 'Error al obtener análisis. Formato de respuesta inválido.',
+      timeoutError: '⏰ Tiempo agotado: El análisis tardó demasiado. Inténtalo de nuevo.',
+      serverError: '❌ Error del servidor',
+      networkError: '🌐 Error de red: Verifica tu conexión a internet.',
+      generalError: '❌ Error'
+>>>>>>> Stashed changes
     },
     fr: {
       welcome: 'Bienvenue',
@@ -2162,6 +2389,24 @@ function App() {
       vipFunction: 'Fonction VIP',
       winRate: 'Taux de réussite',
       pleaseWaitSystemAnalyzing: 'Veuillez patienter. Le système analyse le marché...',
+      moreDetails: 'Plus de Détails',
+      tryAgainInCooldown: 'Réessayez dans {seconds} secondes quand le marché se stabilise',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Mis à jour {successful} sur {total} utilisateurs',
+      bulkUpdateError: 'Erreur de mise à jour en masse: {error}',
+      bulkUpdateErrorGeneric: 'Erreur de mise à jour en masse: {message}',
+      userDeletedSuccess: 'Utilisateur {userId} supprimé avec succès du bot',
+      userDeleteError: 'Erreur de suppression: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Utilisateur ajouté au système',
+      errorOccurredWith: 'Une erreur s\'est produite: {error}',
+      feedbackAcceptedSuccess: 'Commentaire accepté: Trade réussi',
+      feedbackAcceptedFailure: 'Commentaire accepté: Trade perdant',
+      navigationBlockedMessage: 'Vous avez un signal actif!\n\nAttendez l\'expiration et laissez un commentaire sur le résultat du trade.\n\nLa navigation sera débloquée après l\'envoi du commentaire.',
+      modelRestrictedAlert: 'Ce modèle est restreint et disponible uniquement sur commande',
+      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'Signaux précis',
       successfulTradesPercent: '87% de trades réussis',
@@ -2178,6 +2423,35 @@ function App() {
       hoursAgo: 'il y a {count} heure{plural}',
       daysAgo: 'il y a {count} jour{plural}',
       selectLanguageDescription: 'Choisissez votre langue préférée pour continuer',
+<<<<<<< Updated upstream
+=======
+      
+      // Keys for notifications interface
+      notificationsBadge: 'NOTIFICATIONS',
+      tradingSignals: 'Signaux de Trading',
+      newSignals: 'Nouveaux Signaux',
+      newSignalsDescription: 'Notifications sur les nouveaux signaux',
+      signalResults: 'Résultats des Signaux',
+      signalResultsDescription: 'Notifications sur les fermetures de trades',
+      dailySummary: 'Résumé Quotidien',
+      dailySummaryDescription: 'Résultats du jour à 21:00',
+      systemNotifications: 'Notifications Système',
+      marketNews: 'Actualités du Marché',
+      marketNewsDescription: 'Événements importants du marché',
+      systemUpdates: 'Mises à Jour Système',
+      systemUpdatesDescription: 'Nouvelles fonctionnalités et corrections',
+      soundAndVibration: 'Son et Vibration',
+      soundNotification: 'Son',
+      soundNotificationsDescription: 'Notifications sonores',
+      vibration: 'Vibration',
+      vibrationDescription: 'Signal de vibration pour les notifications',
+      emailNotifications: 'Notifications Email',
+      emailNotificationsDescription: 'Notifications par email',
+      smartNotifications: 'Notifications Intelligentes',
+      smartNotificationsDescription: 'Recevez des notifications opportunes sur les événements importants. Vous pouvez configurer chaque type séparément.',
+      enabled: 'Activé',
+      disabled: 'Désactivé',
+>>>>>>> Stashed changes
       forexMarketClosedWeekend: 'Le marché Forex est fermé le week-end. Passez au mode OTC.',
       forexMarketClosedLabel: 'Marché Forex fermé (week-end)',
       top3CooldownMessage: 'Les signaux TOP-3 peuvent être générés une fois toutes les 10 minutes. Restant: {minutes}:{seconds}',
@@ -2222,7 +2496,18 @@ function App() {
       tryAgainInSeconds: 'Réessayez dans {seconds} secondes quand le marché se stabilise',
       modelReady: 'Le modèle est entraîné et prêt à fonctionner',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'Fermer l\'analyse'
+=======
+      closeAnalysis: 'Fermer l\'analyse',
+      apiError: 'Erreur API',
+      unknownError: 'Erreur inconnue',
+      analysisError: 'Erreur lors de l\'obtention de l\'analyse. Format de réponse invalide.',
+      timeoutError: '⏰ Délai d\'attente: L\'analyse a pris trop de temps. Veuillez réessayer.',
+      serverError: '❌ Erreur du serveur',
+      networkError: '🌐 Erreur réseau: Vérifiez votre connexion internet.',
+      generalError: '❌ Erreur'
+>>>>>>> Stashed changes
     },
     de: {
       welcome: 'Willkommen',
@@ -2515,6 +2800,24 @@ function App() {
       vipFunction: 'VIP-Funktion',
       winRate: 'Gewinnrate',
       pleaseWaitSystemAnalyzing: 'Bitte warten. Das System analysiert den Markt...',
+      moreDetails: 'Weitere Details',
+      tryAgainInCooldown: 'Versuchen Sie es in {seconds} Sekunden erneut, wenn sich der Markt stabilisiert',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Aktualisiert {successful} von {total} Benutzern',
+      bulkUpdateError: 'Massenaktualisierungsfehler: {error}',
+      bulkUpdateErrorGeneric: 'Massenaktualisierungsfehler: {message}',
+      userDeletedSuccess: 'Benutzer {userId} erfolgreich aus Bot gelöscht',
+      userDeleteError: 'Löschfehler: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Benutzer zum System hinzugefügt',
+      errorOccurredWith: 'Ein Fehler ist aufgetreten: {error}',
+      feedbackAcceptedSuccess: 'Feedback akzeptiert: Erfolgreicher Trade',
+      feedbackAcceptedFailure: 'Feedback akzeptiert: Verlustreicher Trade',
+      navigationBlockedMessage: 'Sie haben ein aktives Signal!\n\nWarten Sie auf das Ablaufen und hinterlassen Sie Feedback zum Trade-Ergebnis.\n\nDie Navigation wird nach dem Senden des Feedbacks entsperrt.',
+      modelRestrictedAlert: 'Dieses Modell ist eingeschränkt und nur auf Befehl verfügbar',
+      
       forexSignalsPro: 'Forex Signals Pro',
       accurateSignals: 'Präzise Signale',
       successfulTradesPercent: '87% erfolgreiche Trades',
@@ -2531,6 +2834,35 @@ function App() {
       hoursAgo: 'vor {count} Stunde{plural}',
       daysAgo: 'vor {count} Tag{plural}',
       selectLanguageDescription: 'Wählen Sie Ihre bevorzugte Sprache zum Fortfahren',
+<<<<<<< Updated upstream
+=======
+      
+      // Keys for notifications interface
+      notificationsBadge: 'BENACHRICHTIGUNGEN',
+      tradingSignals: 'Trading-Signale',
+      newSignals: 'Neue Signale',
+      newSignalsDescription: 'Benachrichtigungen über neue Signale',
+      signalResults: 'Signal-Ergebnisse',
+      signalResultsDescription: 'Benachrichtigungen über Trade-Schließungen',
+      dailySummary: 'Tägliche Zusammenfassung',
+      dailySummaryDescription: 'Tagesergebnisse um 21:00',
+      systemNotifications: 'System-Benachrichtigungen',
+      marketNews: 'Marktnachrichten',
+      marketNewsDescription: 'Wichtige Marktereignisse',
+      systemUpdates: 'System-Updates',
+      systemUpdatesDescription: 'Neue Funktionen und Korrekturen',
+      soundAndVibration: 'Ton und Vibration',
+      soundNotification: 'Ton',
+      soundNotificationsDescription: 'Tonbenachrichtigungen',
+      vibration: 'Vibration',
+      vibrationDescription: 'Vibrationssignal für Benachrichtigungen',
+      emailNotifications: 'E-Mail-Benachrichtigungen',
+      emailNotificationsDescription: 'Benachrichtigungen per E-Mail',
+      smartNotifications: 'Intelligente Benachrichtigungen',
+      smartNotificationsDescription: 'Erhalten Sie rechtzeitige Benachrichtigungen über wichtige Ereignisse. Sie können jeden Typ separat konfigurieren.',
+      enabled: 'Aktiviert',
+      disabled: 'Deaktiviert',
+>>>>>>> Stashed changes
       forexMarketClosedWeekend: 'Der Forex-Markt ist an Wochenenden geschlossen. Wechseln Sie zum OTC-Modus.',
       forexMarketClosedLabel: 'Forex-Markt geschlossen (Wochenende)',
       top3CooldownMessage: 'TOP-3-Signale können alle 10 Minuten generiert werden. Verbleibend: {minutes}:{seconds}',
@@ -2575,7 +2907,18 @@ function App() {
       tryAgainInSeconds: 'Versuchen Sie es in {seconds} Sekunden erneut, wenn sich der Markt stabilisiert',
       modelReady: 'Das Modell ist trainiert und einsatzbereit',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'Analyse schließen'
+=======
+      closeAnalysis: 'Analyse schließen',
+      apiError: 'API-Fehler',
+      unknownError: 'Unbekannter Fehler',
+      analysisError: 'Fehler beim Abrufen der Analyse. Ungültiges Antwortformat.',
+      timeoutError: '⏰ Zeitüberschreitung: Analyse dauerte zu lange. Bitte versuchen Sie es erneut.',
+      serverError: '❌ Serverfehler',
+      networkError: '🌐 Netzwerkfehler: Überprüfen Sie Ihre Internetverbindung.',
+      generalError: '❌ Fehler'
+>>>>>>> Stashed changes
     },
     it: {
       welcome: 'Benvenuto',
@@ -2606,6 +2949,7 @@ function App() {
       instantNotifications: 'Notifiche istantanee',
       realTimeSignals: 'Ricevi segnali in tempo reale',
       premiumQuality: 'Qualità premium',
+      professionalMarketAnalysis: 'Analisi professionale del mercato',
       professionalAnalysis: 'Analisi professionale del mercato',
       whatSignals: 'Quali segnali vuoi ricevere?',
       forexSchedule: 'Orario del mercato Forex',
@@ -2817,6 +3161,59 @@ function App() {
       hoursAgo: '{count} ora{plural} fa',
       daysAgo: '{count} giorno{plural} fa',
       selectLanguageDescription: 'Scegli la tua lingua preferita per continuare',
+<<<<<<< Updated upstream
+=======
+      
+      // Keys for notifications interface
+      notificationsBadge: 'NOTIFICHE',
+      tradingSignals: 'Segnali di Trading',
+      newSignals: 'Nuovi Segnali',
+      newSignalsDescription: 'Notifiche sui nuovi segnali',
+      signalResults: 'Risultati dei Segnali',
+      signalResultsDescription: 'Notifiche sulla chiusura dei trade',
+      dailySummary: 'Riepilogo Giornaliero',
+      dailySummaryDescription: 'Risultati del giorno alle 21:00',
+      systemNotifications: 'Notifiche di Sistema',
+      marketNews: 'Notizie di Mercato',
+      marketNewsDescription: 'Eventi importanti del mercato',
+      systemUpdates: 'Aggiornamenti di Sistema',
+      systemUpdatesDescription: 'Nuove funzionalità e correzioni',
+      soundAndVibration: 'Suono e Vibrazione',
+      soundNotification: 'Suono',
+      soundNotificationsDescription: 'Notifiche sonore',
+      vibration: 'Vibrazione',
+      vibrationDescription: 'Segnale di vibrazione per le notifiche',
+      emailNotifications: 'Notifiche Email',
+      emailNotificationsDescription: 'Notifiche via email',
+      smartNotifications: 'Notifiche Intelligenti',
+      smartNotificationsDescription: 'Ricevi notifiche tempestive su eventi importanti. Puoi configurare ogni tipo separatamente.',
+      enabled: 'Abilitato',
+      disabled: 'Disabilitato',
+      
+      // Additional missing translations
+      waitingForEntry: 'In attesa di entrata',
+      vipFunction: 'Funzione VIP',
+      winRate: 'Tasso di successo',
+      pleaseWaitSystemAnalyzing: 'Attendere prego. Il sistema sta analizzando il mercato...',
+      moreDetails: 'Più Dettagli',
+      tryAgainInCooldown: 'Riprova tra {seconds} secondi quando il mercato si stabilizza',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Aggiornato {successful} di {total} utenti',
+      bulkUpdateError: 'Errore aggiornamento di massa: {error}',
+      bulkUpdateErrorGeneric: 'Errore aggiornamento di massa: {message}',
+      userDeletedSuccess: 'Utente {userId} eliminato con successo dal bot',
+      userDeleteError: 'Errore eliminazione: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Utente aggiunto al sistema',
+      errorOccurredWith: 'Si è verificato un errore: {error}',
+      feedbackAcceptedSuccess: 'Feedback accettato: Trade di successo',
+      feedbackAcceptedFailure: 'Feedback accettato: Trade perdente',
+      navigationBlockedMessage: 'Hai un segnale attivo!\n\nAspetta la scadenza e lascia un feedback sul risultato del trade.\n\nLa navigazione sarà sbloccata dopo l\'invio del feedback.',
+      modelRestrictedAlert: 'Questo modello è limitato e disponibile solo su comando',
+      
+>>>>>>> Stashed changes
       forexMarketClosedWeekend: 'Il mercato Forex è chiuso nei fine settimana. Passa alla modalità OTC.',
       forexMarketClosedLabel: 'Mercato Forex chiuso (fine settimana)',
       top3CooldownMessage: 'I segnali TOP-3 possono essere generati una volta ogni 10 minuti. Rimanente: {minutes}:{seconds}',
@@ -2861,7 +3258,18 @@ function App() {
       tryAgainInSeconds: 'Riprova tra {seconds} secondi quando il mercato si stabilizza',
       modelReady: 'Il modello è addestrato e pronto per funzionare',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'Chiudi analisi'
+=======
+      closeAnalysis: 'Chiudi analisi',
+      apiError: 'Errore API',
+      unknownError: 'Errore sconosciuto',
+      analysisError: 'Errore nel recupero dell\'analisi. Formato di risposta non valido.',
+      timeoutError: '⏰ Timeout: L\'analisi ha impiegato troppo tempo. Riprova.',
+      serverError: '❌ Errore del server',
+      networkError: '🌐 Errore di rete: Controlla la tua connessione internet.',
+      generalError: '❌ Errore'
+>>>>>>> Stashed changes
     },
     pt: {
       welcome: 'Bem-vindo',
@@ -2892,6 +3300,7 @@ function App() {
       instantNotifications: 'Notificações instantâneas',
       realTimeSignals: 'Receba sinais em tempo real',
       premiumQuality: 'Qualidade premium',
+      professionalMarketAnalysis: 'Análise profissional do mercado',
       professionalAnalysis: 'Análise profissional do mercado',
       whatSignals: 'Quais sinais você quer receber?',
       forexSchedule: 'Horário do mercado Forex',
@@ -3103,6 +3512,59 @@ function App() {
       hoursAgo: 'há {count} hora{plural}',
       daysAgo: 'há {count} dia{plural}',
       selectLanguageDescription: 'Escolha seu idioma preferido para continuar',
+<<<<<<< Updated upstream
+=======
+      
+      // Keys for notifications interface
+      notificationsBadge: 'NOTIFICAÇÕES',
+      tradingSignals: 'Sinais de Trading',
+      newSignals: 'Novos Sinais',
+      newSignalsDescription: 'Notificações sobre novos sinais',
+      signalResults: 'Resultados dos Sinais',
+      signalResultsDescription: 'Notificações sobre fechamentos de trades',
+      dailySummary: 'Resumo Diário',
+      dailySummaryDescription: 'Resultados do dia às 21:00',
+      systemNotifications: 'Notificações do Sistema',
+      marketNews: 'Notícias do Mercado',
+      marketNewsDescription: 'Eventos importantes do mercado',
+      systemUpdates: 'Atualizações do Sistema',
+      systemUpdatesDescription: 'Novas funcionalidades e correções',
+      soundAndVibration: 'Som e Vibração',
+      soundNotification: 'Som',
+      soundNotificationsDescription: 'Notificações sonoras',
+      vibration: 'Vibração',
+      vibrationDescription: 'Sinal de vibração para notificações',
+      emailNotifications: 'Notificações por Email',
+      emailNotificationsDescription: 'Notificações por email',
+      smartNotifications: 'Notificações Inteligentes',
+      smartNotificationsDescription: 'Receba notificações oportunas sobre eventos importantes. Você pode configurar cada tipo separadamente.',
+      enabled: 'Habilitado',
+      disabled: 'Desabilitado',
+      
+      // Additional missing translations
+      waitingForEntry: 'Aguardando entrada',
+      vipFunction: 'Função VIP',
+      winRate: 'Taxa de sucesso',
+      pleaseWaitSystemAnalyzing: 'Por favor aguarde. O sistema está analisando o mercado...',
+      moreDetails: 'Mais Detalhes',
+      tryAgainInCooldown: 'Tente novamente em {seconds} segundos quando o mercado se estabilizar',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Atualizado {successful} de {total} usuários',
+      bulkUpdateError: 'Erro de atualização em massa: {error}',
+      bulkUpdateErrorGeneric: 'Erro de atualização em massa: {message}',
+      userDeletedSuccess: 'Usuário {userId} excluído com sucesso do bot',
+      userDeleteError: 'Erro de exclusão: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Usuário adicionado ao sistema',
+      errorOccurredWith: 'Ocorreu um erro: {error}',
+      feedbackAcceptedSuccess: 'Feedback aceito: Trade bem-sucedido',
+      feedbackAcceptedFailure: 'Feedback aceito: Trade perdedor',
+      navigationBlockedMessage: 'Você tem um sinal ativo!\n\nAguarde a expiração e deixe feedback sobre o resultado do trade.\n\nA navegação será desbloqueada após enviar o feedback.',
+      modelRestrictedAlert: 'Este modelo é restrito e disponível apenas sob comando',
+      
+>>>>>>> Stashed changes
       forexMarketClosedWeekend: 'O mercado Forex está fechado nos fins de semana. Mude para o modo OTC.',
       forexMarketClosedLabel: 'Mercado Forex fechado (fins de semana)',
       top3CooldownMessage: 'Sinais TOP-3 podem ser gerados uma vez a cada 10 minutos. Restante: {minutes}:{seconds}',
@@ -3147,7 +3609,18 @@ function App() {
       tryAgainInSeconds: 'Tente novamente em {seconds} segundos quando o mercado se estabilizar',
       modelReady: 'O modelo está treinado e pronto para funcionar',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'Fechar análise'
+=======
+      closeAnalysis: 'Fechar análise',
+      apiError: 'Erro de API',
+      unknownError: 'Erro desconhecido',
+      analysisError: 'Erro ao obter análise. Formato de resposta inválido.',
+      timeoutError: '⏰ Timeout: A análise demorou muito. Tente novamente.',
+      serverError: '❌ Erro do servidor',
+      networkError: '🌐 Erro de rede: Verifique sua conexão com a internet.',
+      generalError: '❌ Erro'
+>>>>>>> Stashed changes
     },
     zh: {
       welcome: '欢迎',
@@ -3178,6 +3651,7 @@ function App() {
       instantNotifications: '即时通知',
       realTimeSignals: '实时接收信号',
       premiumQuality: '高级品质',
+      professionalMarketAnalysis: '专业市场分析',
       professionalAnalysis: '专业市场分析',
       whatSignals: '您想接收什么信号？',
       forexSchedule: '外汇市场时间表',
@@ -3332,6 +3806,54 @@ function App() {
       pushNotification: '推送',
       enabled: '已启用',
       disabled: '已禁用',
+      
+      // Keys for notifications interface
+      notificationsBadge: '通知',
+      tradingSignals: '交易信号',
+      newSignals: '新信号',
+      newSignalsDescription: '关于新信号的通知',
+      signalResults: '信号结果',
+      signalResultsDescription: '关于交易关闭的通知',
+      dailySummary: '每日摘要',
+      dailySummaryDescription: '21:00的日结果',
+      systemNotifications: '系统通知',
+      marketNews: '市场新闻',
+      marketNewsDescription: '重要的市场事件',
+      systemUpdates: '系统更新',
+      systemUpdatesDescription: '新功能和修复',
+      soundAndVibration: '声音和振动',
+      soundNotification: '声音',
+      soundNotificationsDescription: '声音通知',
+      vibration: '振动',
+      vibrationDescription: '通知的振动信号',
+      emailNotifications: '邮件通知',
+      emailNotificationsDescription: '邮件通知',
+      smartNotifications: '智能通知',
+      smartNotificationsDescription: '及时接收重要事件通知。您可以单独配置每种类型。',
+      
+      // Additional missing translations
+      waitingForEntry: '等待入场',
+      vipFunction: 'VIP功能',
+      winRate: '胜率',
+      pleaseWaitSystemAnalyzing: '请稍等。系统正在分析市场...',
+      moreDetails: '更多详情',
+      tryAgainInCooldown: '请在{seconds}秒后重试，当市场稳定时',
+      
+      // Alert messages
+      bulkUpdateSuccess: '已更新{successful}个用户，共{total}个',
+      bulkUpdateError: '批量更新错误：{error}',
+      bulkUpdateErrorGeneric: '批量更新错误：{message}',
+      userDeletedSuccess: '用户{userId}已成功从机器人中删除',
+      userDeleteError: '删除错误：{error}',
+      
+      // Additional alert messages
+      userAddedSuccess: '用户已添加到系统',
+      errorOccurredWith: '发生错误：{error}',
+      feedbackAcceptedSuccess: '反馈已接受：成功交易',
+      feedbackAcceptedFailure: '反馈已接受：亏损交易',
+      navigationBlockedMessage: '您有一个活跃信号！\n\n等待到期并留下交易结果的反馈。\n\n发送反馈后导航将解锁。',
+      modelRestrictedAlert: '此模型受限，仅按命令可用',
+      
       // Аналитика
       aiAnalytics: 'AI分析',
       successfulTradesHistory: '成功交易历史',
@@ -3500,7 +4022,18 @@ function App() {
       tryAgainInSeconds: '在{seconds}秒后重试，当市场稳定时',
       modelReady: '模型已训练并准备就绪',
       aiAnalytics: 'AI分析',
+<<<<<<< Updated upstream
       closeAnalysis: '关闭分析'
+=======
+      closeAnalysis: '关闭分析',
+      apiError: 'API错误',
+      unknownError: '未知错误',
+      analysisError: '获取分析时出错。响应格式无效。',
+      timeoutError: '⏰ 超时：分析耗时过长。请重试。',
+      serverError: '❌ 服务器错误',
+      networkError: '🌐 网络错误：请检查您的互联网连接。',
+      generalError: '❌ 错误'
+>>>>>>> Stashed changes
     },
     ja: {
       welcome: 'ようこそ',
@@ -3524,6 +4057,14 @@ function App() {
       buy: '購入',
       monthly: '毎月',
       lifetime: '生涯',
+      welcomeTo: 'ようこそ',
+      premiumSignals: 'プロフェッショナルトレーディング用プレミアムシグナル',
+      accurateSignals: '正確なシグナル',
+      successfulTradesPercent: '87%の成功取引',
+      instantNotifications: '即座の通知',
+      realTimeSignals: 'リアルタイムでシグナルを受信',
+      premiumQuality: 'プレミアム品質',
+      professionalMarketAnalysis: 'プロフェッショナル市場分析',
       // Новые переводы
       comingSoon: '近日公開',
       comingSoonDescription: '近日公開予定',
@@ -3590,6 +4131,54 @@ function App() {
       pushNotification: 'プッシュ',
       enabled: '有効',
       disabled: '無効',
+      
+      // Keys for notifications interface
+      notificationsBadge: '通知',
+      tradingSignals: 'トレーディングシグナル',
+      newSignals: '新しいシグナル',
+      newSignalsDescription: '新しいシグナルに関する通知',
+      signalResults: 'シグナル結果',
+      signalResultsDescription: '取引終了に関する通知',
+      dailySummary: '日次サマリー',
+      dailySummaryDescription: '21:00の日次結果',
+      systemNotifications: 'システム通知',
+      marketNews: 'マーケットニュース',
+      marketNewsDescription: '重要なマーケットイベント',
+      systemUpdates: 'システムアップデート',
+      systemUpdatesDescription: '新機能と修正',
+      soundAndVibration: '音と振動',
+      soundNotification: '音',
+      soundNotificationsDescription: '音声通知',
+      vibration: '振動',
+      vibrationDescription: '通知の振動信号',
+      emailNotifications: 'メール通知',
+      emailNotificationsDescription: 'メール通知',
+      smartNotifications: 'スマート通知',
+      smartNotificationsDescription: '重要なイベントについて適時に通知を受け取ります。各タイプを個別に設定できます。',
+      
+      // Additional missing translations
+      waitingForEntry: '入場待機中',
+      vipFunction: 'VIP機能',
+      winRate: '勝率',
+      pleaseWaitSystemAnalyzing: 'お待ちください。システムが市場を分析しています...',
+      moreDetails: '詳細',
+      tryAgainInCooldown: '市場が安定したら{seconds}秒後に再試行してください',
+      
+      // Alert messages
+      bulkUpdateSuccess: '{total}人中{successful}人を更新しました',
+      bulkUpdateError: '一括更新エラー：{error}',
+      bulkUpdateErrorGeneric: '一括更新エラー：{message}',
+      userDeletedSuccess: 'ユーザー{userId}をボットから正常に削除しました',
+      userDeleteError: '削除エラー：{error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'ユーザーがシステムに追加されました',
+      errorOccurredWith: 'エラーが発生しました：{error}',
+      feedbackAcceptedSuccess: 'フィードバック受付：成功取引',
+      feedbackAcceptedFailure: 'フィードバック受付：損失取引',
+      navigationBlockedMessage: 'アクティブなシグナルがあります！\n\n有効期限を待ち、取引結果についてフィードバックを残してください。\n\nフィードバック送信後、ナビゲーションがロック解除されます。',
+      modelRestrictedAlert: 'このモデルは制限されており、コマンドでのみ利用可能です',
+      
       // Аналитика
       aiAnalytics: 'AI分析',
       successfulTradesHistory: '成功取引履歴',
@@ -3641,7 +4230,14 @@ function App() {
       userDeleted: '✅ ユーザー{name}がシステムから削除されました',
       userDeleteError: '❌ ユーザー{name}の削除エラー',
       accessRequestApproved: '✅ ユーザー{name}のアクセスリクエストが承認されました',
-      accessRequestError: '❌ ユーザー{name}のリクエスト承認エラー'
+      accessRequestError: '❌ ユーザー{name}のリクエスト承認エラー',
+      apiError: 'APIエラー',
+      unknownError: '不明なエラー',
+      analysisError: '分析の取得でエラーが発生しました。無効な応答形式です。',
+      timeoutError: '⏰ タイムアウト：分析に時間がかかりすぎました。再試行してください。',
+      serverError: '❌ サーバーエラー',
+      networkError: '🌐 ネットワークエラー：インターネット接続を確認してください。',
+      generalError: '❌ エラー'
     },
     ko: {
       welcome: '환영합니다',
@@ -3665,6 +4261,14 @@ function App() {
       buy: '구매',
       monthly: '월간',
       lifetime: '평생',
+      welcomeTo: '환영합니다',
+      premiumSignals: '전문 트레이딩을 위한 프리미엄 신호',
+      accurateSignals: '정확한 신호',
+      successfulTradesPercent: '87% 성공적인 거래',
+      instantNotifications: '즉시 알림',
+      realTimeSignals: '실시간으로 신호 받기',
+      premiumQuality: '프리미엄 품질',
+      professionalMarketAnalysis: '전문 시장 분석',
       // Новые переводы
       comingSoon: '곧 출시',
       comingSoonDescription: '곧 출시 예정',
@@ -3731,6 +4335,54 @@ function App() {
       pushNotification: '푸시',
       enabled: '활성화됨',
       disabled: '비활성화됨',
+      
+      // Keys for notifications interface
+      notificationsBadge: '알림',
+      tradingSignals: '트레이딩 신호',
+      newSignals: '새 신호',
+      newSignalsDescription: '새 신호에 대한 알림',
+      signalResults: '신호 결과',
+      signalResultsDescription: '거래 종료에 대한 알림',
+      dailySummary: '일일 요약',
+      dailySummaryDescription: '21:00의 일일 결과',
+      systemNotifications: '시스템 알림',
+      marketNews: '시장 뉴스',
+      marketNewsDescription: '중요한 시장 이벤트',
+      systemUpdates: '시스템 업데이트',
+      systemUpdatesDescription: '새 기능 및 수정',
+      soundAndVibration: '소리 및 진동',
+      soundNotification: '소리',
+      soundNotificationsDescription: '소리 알림',
+      vibration: '진동',
+      vibrationDescription: '알림을 위한 진동 신호',
+      emailNotifications: '이메일 알림',
+      emailNotificationsDescription: '이메일 알림',
+      smartNotifications: '스마트 알림',
+      smartNotificationsDescription: '중요한 이벤트에 대한 적시 알림을 받으세요. 각 유형을 개별적으로 구성할 수 있습니다.',
+      
+      // Additional missing translations
+      waitingForEntry: '진입 대기 중',
+      vipFunction: 'VIP 기능',
+      winRate: '승률',
+      pleaseWaitSystemAnalyzing: '잠시 기다려주세요. 시스템이 시장을 분석하고 있습니다...',
+      moreDetails: '자세히',
+      tryAgainInCooldown: '시장이 안정되면 {seconds}초 후에 다시 시도하세요',
+      
+      // Alert messages
+      bulkUpdateSuccess: '{total}명 중 {successful}명 업데이트됨',
+      bulkUpdateError: '대량 업데이트 오류: {error}',
+      bulkUpdateErrorGeneric: '대량 업데이트 오류: {message}',
+      userDeletedSuccess: '사용자 {userId}가 봇에서 성공적으로 삭제됨',
+      userDeleteError: '삭제 오류: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: '사용자가 시스템에 추가되었습니다',
+      errorOccurredWith: '오류가 발생했습니다: {error}',
+      feedbackAcceptedSuccess: '피드백 수락: 성공한 거래',
+      feedbackAcceptedFailure: '피드백 수락: 손실 거래',
+      navigationBlockedMessage: '활성 신호가 있습니다!\n\n만료를 기다리고 거래 결과에 대한 피드백을 남겨주세요.\n\n피드백 전송 후 탐색이 잠금 해제됩니다.',
+      modelRestrictedAlert: '이 모델은 제한되어 있으며 명령에 의해서만 사용 가능합니다',
+      
       // Аналитика
       aiAnalytics: 'AI 분석',
       successfulTradesHistory: '성공한 거래 기록',
@@ -3832,7 +4484,18 @@ function App() {
       tryAgainInSeconds: '시장이 안정되면 {seconds}초 후에 다시 시도하세요',
       modelReady: '모델이 훈련되어 작업 준비가 완료되었습니다',
       aiAnalytics: 'AI 분석',
+<<<<<<< Updated upstream
       closeAnalysis: '분석 닫기'
+=======
+      closeAnalysis: '분석 닫기',
+      apiError: 'API 오류',
+      unknownError: '알 수 없는 오류',
+      analysisError: '분석을 가져오는 중 오류가 발생했습니다. 잘못된 응답 형식입니다.',
+      timeoutError: '⏰ 시간 초과: 분석에 너무 오래 걸렸습니다. 다시 시도해주세요.',
+      serverError: '❌ 서버 오류',
+      networkError: '🌐 네트워크 오류: 인터넷 연결을 확인해주세요.',
+      generalError: '❌ 오류'
+>>>>>>> Stashed changes
     },
     ar: {
       welcome: 'مرحبا',
@@ -3856,6 +4519,14 @@ function App() {
       buy: 'شراء',
       monthly: 'شهري',
       lifetime: 'مدى الحياة',
+      welcomeTo: 'مرحباً بك في',
+      premiumSignals: 'إشارات مميزة للتداول المهني',
+      accurateSignals: 'إشارات دقيقة',
+      successfulTradesPercent: '87% من الصفقات الناجحة',
+      instantNotifications: 'إشعارات فورية',
+      realTimeSignals: 'احصل على الإشارات في الوقت الفعلي',
+      premiumQuality: 'جودة مميزة',
+      professionalMarketAnalysis: 'تحليل السوق المهني',
       // Новые переводы
       comingSoon: 'قريباً',
       comingSoonDescription: 'قريباً متاح',
@@ -3922,6 +4593,54 @@ function App() {
       pushNotification: 'دفع',
       enabled: 'مفعل',
       disabled: 'معطل',
+      
+      // Keys for notifications interface
+      notificationsBadge: 'الإشعارات',
+      tradingSignals: 'إشارات التداول',
+      newSignals: 'إشارات جديدة',
+      newSignalsDescription: 'إشعارات حول الإشارات الجديدة',
+      signalResults: 'نتائج الإشارات',
+      signalResultsDescription: 'إشعارات حول إغلاق الصفقات',
+      dailySummary: 'الملخص اليومي',
+      dailySummaryDescription: 'نتائج اليوم في 21:00',
+      systemNotifications: 'إشعارات النظام',
+      marketNews: 'أخبار السوق',
+      marketNewsDescription: 'أحداث مهمة في السوق',
+      systemUpdates: 'تحديثات النظام',
+      systemUpdatesDescription: 'ميزات جديدة وإصلاحات',
+      soundAndVibration: 'الصوت والاهتزاز',
+      soundNotification: 'الصوت',
+      soundNotificationsDescription: 'إشعارات صوتية',
+      vibration: 'الاهتزاز',
+      vibrationDescription: 'إشارة الاهتزاز للإشعارات',
+      emailNotifications: 'إشعارات البريد الإلكتروني',
+      emailNotificationsDescription: 'إشعارات عبر البريد الإلكتروني',
+      smartNotifications: 'الإشعارات الذكية',
+      smartNotificationsDescription: 'احصل على إشعارات في الوقت المناسب حول الأحداث المهمة. يمكنك تكوين كل نوع بشكل منفصل.',
+      
+      // Additional missing translations
+      waitingForEntry: 'في انتظار الدخول',
+      vipFunction: 'وظيفة VIP',
+      winRate: 'معدل الفوز',
+      pleaseWaitSystemAnalyzing: 'يرجى الانتظار. النظام يحلل السوق...',
+      moreDetails: 'المزيد من التفاصيل',
+      tryAgainInCooldown: 'حاول مرة أخرى خلال {seconds} ثانية عندما يستقر السوق',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'تم تحديث {successful} من {total} مستخدم',
+      bulkUpdateError: 'خطأ في التحديث الجماعي: {error}',
+      bulkUpdateErrorGeneric: 'خطأ في التحديث الجماعي: {message}',
+      userDeletedSuccess: 'تم حذف المستخدم {userId} بنجاح من البوت',
+      userDeleteError: 'خطأ في الحذف: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'تم إضافة المستخدم إلى النظام',
+      errorOccurredWith: 'حدث خطأ: {error}',
+      feedbackAcceptedSuccess: 'تم قبول التعليق: صفقة ناجحة',
+      feedbackAcceptedFailure: 'تم قبول التعليق: صفقة خاسرة',
+      navigationBlockedMessage: 'لديك إشارة نشطة!\n\nانتظر انتهاء الصلاحية واترك تعليقاً حول نتيجة الصفقة.\n\nسيتم إلغاء قفل التنقل بعد إرسال التعليق.',
+      modelRestrictedAlert: 'هذا النموذج مقيد ومتاح فقط عند الطلب',
+      
       // Аналитика
       aiAnalytics: 'تحليل AI',
       successfulTradesHistory: 'تاريخ الصفقات الناجحة',
@@ -4023,7 +4742,18 @@ function App() {
       tryAgainInSeconds: 'حاول مرة أخرى خلال {seconds} ثانية عندما يستقر السوق',
       modelReady: 'النموذج مدرب وجاهز للعمل',
       aiAnalytics: 'تحليلات AI',
+<<<<<<< Updated upstream
       closeAnalysis: 'إغلاق التحليل'
+=======
+      closeAnalysis: 'إغلاق التحليل',
+      apiError: 'خطأ في API',
+      unknownError: 'خطأ غير معروف',
+      analysisError: 'خطأ في الحصول على التحليل. تنسيق الاستجابة غير صالح.',
+      timeoutError: '⏰ انتهت المهلة: استغرق التحليل وقتاً طويلاً. يرجى المحاولة مرة أخرى.',
+      serverError: '❌ خطأ في الخادم',
+      networkError: '🌐 خطأ في الشبكة: تحقق من اتصالك بالإنترنت.',
+      generalError: '❌ خطأ'
+>>>>>>> Stashed changes
     },
     hi: {
       welcome: 'स्वागत है',
@@ -4047,6 +4777,14 @@ function App() {
       buy: 'खरीदें',
       monthly: 'मासिक',
       lifetime: 'आजीवन',
+      welcomeTo: 'आपका स्वागत है',
+      premiumSignals: 'पेशेवर ट्रेडिंग के लिए प्रीमियम सिग्नल',
+      accurateSignals: 'सटीक सिग्नल',
+      successfulTradesPercent: '87% सफल ट्रेड',
+      instantNotifications: 'तत्काल सूचनाएं',
+      realTimeSignals: 'रियल-टाइम में सिग्नल प्राप्त करें',
+      premiumQuality: 'प्रीमियम गुणवत्ता',
+      professionalMarketAnalysis: 'पेशेवर बाजार विश्लेषण',
       // Новые переводы
       comingSoon: 'जल्द आ रहा है',
       comingSoonDescription: 'जल्द उपलब्ध होगा',
@@ -4113,6 +4851,54 @@ function App() {
       pushNotification: 'पुश',
       enabled: 'सक्षम',
       disabled: 'अक्षम',
+      
+      // Keys for notifications interface
+      notificationsBadge: 'सूचनाएं',
+      tradingSignals: 'ट्रेडिंग सिग्नल',
+      newSignals: 'नए सिग्नल',
+      newSignalsDescription: 'नए सिग्नल के बारे में सूचनाएं',
+      signalResults: 'सिग्नल परिणाम',
+      signalResultsDescription: 'ट्रेड बंद होने के बारे में सूचनाएं',
+      dailySummary: 'दैनिक सारांश',
+      dailySummaryDescription: '21:00 पर दिन के परिणाम',
+      systemNotifications: 'सिस्टम सूचनाएं',
+      marketNews: 'बाजार समाचार',
+      marketNewsDescription: 'महत्वपूर्ण बाजार घटनाएं',
+      systemUpdates: 'सिस्टम अपडेट',
+      systemUpdatesDescription: 'नई सुविधाएं और सुधार',
+      soundAndVibration: 'ध्वनि और कंपन',
+      soundNotification: 'ध्वनि',
+      soundNotificationsDescription: 'ध्वनि सूचनाएं',
+      vibration: 'कंपन',
+      vibrationDescription: 'सूचनाओं के लिए कंपन सिग्नल',
+      emailNotifications: 'ईमेल सूचनाएं',
+      emailNotificationsDescription: 'ईमेल सूचनाएं',
+      smartNotifications: 'स्मार्ट सूचनाएं',
+      smartNotificationsDescription: 'महत्वपूर्ण घटनाओं के बारे में समय पर सूचनाएं प्राप्त करें। आप प्रत्येक प्रकार को अलग से कॉन्फ़िगर कर सकते हैं।',
+      
+      // Additional missing translations
+      waitingForEntry: 'प्रवेश की प्रतीक्षा',
+      vipFunction: 'VIP फंक्शन',
+      winRate: 'जीत दर',
+      pleaseWaitSystemAnalyzing: 'कृपया प्रतीक्षा करें। सिस्टम बाजार का विश्लेषण कर रहा है...',
+      moreDetails: 'अधिक विवरण',
+      tryAgainInCooldown: 'बाजार स्थिर होने पर {seconds} सेकंड में फिर से कोशिश करें',
+      
+      // Alert messages
+      bulkUpdateSuccess: '{total} में से {successful} उपयोगकर्ता अपडेट किए गए',
+      bulkUpdateError: 'बल्क अपडेट त्रुटि: {error}',
+      bulkUpdateErrorGeneric: 'बल्क अपडेट त्रुटि: {message}',
+      userDeletedSuccess: 'उपयोगकर्ता {userId} को बॉट से सफलतापूर्वक हटा दिया गया',
+      userDeleteError: 'हटाने की त्रुटि: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'उपयोगकर्ता को सिस्टम में जोड़ा गया',
+      errorOccurredWith: 'एक त्रुटि हुई: {error}',
+      feedbackAcceptedSuccess: 'फीडबैक स्वीकार: सफल ट्रेड',
+      feedbackAcceptedFailure: 'फीडबैक स्वीकार: हानिकारक ट्रेड',
+      navigationBlockedMessage: 'आपके पास एक सक्रिय सिग्नल है!\n\nसमाप्ति की प्रतीक्षा करें और ट्रेड परिणाम के बारे में फीडबैक दें।\n\nफीडबैक भेजने के बाद नेविगेशन अनलॉक हो जाएगा।',
+      modelRestrictedAlert: 'यह मॉडल प्रतिबंधित है और केवल कमांड पर उपलब्ध है',
+      
       // Аналитика
       aiAnalytics: 'AI विश्लेषण',
       successfulTradesHistory: 'सफल ट्रेड इतिहास',
@@ -4214,7 +5000,18 @@ function App() {
       tryAgainInSeconds: 'बाजार स्थिर होने पर {seconds} सेकंड में फिर से कोशिश करें',
       modelReady: 'मॉडल प्रशिक्षित है और काम करने के लिए तैयार है',
       aiAnalytics: 'AI एनालिटिक्स',
+<<<<<<< Updated upstream
       closeAnalysis: 'विश्लेषण बंद करें'
+=======
+      closeAnalysis: 'विश्लेषण बंद करें',
+      apiError: 'API त्रुटि',
+      unknownError: 'अज्ञात त्रुटि',
+      analysisError: 'विश्लेषण प्राप्त करने में त्रुटि। अमान्य प्रतिक्रिया प्रारूप।',
+      timeoutError: '⏰ टाइमआउट: विश्लेषण में बहुत समय लगा। कृपया पुनः प्रयास करें।',
+      serverError: '❌ सर्वर त्रुटि',
+      networkError: '🌐 नेटवर्क त्रुटि: अपना इंटरनेट कनेक्शन जांचें।',
+      generalError: '❌ त्रुटि'
+>>>>>>> Stashed changes
     },
     tr: {
       welcome: 'Hoş geldiniz',
@@ -4238,6 +5035,14 @@ function App() {
       buy: 'Satın al',
       monthly: 'Aylık',
       lifetime: 'Ömür boyu',
+      welcomeTo: 'Hoş geldiniz',
+      premiumSignals: 'Profesyonel alım satım için premium sinyaller',
+      accurateSignals: 'Doğru sinyaller',
+      successfulTradesPercent: '87% başarılı işlem',
+      instantNotifications: 'Anında bildirimler',
+      realTimeSignals: 'Gerçek zamanlı sinyal alın',
+      premiumQuality: 'Premium kalite',
+      professionalMarketAnalysis: 'Profesyonel pazar analizi',
       // Новые переводы
       comingSoon: 'YAKINDA',
       comingSoonDescription: 'Yakında kullanılabilir',
@@ -4304,6 +5109,54 @@ function App() {
       pushNotification: 'Push',
       enabled: 'Etkin',
       disabled: 'Devre dışı',
+      
+      // Keys for notifications interface
+      notificationsBadge: 'BİLDİRİMLER',
+      tradingSignals: 'Trading Sinyalleri',
+      newSignals: 'Yeni Sinyaller',
+      newSignalsDescription: 'Yeni sinyaller hakkında bildirimler',
+      signalResults: 'Sinyal Sonuçları',
+      signalResultsDescription: 'İşlem kapanışları hakkında bildirimler',
+      dailySummary: 'Günlük Özet',
+      dailySummaryDescription: '21:00\'da günlük sonuçlar',
+      systemNotifications: 'Sistem Bildirimleri',
+      marketNews: 'Piyasa Haberleri',
+      marketNewsDescription: 'Önemli piyasa olayları',
+      systemUpdates: 'Sistem Güncellemeleri',
+      systemUpdatesDescription: 'Yeni özellikler ve düzeltmeler',
+      soundAndVibration: 'Ses ve Titreşim',
+      soundNotification: 'Ses',
+      soundNotificationsDescription: 'Ses bildirimleri',
+      vibration: 'Titreşim',
+      vibrationDescription: 'Bildirimler için titreşim sinyali',
+      emailNotifications: 'E-posta Bildirimleri',
+      emailNotificationsDescription: 'E-posta bildirimleri',
+      smartNotifications: 'Akıllı Bildirimler',
+      smartNotificationsDescription: 'Önemli olaylar hakkında zamanında bildirimler alın. Her türü ayrı ayrı yapılandırabilirsiniz.',
+      
+      // Additional missing translations
+      waitingForEntry: 'Giriş bekleniyor',
+      vipFunction: 'VIP Fonksiyon',
+      winRate: 'Kazanma oranı',
+      pleaseWaitSystemAnalyzing: 'Lütfen bekleyin. Sistem piyasayı analiz ediyor...',
+      moreDetails: 'Daha Fazla Detay',
+      tryAgainInCooldown: 'Piyasa stabilize olduğunda {seconds} saniye sonra tekrar deneyin',
+      
+      // Alert messages
+      bulkUpdateSuccess: '{total} kullanıcıdan {successful} tanesi güncellendi',
+      bulkUpdateError: 'Toplu güncelleme hatası: {error}',
+      bulkUpdateErrorGeneric: 'Toplu güncelleme hatası: {message}',
+      userDeletedSuccess: 'Kullanıcı {userId} bot\'tan başarıyla silindi',
+      userDeleteError: 'Silme hatası: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Kullanıcı sisteme eklendi',
+      errorOccurredWith: 'Bir hata oluştu: {error}',
+      feedbackAcceptedSuccess: 'Geri bildirim kabul edildi: Başarılı işlem',
+      feedbackAcceptedFailure: 'Geri bildirim kabul edildi: Kayıplı işlem',
+      navigationBlockedMessage: 'Aktif bir sinyaliniz var!\n\nVade sonunu bekleyin ve işlem sonucu hakkında geri bildirim bırakın.\n\nGeri bildirim gönderdikten sonra navigasyon kilidi açılacak.',
+      modelRestrictedAlert: 'Bu model kısıtlıdır ve sadece komutla kullanılabilir',
+      
       // Аналитика
       aiAnalytics: 'AI Analitiği',
       successfulTradesHistory: 'Başarılı işlemler geçmişi',
@@ -4355,7 +5208,14 @@ function App() {
       userDeleted: '✅ {name} kullanıcısı sistemden silindi',
       userDeleteError: '❌ {name} kullanıcısını silme hatası',
       accessRequestApproved: '✅ {name} kullanıcısının erişim talebi onaylandı',
-      accessRequestError: '❌ {name} kullanıcısının talep onaylama hatası'
+      accessRequestError: '❌ {name} kullanıcısının talep onaylama hatası',
+      apiError: 'API Hatası',
+      unknownError: 'Bilinmeyen hata',
+      analysisError: 'Analiz alınırken hata oluştu. Geçersiz yanıt formatı.',
+      timeoutError: '⏰ Zaman aşımı: Analiz çok uzun sürdü. Lütfen tekrar deneyin.',
+      serverError: '❌ Sunucu hatası',
+      networkError: '🌐 Ağ hatası: İnternet bağlantınızı kontrol edin.',
+      generalError: '❌ Hata'
     },
     vi: {
       welcome: 'Chào mừng',
@@ -4379,6 +5239,14 @@ function App() {
       buy: 'Mua',
       monthly: 'Hàng tháng',
       lifetime: 'Press đời',
+      welcomeTo: 'Chào mừng đến với',
+      premiumSignals: 'Tín hiệu cao cấp cho giao dịch chuyên nghiệp',
+      accurateSignals: 'Tín hiệu chính xác',
+      successfulTradesPercent: '87% giao dịch thành công',
+      instantNotifications: 'Thông báo tức thì',
+      realTimeSignals: 'Nhận tín hiệu theo thời gian thực',
+      premiumQuality: 'Chất lượng cao cấp',
+      professionalMarketAnalysis: 'Phân tích thị trường chuyên nghiệp',
       // Новые переводы
       comingSoon: 'SẮP RA MẮT',
       comingSoonDescription: 'Sắp có sẵn',
@@ -4445,6 +5313,54 @@ function App() {
       pushNotification: 'Đẩy',
       enabled: 'Đã bật',
       disabled: 'Đã tắt',
+      
+      // Keys for notifications interface
+      notificationsBadge: 'THÔNG BÁO',
+      tradingSignals: 'Tín Hiệu Giao Dịch',
+      newSignals: 'Tín Hiệu Mới',
+      newSignalsDescription: 'Thông báo về tín hiệu mới',
+      signalResults: 'Kết Quả Tín Hiệu',
+      signalResultsDescription: 'Thông báo về việc đóng giao dịch',
+      dailySummary: 'Tóm Tắt Hàng Ngày',
+      dailySummaryDescription: 'Kết quả ngày lúc 21:00',
+      systemNotifications: 'Thông Báo Hệ Thống',
+      marketNews: 'Tin Tức Thị Trường',
+      marketNewsDescription: 'Các sự kiện quan trọng của thị trường',
+      systemUpdates: 'Cập Nhật Hệ Thống',
+      systemUpdatesDescription: 'Tính năng mới và sửa lỗi',
+      soundAndVibration: 'Âm Thanh và Rung',
+      soundNotification: 'Âm Thanh',
+      soundNotificationsDescription: 'Thông báo âm thanh',
+      vibration: 'Rung',
+      vibrationDescription: 'Tín hiệu rung cho thông báo',
+      emailNotifications: 'Thông Báo Email',
+      emailNotificationsDescription: 'Thông báo qua email',
+      smartNotifications: 'Thông Báo Thông Minh',
+      smartNotificationsDescription: 'Nhận thông báo kịp thời về các sự kiện quan trọng. Bạn có thể cấu hình từng loại riêng biệt.',
+      
+      // Additional missing translations
+      waitingForEntry: 'Chờ vào lệnh',
+      vipFunction: 'Chức năng VIP',
+      winRate: 'Tỷ lệ thắng',
+      pleaseWaitSystemAnalyzing: 'Vui lòng chờ. Hệ thống đang phân tích thị trường...',
+      moreDetails: 'Chi tiết',
+      tryAgainInCooldown: 'Thử lại sau {seconds} giây khi thị trường ổn định',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Đã cập nhật {successful} trong {total} người dùng',
+      bulkUpdateError: 'Lỗi cập nhật hàng loạt: {error}',
+      bulkUpdateErrorGeneric: 'Lỗi cập nhật hàng loạt: {message}',
+      userDeletedSuccess: 'Người dùng {userId} đã được xóa thành công khỏi bot',
+      userDeleteError: 'Lỗi xóa: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Người dùng đã được thêm vào hệ thống',
+      errorOccurredWith: 'Đã xảy ra lỗi: {error}',
+      feedbackAcceptedSuccess: 'Phản hồi được chấp nhận: Giao dịch thành công',
+      feedbackAcceptedFailure: 'Phản hồi được chấp nhận: Giao dịch thua lỗ',
+      navigationBlockedMessage: 'Bạn có một tín hiệu đang hoạt động!\n\nChờ hết hạn và để lại phản hồi về kết quả giao dịch.\n\nĐiều hướng sẽ được mở khóa sau khi gửi phản hồi.',
+      modelRestrictedAlert: 'Mô hình này bị hạn chế và chỉ khả dụng theo lệnh',
+      
       // Аналитика
       aiAnalytics: 'Phân tích AI',
       successfulTradesHistory: 'Lịch sử giao dịch thành công',
@@ -4546,7 +5462,18 @@ function App() {
       tryAgainInSeconds: 'Thử lại sau {seconds} giây khi thị trường ổn định',
       modelReady: 'Mô hình đã được huấn luyện và sẵn sàng hoạt động',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'Đóng phân tích'
+=======
+      closeAnalysis: 'Đóng phân tích',
+      apiError: 'Lỗi API',
+      unknownError: 'Lỗi không xác định',
+      analysisError: 'Lỗi khi lấy phân tích. Định dạng phản hồi không hợp lệ.',
+      timeoutError: '⏰ Hết thời gian: Phân tích mất quá nhiều thời gian. Vui lòng thử lại.',
+      serverError: '❌ Lỗi máy chủ',
+      networkError: '🌐 Lỗi mạng: Kiểm tra kết nối internet của bạn.',
+      generalError: '❌ Lỗi'
+>>>>>>> Stashed changes
     },
     id: {
       welcome: 'Selamat datang',
@@ -4570,6 +5497,14 @@ function App() {
       buy: 'Beli',
       monthly: 'Bulanan',
       lifetime: 'Seumur hidup',
+      welcomeTo: 'Selamat datang di',
+      premiumSignals: 'Sinyal premium untuk trading profesional',
+      accurateSignals: 'Sinyal akurat',
+      successfulTradesPercent: '87% trading berhasil',
+      instantNotifications: 'Notifikasi instan',
+      realTimeSignals: 'Terima sinyal secara real-time',
+      premiumQuality: 'Kualitas premium',
+      professionalMarketAnalysis: 'Analisis pasar profesional',
       // Новые переводы
       comingSoon: 'SEGERA',
       comingSoonDescription: 'Segera tersedia',
@@ -4636,6 +5571,54 @@ function App() {
       pushNotification: 'Push',
       enabled: 'Diaktifkan',
       disabled: 'Dinonaktifkan',
+      
+      // Keys for notifications interface
+      notificationsBadge: 'NOTIFIKASI',
+      tradingSignals: 'Sinyal Trading',
+      newSignals: 'Sinyal Baru',
+      newSignalsDescription: 'Notifikasi tentang sinyal baru',
+      signalResults: 'Hasil Sinyal',
+      signalResultsDescription: 'Notifikasi tentang penutupan trade',
+      dailySummary: 'Ringkasan Harian',
+      dailySummaryDescription: 'Hasil hari pada 21:00',
+      systemNotifications: 'Notifikasi Sistem',
+      marketNews: 'Berita Pasar',
+      marketNewsDescription: 'Peristiwa penting pasar',
+      systemUpdates: 'Pembaruan Sistem',
+      systemUpdatesDescription: 'Fitur baru dan perbaikan',
+      soundAndVibration: 'Suara dan Getaran',
+      soundNotification: 'Suara',
+      soundNotificationsDescription: 'Notifikasi suara',
+      vibration: 'Getaran',
+      vibrationDescription: 'Sinyal getaran untuk notifikasi',
+      emailNotifications: 'Notifikasi Email',
+      emailNotificationsDescription: 'Notifikasi melalui email',
+      smartNotifications: 'Notifikasi Cerdas',
+      smartNotificationsDescription: 'Terima notifikasi tepat waktu tentang peristiwa penting. Anda dapat mengonfigurasi setiap jenis secara terpisah.',
+      
+      // Additional missing translations
+      waitingForEntry: 'Menunggu masuk',
+      vipFunction: 'Fungsi VIP',
+      winRate: 'Tingkat kemenangan',
+      pleaseWaitSystemAnalyzing: 'Silakan tunggu. Sistem sedang menganalisis pasar...',
+      moreDetails: 'Detail Lebih',
+      tryAgainInCooldown: 'Coba lagi dalam {seconds} detik ketika pasar stabil',
+      
+      // Alert messages
+      bulkUpdateSuccess: 'Diperbarui {successful} dari {total} pengguna',
+      bulkUpdateError: 'Kesalahan pembaruan massal: {error}',
+      bulkUpdateErrorGeneric: 'Kesalahan pembaruan massal: {message}',
+      userDeletedSuccess: 'Pengguna {userId} berhasil dihapus dari bot',
+      userDeleteError: 'Kesalahan penghapusan: {error}',
+      
+      // Additional alert messages
+      userAddedSuccess: 'Pengguna ditambahkan ke sistem',
+      errorOccurredWith: 'Terjadi kesalahan: {error}',
+      feedbackAcceptedSuccess: 'Umpan balik diterima: Perdagangan berhasil',
+      feedbackAcceptedFailure: 'Umpan balik diterima: Perdagangan rugi',
+      navigationBlockedMessage: 'Anda memiliki sinyal aktif!\n\nTunggu kedaluwarsa dan berikan umpan balik tentang hasil perdagangan.\n\nNavigasi akan dibuka kunci setelah mengirim umpan balik.',
+      modelRestrictedAlert: 'Model ini dibatasi dan hanya tersedia berdasarkan perintah',
+      
       // Аналитика
       aiAnalytics: 'Analitik AI',
       successfulTradesHistory: 'Riwayat perdagangan berhasil',
@@ -4737,13 +5720,28 @@ function App() {
       tryAgainInSeconds: 'Coba lagi dalam {seconds} detik ketika pasar stabil',
       modelReady: 'Model telah dilatih dan siap bekerja',
       aiAnalytics: 'AI Analytics',
+<<<<<<< Updated upstream
       closeAnalysis: 'Tutup analisis'
+=======
+      closeAnalysis: 'Tutup analisis',
+      apiError: 'Kesalahan API',
+      unknownError: 'Kesalahan tidak diketahui',
+      analysisError: 'Kesalahan saat mengambil analisis. Format respons tidak valid.',
+      timeoutError: '⏰ Waktu habis: Analisis memakan waktu terlalu lama. Silakan coba lagi.',
+      serverError: '❌ Kesalahan server',
+      networkError: '🌐 Kesalahan jaringan: Periksa koneksi internet Anda.',
+      generalError: '❌ Kesalahan'
+>>>>>>> Stashed changes
     }
   }
 
   const t = (key, params = {}) => {
     const lang = selectedLanguage || 'ru'
+<<<<<<< Updated upstream
     let text = translations[lang]?.[key] || translations.ru[key] || key
+=======
+    let text = translations[lang]?.[key] || key
+>>>>>>> Stashed changes
     
     // Поддержка параметризации
     if (params && Object.keys(params).length > 0) {
@@ -5030,17 +6028,17 @@ function App() {
 
       if (result.success) {
         console.log('✅ Пользователь успешно удален')
-        alert(`✅ Пользователь ${userIdToDelete} успешно удален из бота`)
+        alert(t('userDeletedSuccess', {userId: userIdToDelete}))
         
         // Обновляем список пользователей в админ панели
         loadAdminStats()
       } else {
         console.error('❌ Ошибка удаления:', result.error)
-        alert(`❌ Ошибка удаления: ${result.error}`)
+        alert(t('userDeleteError', {error: result.error}))
       }
     } catch (error) {
       console.error('❌ Ошибка при удалении пользователя:', error)
-      alert(`❌ Ошибка при удалении пользователя: ${error.message}`)
+      alert(t('userDeleteError', {error: error.message}))
     }
   }
 
@@ -5170,21 +6168,21 @@ ${isLoss ? `
       if (data.choices && data.choices[0] && data.choices[0].message) {
         setAnalysisResult(data.choices[0].message.content)
       } else if (data.error) {
-        setAnalysisResult(`Ошибка API: ${data.error.message || 'Неизвестная ошибка'}`)
+        setAnalysisResult(`${t('apiError')}: ${data.error.message || t('unknownError')}`)
       } else {
-        setAnalysisResult('Ошибка получения анализа. Неверный формат ответа.')
+        setAnalysisResult(t('analysisError'))
       }
     } catch (error) {
       console.error('Ошибка анализа:', error)
       
       if (error.name === 'AbortError') {
-        setAnalysisResult('⏰ Таймаут: Анализ занял слишком много времени. Попробуйте еще раз.')
+        setAnalysisResult(t('timeoutError'))
       } else if (error.message.includes('HTTP')) {
-        setAnalysisResult(`❌ Ошибка сервера: ${error.message}`)
+        setAnalysisResult(`${t('serverError')}: ${error.message}`)
       } else if (error.message.includes('Failed to fetch')) {
-        setAnalysisResult('🌐 Ошибка сети: Проверьте подключение к интернету.')
+        setAnalysisResult(t('networkError'))
       } else {
-        setAnalysisResult(`❌ Ошибка: ${error.message}`)
+        setAnalysisResult(`${t('generalError')}: ${error.message}`)
       }
     } finally {
       setIsAnalyzing(false)
@@ -5832,7 +6830,7 @@ ${isLoss ? `
     // Очищаем состояние
     clearSignalState()
     
-    alert(`✅ Фидбек принят: ${isSuccess ? 'Успешная сделка' : 'Убыточная сделка'}`)
+    alert(t(isSuccess ? 'feedbackAcceptedSuccess' : 'feedbackAcceptedFailure'))
     
     // Переходим в статистику пользователя
     setCurrentScreen('user-stats')
@@ -5846,7 +6844,7 @@ ${isLoss ? `
   // Навигация с проверкой блокировки
   const navigateWithCheck = (screen) => {
     if (isNavigationBlocked()) {
-      alert('⚠️ У вас есть активный сигнал!\n\nДождитесь завершения экспирации и оставьте фидбек о результате сделки.\n\nНавигация разблокируется после отправки фидбека.')
+      alert(t('navigationBlockedMessage'))
       return false
     }
     setCurrentScreen(screen)
@@ -7186,7 +8184,7 @@ ${isLoss ? `
                 <div>
                   <h1 className="text-xl font-bold text-white">{t('notifications')}</h1>
                   <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50 text-xs">
-                    NOTIFICATIONS
+                    {t('notificationsBadge')}
                   </Badge>
                 </div>
               </div>
@@ -7865,7 +8863,7 @@ ${isLoss ? `
                     if (isOwned && !isRestricted) {
                       setSelectedMLModel(model.id)
                     } else if (isRestricted) {
-                      alert('Эта модель заблокирована и доступна только по команде')
+                      alert(t('modelRestrictedAlert'))
                     } else {
                       // Переход на страницу премиум для покупки
                       setCurrentScreen('premium')
@@ -9080,7 +10078,7 @@ ${isLoss ? `
                   {signal.status === 'pending' && (
                     <div className="flex items-center gap-2 text-amber-400 text-sm">
                       <Clock className="w-4 h-4" />
-                      <span>Ожидание входа</span>
+                      <span>{t('waitingForEntry')}</span>
                     </div>
                   )}
 
@@ -9089,7 +10087,7 @@ ${isLoss ? `
                     variant="ghost" 
                     className="w-full mt-4 text-slate-400 hover:text-white hover:bg-slate-800/50 group hover:scale-105 transition-all"
                   >
-                    <span>Подробнее</span>
+                    <span>{t('moreDetails')}</span>
                     <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
@@ -9441,7 +10439,7 @@ ${isLoss ? `
                   </div>
                   <div>
                     <p className="text-white font-semibold mb-1">{t('waitForOptimalConditions')}</p>
-                    <p className="text-slate-400 text-sm">Попробуйте снова через {signalCooldown} секунд, когда рынок стабилизируется</p>
+                    <p className="text-slate-400 text-sm">{t('tryAgainInCooldown', {seconds: signalCooldown})}</p>
                   </div>
                 </div>
               </div>
