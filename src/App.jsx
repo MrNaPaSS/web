@@ -7048,7 +7048,9 @@ ${isLoss ? `
   // Загрузка метрик рынка при переходе на экран выбора пар
   useEffect(() => {
     if (currentScreen === 'signal-selection') {
-      console.log('📊 Загружаем метрики при переходе на signal-selection')
+      console.log('📊 [DEBUG] Переход на signal-selection экран')
+      console.log('📊 [DEBUG] Количество сгенерированных сигналов:', generatedSignals.length)
+      console.log('📊 [DEBUG] Сгенерированные сигналы:', generatedSignals)
       loadMarketMetrics()
     }
   }, [currentScreen])
@@ -7066,6 +7068,9 @@ ${isLoss ? `
   // Сохранение активного сигнала в localStorage
   useEffect(() => {
     if (pendingSignal) {
+      console.log('🔄 [DEBUG] pendingSignal изменился, переходим на main экран')
+      console.log('🔄 [DEBUG] pendingSignal:', pendingSignal)
+      setCurrentScreen('main')
       localStorage.setItem('pendingSignal', JSON.stringify(pendingSignal))
       localStorage.setItem('signalTimer', signalTimer.toString())
       localStorage.setItem('isWaitingFeedback', isWaitingFeedback.toString())
@@ -7170,11 +7175,14 @@ ${isLoss ? `
         setLastTop3Generation(Date.now())
         setTop3Cooldown(600)
         setIsGenerating(false)
-        // Автоматически активируем первый сигнал из ТОП-3
+        // НЕ активируем автоматически - показываем экран выбора
         if (signals.length > 0) {
+          console.log('✅ [TOP-3] Получены сигналы:', signals.length, 'штук')
+          console.log('✅ [TOP-3] Переходим на signal-selection экран')
           setCurrentScreen('signal-selection')
-          console.log('✅ Показываем экран выбора сигналов:', signals)
+          console.log('✅ [TOP-3] Экран установлен:', 'signal-selection')
         } else {
+          console.log('⚠️ [TOP-3] Нет сигналов, но переходим на signal-selection')
           setCurrentScreen('signal-selection')
         }
         console.log('✅ Получены РЕАЛЬНЫЕ сигналы:', signals)
@@ -7317,6 +7325,11 @@ ${isLoss ? `
   }
   // Активация сигнала
   const activateSignal = (signal) => {
+    console.log('🚨 [DEBUG] activateSignal вызвана!')
+    console.log('🚨 [DEBUG] Сигнал для активации:', signal)
+    console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
+    console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
+    
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
     const startTime = Date.now() // Время начала сигнала
     setPendingSignal({
