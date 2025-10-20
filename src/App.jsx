@@ -6375,7 +6375,7 @@ ${isLoss ? `
             first_name: user.first_name,
             last_name: user.last_name || '',
             username: user.username || '',
-            language_code: user.language_code || 'ru',
+            language_code: null, // Игнорируем язык из Telegram - принудительный выбор
             is_premium: user.is_premium || false
           }, initData)
         } else {
