@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Check, AlertCircle } from 'lucide-react'
 
-export function TelegramAuth({ onAuthSuccess, onAuthError }) {
+export function TelegramAuth({ onAuthSuccess, onAuthError, t }) {
   const [authState, setAuthState] = useState('checking') // checking, authenticating, success, error, dev-mode
   const [errorMessage, setErrorMessage] = useState('')
   const [userData, setUserData] = useState(null)
@@ -53,7 +53,7 @@ export function TelegramAuth({ onAuthSuccess, onAuthError }) {
           first_name: user.first_name || '',
           last_name: user.last_name || '',
           username: user.username || '',
-          language_code: user.language_code || 'ru',
+          language_code: null, // НЕ берем язык из Telegram - принудительный выбор
           is_admin: telegramId === '511442168'
         },
         subscriptions: ['logistic-spy']
@@ -83,8 +83,8 @@ export function TelegramAuth({ onAuthSuccess, onAuthError }) {
             <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
               <Check className="w-10 h-10 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-3">Добро пожаловать!</h2>
-            <p className="text-slate-400">Загрузка интерфейса...</p>
+            <h2 className="text-2xl font-bold text-white mb-3">{t('welcome')}</h2>
+            <p className="text-slate-400">{t('loadingInterface')}</p>
           </div>
         )}
 
@@ -94,7 +94,7 @@ export function TelegramAuth({ onAuthSuccess, onAuthError }) {
             <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-6">
               <AlertCircle className="w-10 h-10 text-red-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-3">Ошибка входа</h2>
+            <h2 className="text-2xl font-bold text-white mb-3">{t('loginError')}</h2>
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
               <p className="text-red-400 text-sm">{errorMessage}</p>
             </div>
@@ -102,7 +102,7 @@ export function TelegramAuth({ onAuthSuccess, onAuthError }) {
               onClick={() => handleDirectLogin()}
               className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
             >
-              Попробовать снова
+              {t('tryAgain')}
             </Button>
           </div>
         )}
