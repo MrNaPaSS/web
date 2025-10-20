@@ -1,4 +1,15 @@
 {
-  "active_users": {},
-  "last_updated": "2025-10-20T23:59:59.999999"
+  "active_users": {
+    "511442168": {
+      "last_seen": "2025-10-21T00:00:06.060731",
+      "source": "web",
+      "is_online": true
+    },
+    "7613535490": {
+      "last_seen": "2025-10-21T00:00:29.477233",
+      "source": "web",
+      "is_online": true
+    }
+  },
+  "last_updated": "2025-10-21T00:00:29.477233"
 }

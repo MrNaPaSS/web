@@ -1,4 +1,20 @@
 {
-  "authorized_users": [],
-  "last_updated": "2025-10-20T23:59:59.999999"
+  "authorized_users": [
+    7613535490
+  ],
+  "last_updated": "2025-10-21T00:00:10.840553",
+  "7613535490": {
+    "telegram_id": "7613535490",
+    "first_name": ".",
+    "last_name": "",
+    "username": "",
+    "language_code": "ru",
+    "is_premium": false,
+    "is_admin": false,
+    "last_login": "2025-10-21T00:00:10.840553",
+    "subscriptions": [
+      "logistic-spy"
+    ],
+    "created_at": "2025-10-21T00:00:10.840553"
+  }
 }

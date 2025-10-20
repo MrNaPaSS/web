@@ -1,4 +1,11 @@
 {
-  "requests": {},
-  "last_updated": "2025-10-20T23:59:59.999999"
+  "7613535490": {
+    "user_id": 7613535490,
+    "username": "",
+    "first_name": ".",
+    "last_name": "",
+    "request_time": 1760997602.074809,
+    "status": "approved",
+    "admin_response_time": 1760997625.6454642
+  }
 }
