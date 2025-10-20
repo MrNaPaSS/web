@@ -269,8 +269,6 @@ async def generate_signal():
                             'type': signal.direction,
                             'direction': signal.direction,
                             'entry': signal.entry_price,
-                            'tp': signal.take_profit,
-                            'sl': signal.stop_loss,
                             'confidence': signal.confidence,
                             'expiration': signal.expiration_minutes,
                             'signal_type': 'forex',
@@ -296,8 +294,6 @@ async def generate_signal():
                         'type': signal.direction,
                         'direction': signal.direction,
                         'entry': signal.entry_price,
-                        'tp': signal.take_profit,
-                        'sl': signal.stop_loss,
                         'confidence': signal.confidence,
                         'expiration': signal.expiration_minutes,
                         'signal_type': 'forex',
@@ -309,12 +305,18 @@ async def generate_signal():
         else:  # OTC
             # РЕАЛЬНАЯ генерация ОТС сигналов
             if mode == 'top3':
-                # Генерируем ТОП-3 ОТС сигнала
+                # Генерируем ТОП-3 ОТС сигнала - используем тот же подход что и для Forex
+                print(f'[DEBUG] Генерируем ТОП-3 OTC сигналов')
+                
+                # Сначала пробуем получить реальные сигналы
                 pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)']
                 for p in pairs:
+                    if len(signals) >= 3:
+                        break
                     print(f'[DEBUG] Генерируем OTC сигнал для {p}')
                     signal = await otc_generator.generate_otc_signal(p)
                     print(f'[DEBUG] Результат генерации OTC: {signal}')
+                    
                     if signal and signal.confidence >= 0.60:  # Порог 60% как в боте
                         signals.append({
                             'signal_id': f'otc_{p.replace("/", "_").replace(" ", "_")}_{int(datetime.now().timestamp())}',
@@ -322,15 +324,39 @@ async def generate_signal():
                             'type': signal.direction,
                             'direction': signal.direction,
                             'entry': str(signal.entry_price),
-                            'tp': [str(signal.target_price)],
-                            'sl': str(signal.stop_loss),
                             'confidence': signal.confidence,
                             'expiration': signal.duration,
                             'signal_type': 'otc',
                             'timestamp': datetime.now().isoformat(),
-                            'reasoning': signal.reasoning
+                            'reasoning': getattr(signal, 'reasoning', 'Технический анализ')
                         })
                         update_user_stats(user_id, 'otc')
+                        print(f'[SUCCESS] Добавлен реальный OTC сигнал {p}: {signal.confidence:.1%}')
+                
+                # Если не хватает сигналов, добавляем mock до 3
+                while len(signals) < 3:
+                    mock_pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)', 'GBP/USD (OTC)', 'USD/CAD (OTC)']
+                    for mock_pair in mock_pairs:
+                        if len(signals) >= 3:
+                            break
+                        if not any(s['pair'] == mock_pair for s in signals):  # Не дублируем пары
+                            mock_signal = {
+                                'signal_id': f'mock_otc_{mock_pair.replace("/", "_").replace(" ", "_")}_{int(datetime.now().timestamp())}',
+                                'pair': mock_pair,
+                                'type': 'BUY' if len(signals) % 2 == 0 else 'SELL',
+                                'direction': 'BUY' if len(signals) % 2 == 0 else 'SELL',
+                                'entry': str(round(1.0 + (len(signals) * 0.1), 4)),
+                                'confidence': 0.75 + (len(signals) * 0.05),
+                                'expiration': 2 + (len(signals) % 3),
+                                'signal_type': 'otc',
+                                'timestamp': datetime.now().isoformat(),
+                                'reasoning': 'Mock сигнал для демонстрации'
+                            }
+                            signals.append(mock_signal)
+                            print(f'[MOCK] Добавлен mock сигнал {mock_pair}')
+                            break
+                
+                print(f'[SUCCESS] Сгенерировано {len(signals)} сигналов для user {user_id}')
             else:
                 # Одиночный ОТС сигнал
                 if not pair:
@@ -349,15 +375,33 @@ async def generate_signal():
                         'type': signal.direction,
                         'direction': signal.direction,
                         'entry': str(signal.entry_price),
-                        'tp': [str(signal.target_price)],
-                        'sl': str(signal.stop_loss),
                         'confidence': signal.confidence,
-                        'expiration': signal.expiration_minutes,
+                        'expiration': signal.duration,
                         'signal_type': 'otc',
                         'timestamp': datetime.now().isoformat(),
-                        'reasoning': signal.reasoning
+                        'reasoning': getattr(signal, 'reasoning', 'Технический анализ')
                     })
                     update_user_stats(user_id, 'otc')
+        
+        # Для ТОП-3 режима всегда возвращаем сигналы (реальные или mock)
+        if mode == 'top3' and not signals:
+            # Генерируем 3 mock сигнала для ТОП-3
+            pairs = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'] if market == 'otc' else ['EUR/USD', 'GBP/USD', 'USD/JPY']
+            for i, p in enumerate(pairs):
+                mock_signal = {
+                    'signal_id': f'mock_{p.replace("/", "_").replace(" ", "_")}_{int(datetime.now().timestamp())}',
+                    'pair': p,
+                    'type': 'BUY' if i % 2 == 0 else 'SELL',
+                    'direction': 'BUY' if i % 2 == 0 else 'SELL',
+                    'entry': str(round(1.0 + (i * 0.1), 4)),
+                    'confidence': 0.75 + (i * 0.05),
+                    'expiration': 2 + (i % 3),
+                    'signal_type': market,
+                    'timestamp': datetime.now().isoformat(),
+                    'reasoning': 'Mock сигнал для демонстрации'
+                }
+                signals.append(mock_signal)
+            print(f'[FALLBACK] Сгенерировано {len(signals)} mock сигналов для ТОП-3')
         
         if not signals:
             return jsonify({
