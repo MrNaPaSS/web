@@ -239,29 +239,69 @@
       "pair": "EUR/USD (OTC)",
       "direction": "BUY",
       "confidence": 0.7930217772016726
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "otc_EUR_USD_(OTC)_1761007045",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T03:08:11.264506",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.7521599999999999
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "otc_EUR_USD_(OTC)_1761008907",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T03:20:01.711767",
+      "pair": "EUR/USD (OTC)",
+      "direction": "SELL",
+      "confidence": 0.7498799999999999
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "otc_EUR_USD_(OTC)_1761009615",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T03:24:45.323441",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.7622999999999999
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "mock_EUR_USD (OTC)_1761009898637",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T03:30:54.083787",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.9548426778149712
     }
   ],
-  "last_updated": "2025-10-21T02:58:02.536914",
-  "total_signals": 24,
-  "successful_signals": 23,
+  "last_updated": "2025-10-21T03:30:54.083787",
+  "total_signals": 28,
+  "successful_signals": 27,
   "failed_signals": 1,
   "win_rate": 83.3,
   "511442168": {
-    "total_signals": 12,
+    "total_signals": 22,
     "forex_signals": 2,
-    "otc_signals": 10,
-    "successful_trades": 6,
+    "otc_signals": 20,
+    "successful_trades": 10,
     "failed_trades": 1,
-    "pending_trades": 3,
-    "win_rate": 85.71428571428571
+    "pending_trades": 5,
+    "win_rate": 90.9090909090909
   },
   "8428349451": {
-    "total_signals": 4,
+    "total_signals": 6,
     "forex_signals": 3,
-    "otc_signals": 1,
+    "otc_signals": 3,
     "successful_trades": 2,
     "failed_trades": 0,
-    "pending_trades": 1,
+    "pending_trades": 3,
     "win_rate": 100.0
   },
   "7613535490": {
