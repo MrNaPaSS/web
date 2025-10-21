@@ -213,13 +213,23 @@ function App() {
   // Функция проверки доступности форекс рынка
   const isForexMarketOpen = () => {
     const now = new Date()
-    const moscowTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Moscow"}))
-    const dayOfWeek = moscowTime.getDay() // 0 = воскресенье, 1 = понедельник, ..., 6 = суббота
+    const europeanTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Berlin"}))
+    const dayOfWeek = europeanTime.getDay() // 0 = воскресенье, 1 = понедельник, ..., 6 = суббота
+    const currentHour = europeanTime.getHours()
+    
     // Рынок закрыт в субботу (6) и воскресенье (0)
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return false
     }
-    // Рынок открыт с понедельника 00:00 до пятницы 23:59
+    
+    // Рынок закрыт по будням с 22:00 до 06:00 (европейское время)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Понедельник-Пятница
+      if (currentHour >= 22 || currentHour < 6) {
+        return false
+      }
+    }
+    
+    // Рынок открыт в остальное время
     return true
   }
   // Функция проверки возможности генерации топ-3 (каждые 10 минут)
@@ -734,6 +744,7 @@ function App() {
       riskDiversification: 'Диверсификация рисков',
       focusOnOneTrade: 'Фокус на одной сделке',
       simpleManagement: 'Простое управление',
+      availableIn: 'Доступно через: {minutes} мин',
       idealForBeginners: 'Идеально для начинающих',
       analysis: 'Анализ',
       accuracy: 'Точность',
@@ -841,8 +852,8 @@ function App() {
       smartNotificationsDescription: 'Своевременно получайте уведомления о важных событиях. Вы можете настроить каждый тип отдельно.',
       enabled: 'Включено',
       disabled: 'Отключено',
-      forexMarketClosedWeekend: 'Форекс рынок закрыт в выходные дни. Переключитесь на OTC режим.',
-      forexMarketClosedLabel: 'Форекс рынок закрыт (выходные)',
+      forexMarketClosedWeekend: 'Форекс рынок закрыт в выходные дни или ночью (22:00-06:00). Переключитесь на OTC режим.',
+      forexMarketClosedLabel: 'Форекс рынок закрыт (выходные/ночь)',
       top3CooldownMessage: 'Топ-3 сигналы можно генерировать раз в 10 минут. Осталось: {minutes}:{seconds}',
       vipFeature: 'VIP Функция',
       vipAnalyticsDescription: 'AI Аналитика доступна только для пользователей с активной подпиской',
@@ -1195,6 +1206,7 @@ function App() {
       riskDiversification: 'Risk diversification',
       focusOnOneTrade: 'Focus on one trade',
       simpleManagement: 'Simple management',
+      availableIn: 'Available in: {minutes} min',
       idealForBeginners: 'Ideal for beginners',
       analysis: 'Analysis',
       accuracy: 'Accuracy',
@@ -1302,8 +1314,8 @@ function App() {
       smartNotificationsDescription: 'Get timely notifications about important events. You can configure each type separately.',
       enabled: 'Enabled',
       disabled: 'Disabled',
-      forexMarketClosedWeekend: 'Forex market is closed on weekends. Switch to OTC mode.',
-      forexMarketClosedLabel: 'Forex market closed (weekends)',
+      forexMarketClosedWeekend: 'Forex market is closed on weekends or at night (22:00-06:00). Switch to OTC mode.',
+      forexMarketClosedLabel: 'Forex market closed (weekends/night)',
       top3CooldownMessage: 'TOP-3 signals can be generated once every 10 minutes. Remaining: {minutes}:{seconds}',
       vipFeature: 'VIP Feature',
       vipAnalyticsDescription: 'AI Analytics is available only for users with active subscription',
@@ -1664,6 +1676,7 @@ function App() {
       riskDiversification: 'การกระจายความเสี่ยง',
       focusOnOneTrade: 'มุ่งเน้นที่การเทรดหนึ่งครั้ง',
       simpleManagement: 'การจัดการง่าย',
+      availableIn: 'ใช้ได้ใน: {minutes} นาที',
       idealForBeginners: 'เหมาะสำหรับผู้เริ่มต้น',
       analysis: 'การวิเคราะห์',
       accuracy: 'ความแม่นยำ',
@@ -2139,6 +2152,7 @@ function App() {
       riskDiversification: 'Diversificación de riesgos',
       focusOnOneTrade: 'Enfócate en una operación',
       simpleManagement: 'Gestión simple',
+      availableIn: 'Disponible en: {minutes} min',
       idealForBeginners: 'Ideal para principiantes',
       analysis: 'Análisis',
       accuracy: 'Precisión',
@@ -2592,6 +2606,7 @@ function App() {
       riskDiversification: 'Diversification des risques',
       focusOnOneTrade: 'Focus sur un trade',
       simpleManagement: 'Gestion simple',
+      availableIn: 'Disponible dans: {minutes} min',
       idealForBeginners: 'Idéal pour les débutants',
       analysis: 'Analyse',
       accuracy: 'Précision',
@@ -3045,6 +3060,7 @@ function App() {
       riskDiversification: 'Risikodiversifizierung',
       focusOnOneTrade: 'Fokus auf einen Trade',
       simpleManagement: 'Einfache Verwaltung',
+      availableIn: 'Verfügbar in: {minutes} Min',
       idealForBeginners: 'Ideal für Anfänger',
       analysis: 'Analyse',
       accuracy: 'Genauigkeit',
@@ -4326,6 +4342,7 @@ function App() {
       riskDiversification: '风险分散',
       focusOnOneTrade: '专注于一笔交易',
       simpleManagement: '简单管理',
+      availableIn: '可用时间: {minutes} 分钟',
       idealForBeginners: '适合初学者',
       analysis: '分析',
       accuracy: '准确性',
@@ -5852,7 +5869,15 @@ function App() {
       networkError: '🌐 Ağ hatası: İnternet bağlantınızı kontrol edin.',
       generalError: '❌ Hata',
       // Additional keys
-      forexSignalsPro: 'Forex Signals Pro'
+      forexSignalsPro: 'Forex Signals Pro',
+      marketState: 'Piyasa durumu',
+      mood: 'Ruh hali',
+      volatility: 'Oynaklık',
+      accuracy: 'Doğruluk',
+      analysis: 'Analiz',
+      idealForBeginners: 'Yeni başlayanlar için ideal',
+      recommendation: 'Öneri:',
+      clickToGenerateSignal: 'Sinyal oluşturmak için tıklayın'
     },
     vi: {
       welcome: 'Chào mừng',
@@ -6102,7 +6127,15 @@ function App() {
       networkError: '🌐 Lỗi mạng: Kiểm tra kết nối internet của bạn.',
       generalError: '❌ Lỗi',
       // Additional keys
-      forexSignalsPro: 'Forex Signals Pro'
+      forexSignalsPro: 'Forex Signals Pro',
+      marketState: 'Trạng thái thị trường',
+      mood: 'Tâm trạng',
+      volatility: 'Biến động',
+      accuracy: 'Độ chính xác',
+      analysis: 'Phân tích',
+      idealForBeginners: 'Lý tưởng cho người mới bắt đầu',
+      recommendation: 'Khuyến nghị:',
+      clickToGenerateSignal: 'Nhấp để tạo tín hiệu'
     },
     id: {
       welcome: 'Selamat datang',
@@ -6352,11 +6385,21 @@ function App() {
       networkError: '🌐 Kesalahan jaringan: Periksa koneksi internet Anda.',
       generalError: '❌ Kesalahan',
       // Additional keys
-      forexSignalsPro: 'Forex Signals Pro'
+      forexSignalsPro: 'Forex Signals Pro',
+      marketState: 'Status pasar',
+      mood: 'Suasana hati',
+      volatility: 'Volatilitas',
+      accuracy: 'Akurasi',
+      analysis: 'Analisis',
+      idealForBeginners: 'Ideal untuk pemula',
+      recommendation: 'Rekomendasi:',
+      clickToGenerateSignal: 'Klik untuk menghasilkan sinyal'
     }
   }
   const t = (key, params = {}) => {
-    const lang = selectedLanguage || 'ru'
+    // Сначала проверяем сохраненный язык в localStorage
+    const savedLang = localStorage.getItem('selectedLanguage')
+    const lang = selectedLanguage || savedLang || 'ru'
     let text = translations[lang]?.[key] || translations.ru[key] || key
     // Поддержка параметризации
     if (params && Object.keys(params).length > 0) {
@@ -6820,11 +6863,28 @@ ${isLoss ? `
           setSelectedLanguage(savedLanguage)
           setCurrentScreen('welcome')
         } else {
+          // Если нет сохраненного языка - показываем выбор языка
           setCurrentScreen('language-select')
         }
         // Проверяем активный сигнал после авторизации
         const savedSignal = localStorage.getItem('pendingSignal')
-        if (savedSignal) {
+        const savedGeneratedSignals = localStorage.getItem('generatedSignals')
+        
+        // Восстанавливаем сгенерированные сигналы если они есть
+        if (savedGeneratedSignals) {
+          try {
+            const signals = JSON.parse(savedGeneratedSignals)
+            setGeneratedSignals(signals)
+            setCurrentScreen('signal-selection')
+            console.log('✅ Восстановлены сгенерированные сигналы из localStorage:', signals.length)
+          } catch (error) {
+            console.error('❌ Ошибка восстановления generatedSignals:', error)
+            localStorage.removeItem('generatedSignals')
+          }
+        }
+        
+        // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
+        if (savedSignal && !savedGeneratedSignals) {
           const signal = JSON.parse(savedSignal)
           const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
           const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
@@ -6867,7 +6927,10 @@ ${isLoss ? `
       }
       // Проверяем активный сигнал после авторизации
       const savedSignal = localStorage.getItem('pendingSignal')
-      if (savedSignal) {
+      const savedGeneratedSignals = localStorage.getItem('generatedSignals')
+      
+      // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
+      if (savedSignal && !savedGeneratedSignals) {
         const signal = JSON.parse(savedSignal)
         const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
         const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
@@ -7004,7 +7067,9 @@ ${isLoss ? `
   // Загрузка метрик рынка при переходе на экран выбора пар
   useEffect(() => {
     if (currentScreen === 'signal-selection') {
-      console.log('📊 Загружаем метрики при переходе на signal-selection')
+      console.log('📊 [DEBUG] Переход на signal-selection экран')
+      console.log('📊 [DEBUG] Количество сгенерированных сигналов:', generatedSignals.length)
+      console.log('📊 [DEBUG] Сгенерированные сигналы:', generatedSignals)
       loadMarketMetrics()
     }
   }, [currentScreen])
@@ -7126,11 +7191,11 @@ ${isLoss ? `
         setLastTop3Generation(Date.now())
         setTop3Cooldown(600)
         setIsGenerating(false)
-        // Автоматически активируем первый сигнал из ТОП-3
+        
+        // НЕ активируем автоматически - показываем экран выбора для ТОП-3
         if (signals.length > 0) {
-          activateSignal(signals[0])
-          setCurrentScreen('main')
-          console.log('✅ Автоматически активирован сигнал:', signals[0])
+          setCurrentScreen('signal-selection')
+          console.log('✅ Переходим на экран выбора ТОП-3 сигналов:', signals.length)
         } else {
           setCurrentScreen('signal-selection')
         }
@@ -7144,8 +7209,8 @@ ${isLoss ? `
       }
     } catch (error) {
       console.error('❌ Ошибка получения сигналов:', error)
-      // Fallback: генерируем моковые сигналы если API недоступен
-      console.warn('⚠️ Используем mock сигналы (API недоступен)')
+      // Fallback: генерируем mock сигналы если API недоступен
+      console.warn('⚠️ API недоступен - используем mock сигналы')
       const pairs = selectedMarket === 'forex' 
         ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
         : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)']
@@ -7171,6 +7236,7 @@ ${isLoss ? `
       setTop3Cooldown(600)
       setIsGenerating(false)
       setCurrentScreen('signal-selection')
+      console.log('✅ Mock сигналы сгенерированы:', signals)
     }
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
@@ -7214,9 +7280,11 @@ ${isLoss ? `
         }
         setGeneratedSignals([signal])
         setIsGenerating(false)
+        
         // Автоматически активируем сигнал
         activateSignal(signal)
         setCurrentScreen('main')
+        
         console.log('✅ Получен и активирован РЕАЛЬНЫЙ сигнал:', signal)
       } else {
         // Нет подходящего сигнала
@@ -7227,8 +7295,8 @@ ${isLoss ? `
       }
     } catch (error) {
       console.error('❌ Ошибка получения сигнала:', error)
-      // Fallback: генерируем моковый сигнал если API недоступен
-      console.warn('⚠️ Используем mock сигнал (API недоступен)')
+      // Fallback: генерируем mock сигнал если API недоступен
+      console.warn('⚠️ API недоступен - используем mock сигнал')
       const mockSignal = {
         signal_id: `mock_${pair.replace('/', '_')}_${Date.now()}`,
         id: Date.now(),
@@ -7246,6 +7314,7 @@ ${isLoss ? `
       setGeneratedSignals([mockSignal])
       setIsGenerating(false)
       setCurrentScreen('signal-selection')
+      console.log('✅ Mock сигнал сгенерирован:', mockSignal)
     }
   }
   // Функция для расчета оставшегося времени на основе реального времени
@@ -7272,6 +7341,11 @@ ${isLoss ? `
   }
   // Активация сигнала
   const activateSignal = (signal) => {
+    console.log('🚨 [DEBUG] activateSignal вызвана!')
+    console.log('🚨 [DEBUG] Сигнал для активации:', signal)
+    console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
+    console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
+    
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
     const startTime = Date.now() // Время начала сигнала
     setPendingSignal({
@@ -7280,6 +7354,8 @@ ${isLoss ? `
     })
     setSignalTimer(expirationSeconds)
     setIsWaitingFeedback(false)
+    // Очищаем сгенерированные сигналы из localStorage
+    localStorage.removeItem('generatedSignals')
     // Сохраняем время начала в localStorage
     localStorage.setItem('signalStartTime', startTime.toString())
   }
@@ -7349,7 +7425,10 @@ ${isLoss ? `
     }
     // Проверяем активный сигнал после авторизации
     const savedSignal = localStorage.getItem('pendingSignal')
-    if (savedSignal) {
+    const savedGeneratedSignals = localStorage.getItem('generatedSignals')
+    
+    // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
+    if (savedSignal && !savedGeneratedSignals) {
       const signal = JSON.parse(savedSignal)
       const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
       const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
@@ -7429,6 +7508,8 @@ ${isLoss ? `
                 key={language.code}
                 onClick={() => {
                   setSelectedLanguage(language.code)
+                  localStorage.setItem('selectedLanguage', language.code)
+                  setCurrentScreen('welcome')
                 }}
                 className={`glass-effect p-6 backdrop-blur-sm cursor-pointer transition-all duration-500 group card-3d border-slate-700/50 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/20 hover:scale-110 hover:-translate-y-2 ${
                   selectedLanguage === language.code 
@@ -7980,15 +8061,15 @@ ${isLoss ? `
                 {(marketMetrics[selectedMarket]?.length > 0
                   ? marketMetrics[selectedMarket]
                   : (selectedMarket === 'forex' ? [
-                      { pair: 'EUR/USD', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'GBP/USD', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'USD/JPY', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'USD/CHF', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' }
+                      { pair: 'EUR/USD', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'GBP/USD', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'USD/JPY', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'USD/CHF', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' }
                     ] : [
-                      { pair: 'EUR/USD (OTC)', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'NZD/USD (OTC)', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'USD/CHF (OTC)', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' },
-                      { pair: 'GBP/USD (OTC)', sentiment: 'Загрузка...', volatility: 0, trend: 'HOLD' }
+                      { pair: 'EUR/USD (OTC)', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'NZD/USD (OTC)', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'USD/CHF (OTC)', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' },
+                      { pair: 'GBP/USD (OTC)', sentiment: t('loadingData'), volatility: 0, trend: 'HOLD' }
                     ])
                 ).map((market, index) => (
                   <Card 
@@ -8022,11 +8103,11 @@ ${isLoss ? `
                     <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
                       <span className="text-slate-400 text-xs block mb-1">{t('mood')}</span>
                       <Badge className={`${
-                        market.sentiment === 'Бычий' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' :
-                        market.sentiment === 'Медвежий' ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' :
+                        market.sentiment === t('bullish') ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' :
+                        market.sentiment === t('bearish') ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' :
                         'bg-amber-500/20 text-amber-400 border-amber-500/50'
                       }`}>
-                        {market.sentiment === 'Бычий' ? t('bullish') : market.sentiment === 'Медвежий' ? t('bearish') : t('neutral')}
+                        {market.sentiment === t('bullish') ? t('bullish') : market.sentiment === t('bearish') ? t('bearish') : t('neutral')}
                       </Badge>
                     </div>
                     <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
@@ -8270,7 +8351,7 @@ ${isLoss ? `
                               ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                               : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                           }`}>
-                            {signal.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
+                            {signal.feedback === 'success' ? t('success') : t('failure')}
                           </Badge>
                           <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-cyan-400 mt-2" />
                         </div>
@@ -8352,7 +8433,7 @@ ${isLoss ? `
                           ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                           : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                       }`}>
-                   {selectedSignalForAnalysis.feedback === 'success' ? 'Успешно' : 'Проигрыш'}
+                   {selectedSignalForAnalysis.feedback === 'success' ? t('success') : t('failure')}
                       </Badge>
                  <span className="text-xs text-slate-500">
                    {new Date(selectedSignalForAnalysis.timestamp).toLocaleString('ru-RU')}
@@ -8973,8 +9054,10 @@ ${isLoss ? `
                 clearSignalState()
                 generateTop3Signals()
               }}
-              className={`glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-amber-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${
-                !canGenerateTop3() || (selectedMarket === 'forex' && !isForexMarketOpen()) ? 'opacity-60 cursor-not-allowed' : ''
+              className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${
+                !canGenerateTop3() || (selectedMarket === 'forex' && !isForexMarketOpen()) 
+                  ? 'opacity-60 cursor-not-allowed' 
+                  : 'cursor-pointer hover:border-amber-500/50'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -8990,9 +9073,14 @@ ${isLoss ? `
                       </Badge>
                     </div>
                     <p className="text-slate-400 text-sm mb-3">{t('bestOpportunitiesOfDay')}</p>
+                    {selectedMarket === 'forex' && !isForexMarketOpen() && (
+                      <p className="text-xs text-rose-400 mb-2">
+                        {t('forexMarketClosedLabel')}
+                      </p>
+                    )}
                     {!canGenerateTop3() && (
                       <p className="text-xs text-amber-400 mb-2">
-                        Доступно через: {Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)} мин
+                        {t('availableIn', {minutes: Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)})}
                       </p>
                     )}
                     <div className="space-y-1">
@@ -9558,7 +9646,7 @@ ${isLoss ? `
                       <div className="flex items-center gap-3">
                         <span className="text-emerald-400 font-bold">{item.successful} {t('successful')}</span>
                         <span className="text-slate-600">•</span>
-                        <span className="text-rose-400 font-bold">{item.failed} проигрышных</span>
+                        <span className="text-rose-400 font-bold">{item.failed} {t('failed')}</span>
                       </div>
                     </div>
                     <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden border border-slate-700/30 flex">
@@ -9893,7 +9981,7 @@ ${isLoss ? `
                       <div className="flex items-center gap-3">
                         <span className="text-emerald-400 font-bold">{item.successful} {t('successful')}</span>
                         <span className="text-slate-600">•</span>
-                        <span className="text-rose-400 font-bold">{item.failed} проигрышных</span>
+                        <span className="text-rose-400 font-bold">{item.failed} {t('failed')}</span>
                       </div>
                     </div>
                     <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden border border-slate-700/30 flex">
@@ -9963,7 +10051,7 @@ ${isLoss ? `
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-slate-300 font-medium">{t('mlModel')}</span>
                   <Badge className={`${selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-slate-500/20 text-slate-400 border-slate-500/50'}`}>
-                    {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? 'Активна' : 'Неактивна'}
+                    {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? t('active') : t('inactive')}
                   </Badge>
                 </div>
                 <div className="space-y-4">
@@ -10124,7 +10212,7 @@ ${isLoss ? `
                   <h3 className="text-xl font-bold text-white mb-1">
                     🎯 АКТИВНАЯ МОДЕЛЬ: {mlModels.find(m => m.status === 'active')?.emoji} {mlModels.find(m => m.status === 'active')?.name}
                   </h3>
-                  <p className="text-emerald-400 text-sm">✅ Модель обучена и готова к работе</p>
+                  <p className="text-emerald-400 text-sm">✅ {t('modelReady')}</p>
                 </div>
               </div>
               <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
@@ -10514,7 +10602,7 @@ ${isLoss ? `
                           ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
                           : 'bg-rose-500/20 text-rose-400 border-rose-500/50'
                       }`}>
-                        {signal.result === 'profit' ? 'Успешно' : 'Проигрыш'}
+                        {signal.result === 'profit' ? t('success') : t('failure')}
                       </Badge>
                       <div className="text-xs text-slate-500 mt-2">
                         {signal.entry} → {signal.closePrice}
