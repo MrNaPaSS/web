@@ -7160,9 +7160,9 @@ ${isLoss ? `
   const generateTop3Signals = async () => {
     setIsGenerating(true)
     setCurrentScreen('generating')
-    // Сохраняем время последней генерации топ-3
     setLastTop3Generation(new Date().toISOString())
-    // Этапы генерации
+    
+    // Этапы генерации для UI
     const stages = [
       { stage: t('connectingToMarket'), delay: 800 },
       { stage: t('analyzingTechnicalIndicators'), delay: 1200 },
@@ -7175,8 +7175,8 @@ ${isLoss ? `
       setGenerationStage(stage)
       await new Promise(resolve => setTimeout(resolve, delay))
     }
+
     try {
-      // РЕАЛЬНЫЙ запрос к Signal API
       const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
         method: 'POST',
         headers: {
@@ -7189,40 +7189,39 @@ ${isLoss ? `
         })
       })
       const result = await response.json()
-      if (result.success && result.signals) {
-        // Преобразуем реальные сигналы в формат для UI
+
+      if (result.success && result.signals && result.signals.length > 0) {
         const signals = result.signals.map((signal, index) => ({
           ...signal,
           id: Date.now() + index,
           status: 'generated',
           time: 'Только что'
-        }))
-        setGeneratedSignals(signals)
-        localStorage.setItem('generatedSignals', JSON.stringify(signals)) // ДОБАВЛЕНО: сохранение в localStorage
-        setLastTop3Generation(Date.now())
-        setTop3Cooldown(600)
-        setIsGenerating(false)
+        }));
+
+        setGeneratedSignals(signals);
+        localStorage.setItem('generatedSignals', JSON.stringify(signals));
+        setLastTop3Generation(Date.now());
+        setTop3Cooldown(600);
         
-        // ИСПРАВЛЕНО: Возвращаемся на экран выбора ПОСЛЕ генерации
-        setCurrentScreen('signal-selection')
-        
-        console.log('✅ Получены РЕАЛЬНЫЕ сигналы, отображаем экран выбора:', signals)
+        // Корректное завершение: переход на экран ВЫБОРА
+        setIsGenerating(false);
+        setCurrentScreen('signal-selection');
+        console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
+
       } else {
-        // Нет подходящих сигналов
-        setIsGenerating(false)
-        setNoSignalAvailable(true)
-        setSignalCooldown(30)
-        // ИСПРАВЛЕНО: Возвращаемся на экран выбора, чтобы показать сообщение
-        setCurrentScreen('signal-selection')
+        // Обработка случая, когда сигналы не найдены
+        setIsGenerating(false);
+        setNoSignalAvailable(true);
+        setSignalCooldown(30);
+        setCurrentScreen('signal-selection'); // Переходим на экран выбора, чтобы показать сообщение "Нет сигналов"
       }
     } catch (error) {
-      console.error('❌ Ошибка получения сигналов:', error)
-      // Fallback: генерируем mock сигналы если API недоступен
-      console.warn('⚠️ API недоступен - используем mock сигналы')
+      console.error('❌ Ошибка получения ТОП-3 сигналов:', error);
+      // Fallback логика остается без изменений, она также ведет на 'signal-selection'
       const pairs = selectedMarket === 'forex' 
         ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
-        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)']
-      const signals = []
+        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
+      const signals = [];
       for (let i = 0; i < 3; i++) {
         signals.push({
           signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
@@ -7230,23 +7229,21 @@ ${isLoss ? `
           pair: pairs[i],
           type: Math.random() > 0.5 ? 'BUY' : 'SELL',
           direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          entry: selectedMarket === 'forex' ? (Math.random() * 2 + 1).toFixed(4) : (Math.random() * 10000 + 1000).toFixed(2),
+          entry: '0.0000',
           confidence: Math.random() * 0.3 + 0.7,
           expiration: Math.floor(Math.random() * 5) + 1,
-          signal_type: selectedMarket === 'otc' ? 'otc' : 'forex',
+          signal_type: selectedMarket,
           timestamp: new Date().toISOString(),
           status: 'generated',
           time: 'Только что'
-        })
+        });
       }
-      setGeneratedSignals(signals)
-      localStorage.setItem('generatedSignals', JSON.stringify(signals)) // ДОБАВЛЕНО: сохранение в localStorage
-      setLastTop3Generation(Date.now())
-      setTop3Cooldown(600)
-      setIsGenerating(false)
-      // ИСПРАВЛЕНО: Возвращаемся на экран выбора ПОСЛЕ генерации
-      setCurrentScreen('signal-selection')
-      console.log('✅ Mock сигналы сгенерированы, отображаем экран выбора:', signals)
+      setGeneratedSignals(signals);
+      localStorage.setItem('generatedSignals', JSON.stringify(signals));
+      setLastTop3Generation(Date.now());
+      setTop3Cooldown(600);
+      setIsGenerating(false);
+      setCurrentScreen('signal-selection');
     }
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
@@ -7895,13 +7892,6 @@ ${isLoss ? `
                   🏆 {t('top3SignalsReady')}
                 </h2>
                 <p className="text-slate-400">{t('selectSignalForActivation')}</p>
-                {/* DEBUG INFO */}
-                <div className="mt-4 p-4 bg-slate-800/50 rounded-lg text-left">
-                  <p className="text-xs text-slate-300">DEBUG: generatedSignals.length = {generatedSignals.length}</p>
-                  <p className="text-xs text-slate-300">DEBUG: selectedMode = {selectedMode}</p>
-                  <p className="text-xs text-slate-300">DEBUG: isGenerating = {isGenerating ? 'true' : 'false'}</p>
-                  <p className="text-xs text-slate-300">DEBUG: currentScreen = {currentScreen}</p>
-                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {generatedSignals.map((signal, index) => (
@@ -7909,7 +7899,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
+                      setCurrentScreen('main')
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
@@ -7996,7 +7986,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
+                      setCurrentScreen('main')
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
