@@ -7006,10 +7006,22 @@ ${isLoss ? `
     console.log('🧹 [CRITICAL] Полная очистка localStorage при загрузке приложения')
   }, [])
 
-  // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЕ useEffect ДЛЯ ГЕНЕРАЦИИ
-  // useEffect(() => {
-  //   console.log('🚫 [DISABLED] Все useEffect отключены')
-  // }, [currentScreen, selectedMode, isGenerating])
+  // НОВЫЙ useEffect для запуска генерации ТОП-3
+  useEffect(() => {
+    // Автоматически запускаем генерацию для ТОП-3 при переходе на экран выбора,
+    // но только если сигналы еще не сгенерированы.
+    console.log('🔍 [useEffect DEBUG] Проверка условий для генерации ТОП-3:');
+    console.log('🔍 [useEffect DEBUG] currentScreen:', currentScreen);
+    console.log('🔍 [useEffect DEBUG] selectedMode:', selectedMode);
+    console.log('🔍 [useEffect DEBUG] generatedSignals.length:', generatedSignals.length);
+    console.log('🔍 [useEffect DEBUG] isGenerating:', isGenerating);
+    
+    // КРИТИЧНО: Убираем generatedSignals из зависимостей, чтобы избежать повторных вызовов
+    if (currentScreen === 'signal-selection' && selectedMode === 'top3' && generatedSignals.length === 0 && !isGenerating) {
+      console.log('🚀 [useEffect Trigger] Запуск генерации ТОП-3 сигналов...');
+      generateTop3Signals();
+    }
+  }, [currentScreen, selectedMode, isGenerating]); // УБРАНО: generatedSignals
   // Загрузка статистики при переходе на экран user-stats
   useEffect(() => {
     if (currentScreen === 'user-stats') {
@@ -7038,10 +7050,17 @@ ${isLoss ? `
       return () => clearInterval(interval)
     }
   }, [userId, isAuthorized])
-  // КРИТИЧНО: ОТКЛЮЧАЕМ useEffect ДЛЯ signal-selection
-  // useEffect(() => {
-  //   console.log('🚫 [DISABLED] useEffect для signal-selection отключен')
-  // }, [currentScreen])
+  // Загрузка метрик рынка при переходе на экран выбора пар
+  useEffect(() => {
+    if (currentScreen === 'signal-selection') {
+      console.log('📊 [DEBUG] Переход на signal-selection экран')
+      console.log('📊 [DEBUG] Количество сгенерированных сигналов:', generatedSignals.length)
+      console.log('📊 [DEBUG] Сгенерированные сигналы:', generatedSignals)
+      console.log('📊 [DEBUG] selectedMode:', selectedMode)
+      console.log('📊 [DEBUG] isGenerating:', isGenerating)
+      loadMarketMetrics()
+    }
+  }, [currentScreen])
   // Предзагрузка метрик при инициализации приложения
   useEffect(() => {
     console.log('📊 Предзагружаем метрики при инициализации')
@@ -7053,14 +7072,39 @@ ${isLoss ? `
       loadUserSignalsHistory()
     }
   }, [currentScreen])
-  // КРИТИЧНО: ОТКЛЮЧАЕМ СОХРАНЕНИЕ pendingSignal В localStorage
-  // useEffect(() => {
-  //   console.log('🚫 [DISABLED] Сохранение pendingSignal отключено')
-  // }, [pendingSignal, signalTimer, isWaitingFeedback])
-  // КРИТИЧНО: ОТКЛЮЧАЕМ ТАЙМЕР ДЛЯ СИГНАЛА
-  // useEffect(() => {
-  //   console.log('🚫 [DISABLED] Таймер для сигнала отключен')
-  // }, [pendingSignal, signalTimer, isWaitingFeedback])
+  // Сохранение активного сигнала в localStorage
+  useEffect(() => {
+    if (pendingSignal) {
+      localStorage.setItem('pendingSignal', JSON.stringify(pendingSignal))
+      localStorage.setItem('signalTimer', signalTimer.toString())
+      localStorage.setItem('isWaitingFeedback', isWaitingFeedback.toString())
+      if (pendingSignal.startTime) {
+        localStorage.setItem('signalStartTime', pendingSignal.startTime.toString())
+      }
+    } else {
+      localStorage.removeItem('pendingSignal')
+      localStorage.removeItem('signalTimer')
+      localStorage.removeItem('isWaitingFeedback')
+      localStorage.removeItem('signalStartTime')
+    }
+  }, [pendingSignal, signalTimer, isWaitingFeedback])
+  // Таймер для сигнала
+  useEffect(() => {
+    let interval = null
+    if (pendingSignal && !isWaitingFeedback) {
+      interval = setInterval(() => {
+        // Рассчитываем оставшееся время на основе реального времени
+        const remainingTime = calculateRemainingTime(pendingSignal)
+        if (remainingTime <= 0) {
+          setSignalTimer(0)
+            setIsWaitingFeedback(true)
+        } else {
+          setSignalTimer(remainingTime)
+          }
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [pendingSignal, signalTimer, isWaitingFeedback])
   // Таймер cooldown для ТОП-3
   useEffect(() => {
     let interval = null
@@ -7091,87 +7135,11 @@ ${isLoss ? `
     }
   }, [noSignalAvailable])
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
+  // КРИТИЧНО: ОТКЛЮЧАЕМ generateTop3Signals ПОЛНОСТЬЮ
   const generateTop3Signals = async () => {
-    // КРИТИЧНО: Полностью очищаем localStorage перед генерацией
-    localStorage.removeItem('pendingSignal')
-    localStorage.removeItem('signalActivated')
-    localStorage.removeItem('signalTimer')
-    localStorage.removeItem('isWaitingFeedback')
-    localStorage.removeItem('signalStartTime')
-    localStorage.removeItem('generatedSignals')
-    
-    setIsGenerating(true)
-    setCurrentScreen('generating')
-    setLastTop3Generation(new Date().toISOString())
-    
-    // Этапы генерации для UI
-    const stages = [
-      { stage: t('connectingToMarket'), delay: 800 },
-      { stage: t('analyzingTechnicalIndicators'), delay: 1200 },
-      { stage: t('evaluatingNewsBackground'), delay: 1000 },
-      { stage: t('calculatingOptimalExpiration'), delay: 900 },
-      { stage: t('applyingMLModels'), delay: 1100 },
-      { stage: t('formingTop3Signals'), delay: 1000 }
-    ]
-    for (const { stage, delay } of stages) {
-      setGenerationStage(stage)
-      await new Promise(resolve => setTimeout(resolve, delay))
-    }
-
-    try {
-      const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          market: selectedMarket,
-          mode: 'top3'
-        })
-      });
-      const result = await response.json();
-
-      if (result.success && result.signals && result.signals.length > 0) {
-        // ЭТОТ БЛОК ВЫПОЛНЯЕТСЯ, КОГДА СЕРВЕР ВКЛЮЧЕН
-        console.log('[TRY-БЛОК] API вернул', result.signals.length, 'сигнала(ов).');
-        const signals = result.signals.map((signal, index) => ({
-          ...signal,
-          id: Date.now() + index,
-          status: 'generated',
-          time: 'Только что'
-        }));
-        setGeneratedSignals(signals);
-        localStorage.setItem('generatedSignals', JSON.stringify(signals));
-        setLastTop3Generation(Date.now());
-        setTop3Cooldown(600);
-      } else {
-        // Сервер ответил, но сигналов нет
-        console.log('[TRY-БЛОК] API не нашел подходящих сигналов.');
-        setGeneratedSignals([]);
-        localStorage.removeItem('generatedSignals');
-        setNoSignalAvailable(true);
-        setSignalCooldown(30);
-      }
-    } catch (error) {
-      // ЭТОТ БЛОК ВЫПОЛНЯЕТСЯ, КОГДА СЕРВЕР ВЫКЛЮЧЕН
-      console.error('❌ [CATCH-БЛОК] Ошибка сети, генерируем mock-сигналы:', error);
-      const mockSignals = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'].map((pair, i) => ({
-        signal_id: `mock_${pair.replace(/[\/() ]/g, '_')}_${Date.now()}_${i}`,
-        id: Date.now() + i, pair, type: i % 2 === 0 ? 'BUY' : 'SELL', direction: i % 2 === 0 ? 'BUY' : 'SELL', entry: '0.0000',
-        confidence: 0.7 + i * 0.05, expiration: i + 2, signal_type: 'otc', timestamp: new Date().toISOString(), status: 'generated', time: 'Только что'
-      }));
-      setGeneratedSignals(mockSignals);
-      localStorage.setItem('generatedSignals', JSON.stringify(mockSignals));
-    } finally {
-      // ЭТОТ БЛОК ВЫПОЛНЯЕТСЯ ВСЕГДА В КОНЦЕ - И ПРИ УСПЕХЕ, И ПРИ ОШИБКЕ
-      console.log('[FINALLY-БЛОК] Завершение генерации. Гарантированный переход на signal-selection.');
-      setIsGenerating(false);
-      
-      // КРИТИЧНО: Принудительная задержка для предотвращения перехвата навигации
-      setTimeout(() => {
-        console.log('[FINALLY-БЛОК] Принудительный переход на signal-selection через 100ms');
-        setCurrentScreen('signal-selection');
-      }, 100);
-    }
+    console.log('🚫 [DISABLED] generateTop3Signals ОТКЛЮЧЕНА!')
+    console.log('🚫 [DISABLED] НЕ ВЫПОЛНЯЕМ ГЕНЕРАЦИЮ!')
+    return; // Полностью блокируем генерацию
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
   const generateSignalForPair = async (pair) => {
@@ -7278,13 +7246,30 @@ ${isLoss ? `
     localStorage.removeItem('signalActivated') // ДОБАВЛЕНО: очистка флага активации
     console.log('🧹 [DEBUG] Все состояние сигналов очищено')
   }
-  // КРИТИЧНО: ОТКЛЮЧАЕМ activateSignal ПОЛНОСТЬЮ
+  // Активация сигнала
   const activateSignal = (signal) => {
-    console.log('🚫 [DISABLED] activateSignal ОТКЛЮЧЕНА!')
-    console.log('🚫 [DISABLED] Сигнал:', signal)
-    console.log('🚫 [DISABLED] Текущий экран:', currentScreen)
-    console.log('🚫 [DISABLED] НЕ ВЫПОЛНЯЕМ АКТИВАЦИЮ!')
-    return; // Полностью блокируем активацию
+    console.log('🚨 [DEBUG] activateSignal вызвана!')
+    console.log('🚨 [DEBUG] Сигнал для активации:', signal)
+    console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
+    console.log('🚨 [DEBUG] Это РУЧНАЯ активация пользователем - НЕ автоматическая!')
+    console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
+    
+    const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
+    const startTime = Date.now() // Время начала сигнала
+    setPendingSignal({
+      ...signal,
+      startTime: startTime
+    })
+    setSignalTimer(expirationSeconds)
+    setIsWaitingFeedback(false)
+    // Очищаем сгенерированные сигналы из localStorage
+    localStorage.removeItem('generatedSignals')
+    // Сохраняем время начала в localStorage
+    localStorage.setItem('signalStartTime', startTime.toString())
+    // Сохраняем флаг активации
+    localStorage.setItem('signalActivated', 'true')
+    // Переходим на экран активной сделки
+    setCurrentScreen('main')
   }
   // Отправка фидбека на бэкенд
   const submitFeedback = async (isSuccess) => {
