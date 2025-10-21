@@ -7036,6 +7036,16 @@ ${isLoss ? `
       setSelectedLanguage(savedLanguage)
     }
   }, [])
+
+  // НОВЫЙ useEffect для запуска генерации ТОП-3
+  useEffect(() => {
+    // Автоматически запускаем генерацию для ТОП-3 при переходе на экран выбора,
+    // но только если сигналы еще не сгенерированы.
+    if (currentScreen === 'signal-selection' && selectedMode === 'top3' && generatedSignals.length === 0 && !isGenerating) {
+      console.log('🚀 [useEffect Trigger] Запуск генерации ТОП-3 сигналов...');
+      generateTop3Signals();
+    }
+  }, [currentScreen, selectedMode, generatedSignals, isGenerating]);
   // Загрузка статистики при переходе на экран user-stats
   useEffect(() => {
     if (currentScreen === 'user-stats') {
@@ -7193,19 +7203,16 @@ ${isLoss ? `
         setTop3Cooldown(600)
         setIsGenerating(false)
         
-        // НЕ активируем автоматически - показываем экран выбора для ТОП-3
-        if (signals.length > 0) {
-          setCurrentScreen('signal-selection')
-          console.log('✅ Переходим на экран выбора ТОП-3 сигналов:', signals.length)
-        } else {
-          setCurrentScreen('signal-selection')
-        }
-        console.log('✅ Получены РЕАЛЬНЫЕ сигналы:', signals)
+        // ИСПРАВЛЕНО: Возвращаемся на экран выбора ПОСЛЕ генерации
+        setCurrentScreen('signal-selection')
+        
+        console.log('✅ Получены РЕАЛЬНЫЕ сигналы, отображаем экран выбора:', signals)
       } else {
         // Нет подходящих сигналов
         setIsGenerating(false)
         setNoSignalAvailable(true)
         setSignalCooldown(30)
+        // ИСПРАВЛЕНО: Возвращаемся на экран выбора, чтобы показать сообщение
         setCurrentScreen('signal-selection')
       }
     } catch (error) {
@@ -7237,8 +7244,9 @@ ${isLoss ? `
       setLastTop3Generation(Date.now())
       setTop3Cooldown(600)
       setIsGenerating(false)
+      // ИСПРАВЛЕНО: Возвращаемся на экран выбора ПОСЛЕ генерации
       setCurrentScreen('signal-selection')
-      console.log('✅ Mock сигналы сгенерированы:', signals)
+      console.log('✅ Mock сигналы сгенерированы, отображаем экран выбора:', signals)
     }
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
@@ -9052,10 +9060,11 @@ ${isLoss ? `
                   alert(t('top3CooldownMessage', {minutes: minutes, seconds: seconds.toString().padStart(2, '0')}))
                   return
                 }
+                // ИСПРАВЛЕНО: Убираем прямой вызов генерации.
+                // Только устанавливаем режим и переходим на следующий экран.
                 setSelectedMode('top3')
-                // Очищаем состояние сгенерированных сигналов
                 clearSignalState()
-                generateTop3Signals()
+                setCurrentScreen('signal-selection')
               }}
               className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${
                 !canGenerateTop3() || (selectedMarket === 'forex' && !isForexMarketOpen()) 
