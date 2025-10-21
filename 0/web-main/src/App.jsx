@@ -7016,11 +7016,12 @@ ${isLoss ? `
     console.log('🔍 [useEffect DEBUG] generatedSignals.length:', generatedSignals.length);
     console.log('🔍 [useEffect DEBUG] isGenerating:', isGenerating);
     
+    // КРИТИЧНО: Убираем generatedSignals из зависимостей, чтобы избежать повторных вызовов
     if (currentScreen === 'signal-selection' && selectedMode === 'top3' && generatedSignals.length === 0 && !isGenerating) {
       console.log('🚀 [useEffect Trigger] Запуск генерации ТОП-3 сигналов...');
       generateTop3Signals();
     }
-  }, [currentScreen, selectedMode, generatedSignals, isGenerating]);
+  }, [currentScreen, selectedMode, isGenerating]); // УБРАНО: generatedSignals
   // Загрузка статистики при переходе на экран user-stats
   useEffect(() => {
     if (currentScreen === 'user-stats') {
