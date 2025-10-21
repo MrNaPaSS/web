@@ -6768,7 +6768,7 @@ ${isLoss ? `
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer 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',
+          'Authorization': `Bearer ${process.env.REACT_APP_OPENROUTER_API_KEY || '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'}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': window.location.origin,
           'X-Title': 'Forex Signals Pro'

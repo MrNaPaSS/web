@@ -14,6 +14,9 @@ class BotConfig:
     # Telegram Bot Token (сигнальный бот) - ТЕСТОВЫЙ
     BOT_TOKEN = "8365963410:AAFVnrFboehOUxWmkeivDVvC4nft_hjjcCQ"
     
+    # OpenRouter API Key для GPT-4o mini анализа
+    OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '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')
+    
     # Twelvedata API Keys (ротация для избежания лимитов)
     TWELVEDATA_API_KEYS = [
         "db0b6170bf88422890f72d31cde96d73",  # Новый основной ключ

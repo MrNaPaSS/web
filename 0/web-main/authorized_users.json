@@ -9,7 +9,7 @@
     7777777777,
     733048996
   ],
-  "last_updated": "2025-10-20T22:00:27.967452",
+  "last_updated": "2025-10-22T01:24:18.291594",
   "511442168": {
     "telegram_id": "511442168",
     "first_name": "Admin",
@@ -32,38 +32,10 @@
     "language_code": "ru",
     "is_premium": false,
     "is_admin": false,
-    "last_login": "2025-10-19T18:07:05.154016",
+    "last_login": "2025-10-22T01:24:18.291594",
     "subscriptions": [
       "logistic-spy"
     ],
-    "created_at": "2025-10-19T18:07:05.154016"
-  },
-  "7613535490": {
-    "telegram_id": "7613535490",
-    "first_name": ".",
-    "last_name": "",
-    "username": "",
-    "language_code": "ru",
-    "is_premium": false,
-    "is_admin": false,
-    "last_login": "2025-10-20T22:00:27.967452",
-    "subscriptions": [
-      "logistic-spy"
-    ],
-    "created_at": "2025-10-20T22:00:27.967452"
-  },
-  "733048996": {
-    "telegram_id": "733048996",
-    "first_name": "โย",
-    "last_name": "",
-    "username": "xgbrina",
-    "language_code": "ru",
-    "is_premium": false,
-    "is_admin": false,
-    "last_login": "2025-10-20T19:17:14.411127",
-    "subscriptions": [
-      "logistic-spy"
-    ],
-    "created_at": "2025-10-20T19:17:14.411127"
+    "created_at": "2025-10-22T01:24:18.291594"
   }
 }
