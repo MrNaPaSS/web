@@ -7196,6 +7196,14 @@ ${isLoss ? `
   }, [noSignalAvailable])
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
   const generateTop3Signals = async () => {
+    // КРИТИЧНО: Полностью очищаем localStorage перед генерацией
+    localStorage.removeItem('pendingSignal')
+    localStorage.removeItem('signalActivated')
+    localStorage.removeItem('signalTimer')
+    localStorage.removeItem('isWaitingFeedback')
+    localStorage.removeItem('signalStartTime')
+    localStorage.removeItem('generatedSignals')
+    
     setIsGenerating(true)
     setCurrentScreen('generating')
     setLastTop3Generation(new Date().toISOString())
