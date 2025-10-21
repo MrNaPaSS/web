@@ -7322,40 +7322,13 @@ ${isLoss ? `
     localStorage.removeItem('signalActivated') // ДОБАВЛЕНО: очистка флага активации
     console.log('🧹 [DEBUG] Все состояние сигналов очищено')
   }
-  // Активация сигнала
+  // КРИТИЧНО: ОТКЛЮЧАЕМ activateSignal ПОЛНОСТЬЮ
   const activateSignal = (signal) => {
-    console.log('🚨 [DEBUG] activateSignal вызвана!')
-    console.log('🚨 [DEBUG] Сигнал для активации:', signal)
-    console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
-    console.log('🚨 [DEBUG] generatedSignals.length:', generatedSignals.length)
-    console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
-    
-    // КРИТИЧНО: Проверяем, что это НЕ автоматический вызов
-    if (currentScreen !== 'signal-selection') {
-      console.error('🚨 [CRITICAL] activateSignal вызвана НЕ с экрана signal-selection!')
-      console.error('🚨 [CRITICAL] currentScreen:', currentScreen)
-      console.error('🚨 [CRITICAL] Это автоматический вызов - БЛОКИРУЕМ!')
-      return; // Блокируем автоматическую активацию
-    }
-    
-    console.log('✅ [DEBUG] Это РУЧНАЯ активация пользователем с экрана signal-selection')
-    
-    const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
-    const startTime = Date.now() // Время начала сигнала
-    setPendingSignal({
-      ...signal,
-      startTime: startTime
-    })
-    setSignalTimer(expirationSeconds)
-    setIsWaitingFeedback(false)
-    // Очищаем сгенерированные сигналы из localStorage
-    localStorage.removeItem('generatedSignals')
-    // Сохраняем время начала в localStorage
-    localStorage.setItem('signalStartTime', startTime.toString())
-    // Сохраняем флаг активации
-    localStorage.setItem('signalActivated', 'true')
-    // Переходим на экран активной сделки
-    setCurrentScreen('main')
+    console.log('🚫 [DISABLED] activateSignal ОТКЛЮЧЕНА!')
+    console.log('🚫 [DISABLED] Сигнал:', signal)
+    console.log('🚫 [DISABLED] Текущий экран:', currentScreen)
+    console.log('🚫 [DISABLED] НЕ ВЫПОЛНЯЕМ АКТИВАЦИЮ!')
+    return; // Полностью блокируем активацию
   }
   // Отправка фидбека на бэкенд
   const submitFeedback = async (isSuccess) => {
