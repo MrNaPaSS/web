@@ -7068,6 +7068,7 @@ ${isLoss ? `
   // Сохранение активного сигнала в localStorage
   useEffect(() => {
     if (pendingSignal) {
+      console.log('🚨 [DEBUG] ===== PENDING SIGNAL ИЗМЕНИЛСЯ =====')
       console.log('🔄 [DEBUG] pendingSignal изменился')
       console.log('🔄 [DEBUG] pendingSignal:', pendingSignal)
       console.log('🔄 [DEBUG] currentScreen:', currentScreen)
@@ -7080,6 +7081,7 @@ ${isLoss ? `
       } else {
         console.log('🔄 [DEBUG] Остаемся на signal-selection для выбора сигнала')
       }
+      console.log('🚨 [DEBUG] ===== КОНЕЦ PENDING SIGNAL =====')
       localStorage.setItem('pendingSignal', JSON.stringify(pendingSignal))
       localStorage.setItem('signalTimer', signalTimer.toString())
       localStorage.setItem('isWaitingFeedback', isWaitingFeedback.toString())
@@ -7186,6 +7188,7 @@ ${isLoss ? `
         setIsGenerating(false)
         // НЕ активируем автоматически - показываем экран выбора
         if (signals.length > 0) {
+          console.log('🚨 [TOP-3] ===== НАЧАЛО ОБРАБОТКИ СИГНАЛОВ =====')
           console.log('✅ [TOP-3] Получены сигналы:', signals.length, 'штук')
           console.log('✅ [TOP-3] Сигналы:', signals.map(s => `${s.pair} ${s.type}`))
           console.log('✅ [TOP-3] Текущий экран перед установкой:', currentScreen)
@@ -7193,6 +7196,7 @@ ${isLoss ? `
           setCurrentScreen('signal-selection')
           console.log('✅ [TOP-3] Экран установлен:', 'signal-selection')
           console.log('✅ [TOP-3] generatedSignals установлены:', signals.length, 'сигналов')
+          console.log('🚨 [TOP-3] ===== КОНЕЦ ОБРАБОТКИ СИГНАЛОВ =====')
         } else {
           console.log('⚠️ [TOP-3] Нет сигналов, но переходим на signal-selection')
           setCurrentScreen('signal-selection')
