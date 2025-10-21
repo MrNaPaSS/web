@@ -7209,7 +7209,12 @@ ${isLoss ? `
       // ЭТОТ БЛОК ВЫПОЛНЯЕТСЯ ВСЕГДА В КОНЦЕ - И ПРИ УСПЕХЕ, И ПРИ ОШИБКЕ
       console.log('[FINALLY-БЛОК] Завершение генерации. Гарантированный переход на signal-selection.');
       setIsGenerating(false);
-      setCurrentScreen('signal-selection');
+      
+      // КРИТИЧНО: Принудительная задержка для предотвращения перехвата навигации
+      setTimeout(() => {
+        console.log('[FINALLY-БЛОК] Принудительный переход на signal-selection через 100ms');
+        setCurrentScreen('signal-selection');
+      }, 100);
     }
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
@@ -7322,8 +7327,18 @@ ${isLoss ? `
     console.log('🚨 [DEBUG] activateSignal вызвана!')
     console.log('🚨 [DEBUG] Сигнал для активации:', signal)
     console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
-    console.log('🚨 [DEBUG] Это РУЧНАЯ активация пользователем - НЕ автоматическая!')
+    console.log('🚨 [DEBUG] generatedSignals.length:', generatedSignals.length)
     console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
+    
+    // КРИТИЧНО: Проверяем, что это НЕ автоматический вызов
+    if (currentScreen !== 'signal-selection') {
+      console.error('🚨 [CRITICAL] activateSignal вызвана НЕ с экрана signal-selection!')
+      console.error('🚨 [CRITICAL] currentScreen:', currentScreen)
+      console.error('🚨 [CRITICAL] Это автоматический вызов - БЛОКИРУЕМ!')
+      return; // Блокируем автоматическую активацию
+    }
+    
+    console.log('✅ [DEBUG] Это РУЧНАЯ активация пользователем с экрана signal-selection')
     
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
     const startTime = Date.now() // Время начала сигнала
