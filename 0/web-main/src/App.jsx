@@ -8,6 +8,9 @@ import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 function App() {
+  // ВЕРСИЯ ПРИЛОЖЕНИЯ - для проверки обновлений
+  console.log('🚀 APP VERSION: 2024.12.19 - VIP BUTTON FIXED')
+  
   // КОНФИГУРАЦИЯ АДМИНА - ЗДЕСЬ УКАЖИ СВОЙ TELEGRAM ID
   const ADMIN_TELEGRAM_ID = '511442168' // ЗАМЕНИ НА СВОЙ РЕАЛЬНЫЙ TELEGRAM ID!
   // Функция для определения правильного API URL
