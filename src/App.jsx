@@ -581,7 +581,6 @@ function App() {
       confidence: 'Уверенность',
       clickToActivate: 'Нажмите для активации',
       signalReady: 'Сигнал готов',
-      activateSignal: 'Активировать',
       activateSignalForTrading: 'Активируйте сигнал для торговли',
       // Подтверждения
       confirmDeleteUser: 'Вы уверены, что хотите удалить пользователя',
@@ -1086,7 +1085,6 @@ function App() {
       confidence: 'Confidence',
       clickToActivate: 'Click to activate',
       signalReady: 'Signal ready',
-      activateSignal: 'Activate',
       activateSignalForTrading: 'Activate signal for trading',
       // Подтверждения
       confirmDeleteUser: 'Are you sure you want to delete user',
@@ -1550,7 +1548,6 @@ function App() {
       confidence: 'ความมั่นใจ',
       clickToActivate: 'คลิกเพื่อเปิดใช้งาน',
       signalReady: 'สัญญาณพร้อม',
-      activateSignal: 'เปิดใช้งาน',
       activateSignalForTrading: 'เปิดใช้งานสัญญาณสำหรับการเทรด',
       // Подтверждения
       confirmDeleteUser: 'คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้',
@@ -1992,7 +1989,6 @@ function App() {
       confidence: 'Confianza',
       clickToActivate: 'Haz clic para activar',
       signalReady: 'Señal lista',
-      activateSignal: 'Activar',
       activateSignalForTrading: 'Activa la señal para trading',
       // Подтверждения
       confirmDeleteUser: '¿Estás seguro de que quieres eliminar al usuario',
@@ -2447,7 +2443,6 @@ function App() {
       confidence: 'Confiance',
       clickToActivate: 'Cliquez pour activer',
       signalReady: 'Signal prêt',
-      activateSignal: 'Activer',
       activateSignalForTrading: 'Activez le signal pour le trading',
       // Подтверждения
       confirmDeleteUser: 'Êtes-vous sûr de vouloir supprimer l\'utilisateur',
@@ -2902,7 +2897,6 @@ function App() {
       confidence: 'Vertrauen',
       clickToActivate: 'Klicken Sie zum Aktivieren',
       signalReady: 'Signal bereit',
-      activateSignal: 'Aktivieren',
       activateSignalForTrading: 'Signal für Trading aktivieren',
       // Подтверждения
       confirmDeleteUser: 'Sind Sie sicher, dass Sie den Benutzer löschen möchten',
@@ -3358,7 +3352,6 @@ function App() {
       confidence: 'Fiducia',
       clickToActivate: 'Clicca per attivare',
       signalReady: 'Segnale pronto',
-      activateSignal: 'Attiva',
       activateSignalForTrading: 'Attiva il segnale per il trading',
       // Подтверждения
       confirmDeleteUser: 'Sei sicuro di voler eliminare l\'utente',
@@ -3751,7 +3744,6 @@ function App() {
       confidence: 'Confiança',
       clickToActivate: 'Clique para ativar',
       signalReady: 'Sinal pronto',
-      activateSignal: 'Ativar',
       activateSignalForTrading: 'Ative o sinal para trading',
       // Подтверждения
       confirmDeleteUser: 'Tem certeza de que deseja excluir o usuário',
@@ -4144,7 +4136,6 @@ function App() {
       confidence: '信心',
       clickToActivate: '点击激活',
       signalReady: '信号就绪',
-      activateSignal: '激活',
       activateSignalForTrading: '激活交易信号',
       // Подтверждения
       confirmDeleteUser: '您确定要删除用户',
@@ -7077,9 +7068,16 @@ ${isLoss ? `
   // Сохранение активного сигнала в localStorage
   useEffect(() => {
     if (pendingSignal) {
-      console.log('🔄 [DEBUG] pendingSignal изменился, переходим на main экран')
+      console.log('🔄 [DEBUG] pendingSignal изменился')
       console.log('🔄 [DEBUG] pendingSignal:', pendingSignal)
-      setCurrentScreen('main')
+      console.log('🔄 [DEBUG] currentScreen:', currentScreen)
+      // НЕ переходим на main экран если мы на signal-selection - пользователь должен выбрать сигнал
+      if (currentScreen !== 'signal-selection') {
+        console.log('🔄 [DEBUG] Переходим на main экран')
+        setCurrentScreen('main')
+      } else {
+        console.log('🔄 [DEBUG] Остаемся на signal-selection для выбора сигнала')
+      }
       localStorage.setItem('pendingSignal', JSON.stringify(pendingSignal))
       localStorage.setItem('signalTimer', signalTimer.toString())
       localStorage.setItem('isWaitingFeedback', isWaitingFeedback.toString())
@@ -7349,8 +7347,6 @@ ${isLoss ? `
     setIsWaitingFeedback(false)
     // Сохраняем время начала в localStorage
     localStorage.setItem('signalStartTime', startTime.toString())
-    // Переходим на экран main после активации сигнала
-    setCurrentScreen('main')
   }
   // Отправка фидбека на бэкенд
   const submitFeedback = async (isSuccess) => {
@@ -7879,7 +7875,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      // Убираем принудительный переход на main - пользователь должен выбрать сигнал
+                      setCurrentScreen('main')
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
@@ -7942,16 +7938,9 @@ ${isLoss ? `
                           />
                         </div>
                       </div>
-                      {/* Activate Button */}
+                      {/* Click to Activate */}
                       <div className="text-center pt-2">
-                        <Button
-                          onClick={() => {
-                            activateSignal(signal)
-                          }}
-                          className="w-full bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white py-2 px-4 rounded-lg font-semibold shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:scale-105"
-                        >
-                          {t('activateSignal')}
-                        </Button>
+                        <span className="text-emerald-400 text-sm font-semibold">{t('clickToActivate')}</span>
                       </div>
                     </div>
                   </Card>
@@ -7973,7 +7962,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      // Убираем принудительный переход на main - пользователь должен выбрать сигнал
+                      setCurrentScreen('main')
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
