@@ -1,0 +1,9 @@
+tunnel: quick-tunnel
+ingress:
+  - hostname: biographies-posted-modem-usd.trycloudflare.com
+    service: http://localhost:8000
+  - hostname: auth.biographies-posted-modem-usd.trycloudflare.com  
+    service: http://localhost:8000
+  - hostname: api.biographies-posted-modem-usd.trycloudflare.com
+    service: http://localhost:8000
+  - service: http_status:404
