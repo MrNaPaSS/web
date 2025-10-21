@@ -7369,6 +7369,8 @@ ${isLoss ? `
     localStorage.removeItem('generatedSignals')
     // Сохраняем время начала в localStorage
     localStorage.setItem('signalStartTime', startTime.toString())
+    // Переходим на экран активной сделки
+    setCurrentScreen('main')
   }
   // Отправка фидбека на бэкенд
   const submitFeedback = async (isSuccess) => {
@@ -7900,7 +7902,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      setCurrentScreen('main')
+                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
@@ -7987,7 +7989,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      setCurrentScreen('main')
+                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
