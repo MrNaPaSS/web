@@ -7895,6 +7895,13 @@ ${isLoss ? `
                   🏆 {t('top3SignalsReady')}
                 </h2>
                 <p className="text-slate-400">{t('selectSignalForActivation')}</p>
+                {/* DEBUG INFO */}
+                <div className="mt-4 p-4 bg-slate-800/50 rounded-lg text-left">
+                  <p className="text-xs text-slate-300">DEBUG: generatedSignals.length = {generatedSignals.length}</p>
+                  <p className="text-xs text-slate-300">DEBUG: selectedMode = {selectedMode}</p>
+                  <p className="text-xs text-slate-300">DEBUG: isGenerating = {isGenerating ? 'true' : 'false'}</p>
+                  <p className="text-xs text-slate-300">DEBUG: currentScreen = {currentScreen}</p>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {generatedSignals.map((signal, index) => (
