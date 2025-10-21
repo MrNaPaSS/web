@@ -6870,17 +6870,11 @@ ${isLoss ? `
         const savedSignal = localStorage.getItem('pendingSignal')
         const savedGeneratedSignals = localStorage.getItem('generatedSignals')
         
-        // Восстанавливаем сгенерированные сигналы если они есть
+        // КРИТИЧНО: ОТКЛЮЧАЕМ ВОССТАНОВЛЕНИЕ СИГНАЛОВ
         if (savedGeneratedSignals) {
-          try {
-            const signals = JSON.parse(savedGeneratedSignals)
-            setGeneratedSignals(signals)
-            setCurrentScreen('signal-selection')
-            console.log('✅ Восстановлены сгенерированные сигналы из localStorage:', signals.length)
-          } catch (error) {
-            console.error('❌ Ошибка восстановления generatedSignals:', error)
-            localStorage.removeItem('generatedSignals')
-          }
+          console.log('🚫 [DISABLED] Восстановление сигналов ОТКЛЮЧЕНО!')
+          console.log('🚫 [DISABLED] НЕ ВОССТАНАВЛИВАЕМ СИГНАЛЫ!')
+          localStorage.removeItem('generatedSignals') // Очищаем сохраненные сигналы
         }
         
         // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЮ ЛОГИКУ ВОССТАНОВЛЕНИЯ
@@ -7135,11 +7129,107 @@ ${isLoss ? `
     }
   }, [noSignalAvailable])
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
-  // КРИТИЧНО: ОТКЛЮЧАЕМ generateTop3Signals ПОЛНОСТЬЮ
   const generateTop3Signals = async () => {
-    console.log('🚫 [DISABLED] generateTop3Signals ОТКЛЮЧЕНА!')
-    console.log('🚫 [DISABLED] НЕ ВЫПОЛНЯЕМ ГЕНЕРАЦИЮ!')
-    return; // Полностью блокируем генерацию
+    // КРИТИЧНО: Полностью очищаем localStorage перед генерацией
+    localStorage.removeItem('pendingSignal')
+    localStorage.removeItem('signalActivated')
+    localStorage.removeItem('signalTimer')
+    localStorage.removeItem('isWaitingFeedback')
+    localStorage.removeItem('signalStartTime')
+    localStorage.removeItem('generatedSignals')
+    
+    setIsGenerating(true)
+    setCurrentScreen('generating')
+    setLastTop3Generation(new Date().toISOString())
+    
+    // Этапы генерации для UI
+    const stages = [
+      { stage: t('connectingToMarket'), delay: 800 },
+      { stage: t('analyzingTechnicalIndicators'), delay: 1200 },
+      { stage: t('evaluatingNewsBackground'), delay: 1000 },
+      { stage: t('calculatingOptimalExpiration'), delay: 900 },
+      { stage: t('applyingMLModels'), delay: 1100 },
+      { stage: t('formingTop3Signals'), delay: 1000 }
+    ]
+    for (const { stage, delay } of stages) {
+      setGenerationStage(stage)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+
+    try {
+      const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          market: selectedMarket,
+          mode: 'top3'
+        })
+      })
+      const result = await response.json()
+
+      if (result.success && result.signals && result.signals.length > 0) {
+        const signals = result.signals.map((signal, index) => ({
+          ...signal,
+          id: Date.now() + index,
+          status: 'generated',
+          time: 'Только что'
+        }));
+
+        setGeneratedSignals(signals);
+        localStorage.setItem('generatedSignals', JSON.stringify(signals));
+        setLastTop3Generation(Date.now());
+        setTop3Cooldown(600);
+        
+        // Корректное завершение: переход на экран ВЫБОРА
+        setIsGenerating(false);
+        setCurrentScreen('signal-selection');
+        console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
+        console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
+        console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
+        console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
+        console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
+        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
+
+      } else {
+        // Обработка случая, когда сигналы не найдены
+        setIsGenerating(false);
+        setNoSignalAvailable(true);
+        setSignalCooldown(30);
+        setCurrentScreen('signal-selection'); // Переходим на экран выбора, чтобы показать сообщение "Нет сигналов"
+      }
+    } catch (error) {
+      console.error('❌ Ошибка получения ТОП-3 сигналов:', error);
+      // Fallback логика остается без изменений, она также ведет на 'signal-selection'
+      const pairs = selectedMarket === 'forex' 
+        ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
+        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
+      const signals = [];
+      for (let i = 0; i < 3; i++) {
+        signals.push({
+          signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
+          id: Date.now() + i,
+          pair: pairs[i],
+          type: Math.random() > 0.5 ? 'BUY' : 'SELL',
+          direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
+          entry: '0.0000',
+          confidence: Math.random() * 0.3 + 0.7,
+          expiration: Math.floor(Math.random() * 5) + 1,
+          signal_type: selectedMarket,
+          timestamp: new Date().toISOString(),
+          status: 'generated',
+          time: 'Только что'
+        });
+      }
+      setGeneratedSignals(signals);
+      localStorage.setItem('generatedSignals', JSON.stringify(signals));
+      setLastTop3Generation(Date.now());
+      setTop3Cooldown(600);
+      setIsGenerating(false);
+      setCurrentScreen('signal-selection');
+    }
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
   const generateSignalForPair = async (pair) => {
