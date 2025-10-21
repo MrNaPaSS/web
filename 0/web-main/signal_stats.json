@@ -379,39 +379,119 @@
       "pair": "NZD/USD (OTC)",
       "direction": "BUY",
       "confidence": 0.7526999999999999
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "otc_EUR_USD_(OTC)_1761075251",
+      "signal_type": "otc",
+      "feedback": "failed",
+      "timestamp": "2025-10-21T21:40:17.026139",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.7508999999999999
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "otc_EUR_USD_(OTC)_1761076353",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T21:59:27.385326",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.7577999999999999
+    },
+    {
+      "user_id": "7613535490",
+      "signal_id": "mock_EUR_USD_1761078078166_0",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T22:38:37.585741",
+      "pair": "EUR/USD",
+      "direction": "BUY",
+      "confidence": 0.8810136206974655
+    },
+    {
+      "user_id": "7613535490",
+      "signal_id": "otc_EUR_USD_(OTC)_1761079130",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T22:44:14.019470",
+      "pair": "EUR/USD (OTC)",
+      "direction": "SELL",
+      "confidence": 0.7383599999999998
+    },
+    {
+      "user_id": "8428349451",
+      "signal_id": "otc_EUR_USD_(OTC)_1761070637",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T22:52:53.779571",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.7902
+    },
+    {
+      "user_id": "8428349451",
+      "signal_id": "otc_NZD_USD_(OTC)_1761079988",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T22:57:51.615780",
+      "pair": "NZD/USD (OTC)",
+      "direction": "SELL",
+      "confidence": 0.7392599999999999
+    },
+    {
+      "user_id": "8428349451",
+      "signal_id": "otc_EUR_USD_(OTC)_1761080283",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T23:01:19.582999",
+      "pair": "EUR/USD (OTC)",
+      "direction": "SELL",
+      "confidence": 0.7473599999999999
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "mock_NZD_USD (OTC)_1761080611196_1",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T23:11:35.630635",
+      "pair": "NZD/USD (OTC)",
+      "direction": "SELL",
+      "confidence": 0.9968928003372914
     }
   ],
-  "last_updated": "2025-10-21T21:12:41.619586",
-  "total_signals": 38,
-  "successful_signals": 33,
-  "failed_signals": 5,
+  "last_updated": "2025-10-21T23:11:35.630635",
+  "total_signals": 46,
+  "successful_signals": 40,
+  "failed_signals": 6,
   "win_rate": 83.3,
   "511442168": {
-    "total_signals": 44,
-    "forex_signals": 2,
-    "otc_signals": 42,
-    "successful_trades": 16,
-    "failed_trades": 3,
-    "pending_trades": 11,
-    "win_rate": 84.21052631578947
+    "total_signals": 64,
+    "forex_signals": 4,
+    "otc_signals": 60,
+    "successful_trades": 18,
+    "failed_trades": 4,
+    "pending_trades": 25,
+    "win_rate": 81.81818181818183
   },
   "8428349451": {
-    "total_signals": 8,
+    "total_signals": 19,
     "forex_signals": 3,
-    "otc_signals": 5,
-    "successful_trades": 2,
+    "otc_signals": 16,
+    "successful_trades": 5,
     "failed_trades": 0,
-    "pending_trades": 5,
+    "pending_trades": 10,
     "win_rate": 100.0
   },
   "7613535490": {
-    "total_signals": 16,
+    "total_signals": 24,
     "forex_signals": 4,
-    "otc_signals": 12,
-    "successful_trades": 3,
+    "otc_signals": 20,
+    "successful_trades": 5,
     "failed_trades": 2,
-    "pending_trades": 9,
-    "win_rate": 60.0
+    "pending_trades": 13,
+    "win_rate": 71.42857142857143
   },
   "733048996": {
     "total_signals": 3,
@@ -430,5 +510,14 @@
     "failed_trades": 0,
     "pending_trades": 4,
     "win_rate": 100.0
+  },
+  "292375460": {
+    "total_signals": 5,
+    "forex_signals": 0,
+    "otc_signals": 5,
+    "successful_trades": 0,
+    "failed_trades": 0,
+    "pending_trades": 5,
+    "win_rate": 0.0
   }
 }
