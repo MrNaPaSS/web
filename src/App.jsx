@@ -7071,6 +7071,8 @@ ${isLoss ? `
       console.log('🔄 [DEBUG] pendingSignal изменился')
       console.log('🔄 [DEBUG] pendingSignal:', pendingSignal)
       console.log('🔄 [DEBUG] currentScreen:', currentScreen)
+      console.log('🔄 [DEBUG] generatedSignals.length:', generatedSignals.length)
+      console.log('🔄 [DEBUG] selectedMode:', selectedMode)
       // НЕ переходим на main экран если мы на signal-selection - пользователь должен выбрать сигнал
       if (currentScreen !== 'signal-selection') {
         console.log('🔄 [DEBUG] Переходим на main экран')
@@ -7185,9 +7187,12 @@ ${isLoss ? `
         // НЕ активируем автоматически - показываем экран выбора
         if (signals.length > 0) {
           console.log('✅ [TOP-3] Получены сигналы:', signals.length, 'штук')
+          console.log('✅ [TOP-3] Сигналы:', signals.map(s => `${s.pair} ${s.type}`))
+          console.log('✅ [TOP-3] Текущий экран перед установкой:', currentScreen)
           console.log('✅ [TOP-3] Переходим на signal-selection экран')
           setCurrentScreen('signal-selection')
           console.log('✅ [TOP-3] Экран установлен:', 'signal-selection')
+          console.log('✅ [TOP-3] generatedSignals установлены:', signals.length, 'сигналов')
         } else {
           console.log('⚠️ [TOP-3] Нет сигналов, но переходим на signal-selection')
           setCurrentScreen('signal-selection')
@@ -7273,10 +7278,9 @@ ${isLoss ? `
         }
         setGeneratedSignals([signal])
         setIsGenerating(false)
-        // Автоматически активируем сигнал
-        activateSignal(signal)
-        setCurrentScreen('main')
-        console.log('✅ Получен и активирован РЕАЛЬНЫЙ сигнал:', signal)
+        // НЕ активируем автоматически - показываем экран выбора для выбора пользователем
+        setCurrentScreen('signal-selection')
+        console.log('✅ Получен РЕАЛЬНЫЙ сигнал для выбора:', signal)
       } else {
         // Нет подходящего сигнала
         setIsGenerating(false)
