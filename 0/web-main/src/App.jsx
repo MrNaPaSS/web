@@ -7006,22 +7006,10 @@ ${isLoss ? `
     console.log('🧹 [CRITICAL] Полная очистка localStorage при загрузке приложения')
   }, [])
 
-  // НОВЫЙ useEffect для запуска генерации ТОП-3
-  useEffect(() => {
-    // Автоматически запускаем генерацию для ТОП-3 при переходе на экран выбора,
-    // но только если сигналы еще не сгенерированы.
-    console.log('🔍 [useEffect DEBUG] Проверка условий для генерации ТОП-3:');
-    console.log('🔍 [useEffect DEBUG] currentScreen:', currentScreen);
-    console.log('🔍 [useEffect DEBUG] selectedMode:', selectedMode);
-    console.log('🔍 [useEffect DEBUG] generatedSignals.length:', generatedSignals.length);
-    console.log('🔍 [useEffect DEBUG] isGenerating:', isGenerating);
-    
-    // КРИТИЧНО: Убираем generatedSignals из зависимостей, чтобы избежать повторных вызовов
-    if (currentScreen === 'signal-selection' && selectedMode === 'top3' && generatedSignals.length === 0 && !isGenerating) {
-      console.log('🚀 [useEffect Trigger] Запуск генерации ТОП-3 сигналов...');
-      generateTop3Signals();
-    }
-  }, [currentScreen, selectedMode, isGenerating]); // УБРАНО: generatedSignals
+  // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЕ useEffect ДЛЯ ГЕНЕРАЦИИ
+  // useEffect(() => {
+  //   console.log('🚫 [DISABLED] Все useEffect отключены')
+  // }, [currentScreen, selectedMode, isGenerating])
   // Загрузка статистики при переходе на экран user-stats
   useEffect(() => {
     if (currentScreen === 'user-stats') {
@@ -7050,17 +7038,10 @@ ${isLoss ? `
       return () => clearInterval(interval)
     }
   }, [userId, isAuthorized])
-  // Загрузка метрик рынка при переходе на экран выбора пар
-  useEffect(() => {
-    if (currentScreen === 'signal-selection') {
-      console.log('📊 [DEBUG] Переход на signal-selection экран')
-      console.log('📊 [DEBUG] Количество сгенерированных сигналов:', generatedSignals.length)
-      console.log('📊 [DEBUG] Сгенерированные сигналы:', generatedSignals)
-      console.log('📊 [DEBUG] selectedMode:', selectedMode)
-      console.log('📊 [DEBUG] isGenerating:', isGenerating)
-      loadMarketMetrics()
-    }
-  }, [currentScreen])
+  // КРИТИЧНО: ОТКЛЮЧАЕМ useEffect ДЛЯ signal-selection
+  // useEffect(() => {
+  //   console.log('🚫 [DISABLED] useEffect для signal-selection отключен')
+  // }, [currentScreen])
   // Предзагрузка метрик при инициализации приложения
   useEffect(() => {
     console.log('📊 Предзагружаем метрики при инициализации')
@@ -7076,23 +7057,10 @@ ${isLoss ? `
   // useEffect(() => {
   //   console.log('🚫 [DISABLED] Сохранение pendingSignal отключено')
   // }, [pendingSignal, signalTimer, isWaitingFeedback])
-  // Таймер для сигнала
-  useEffect(() => {
-    let interval = null
-    if (pendingSignal && !isWaitingFeedback) {
-      interval = setInterval(() => {
-        // Рассчитываем оставшееся время на основе реального времени
-        const remainingTime = calculateRemainingTime(pendingSignal)
-        if (remainingTime <= 0) {
-          setSignalTimer(0)
-            setIsWaitingFeedback(true)
-        } else {
-          setSignalTimer(remainingTime)
-          }
-      }, 1000)
-    }
-    return () => clearInterval(interval)
-  }, [pendingSignal, signalTimer, isWaitingFeedback])
+  // КРИТИЧНО: ОТКЛЮЧАЕМ ТАЙМЕР ДЛЯ СИГНАЛА
+  // useEffect(() => {
+  //   console.log('🚫 [DISABLED] Таймер для сигнала отключен')
+  // }, [pendingSignal, signalTimer, isWaitingFeedback])
   // Таймер cooldown для ТОП-3
   useEffect(() => {
     let interval = null
