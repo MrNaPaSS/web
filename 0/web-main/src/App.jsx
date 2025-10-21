@@ -7474,26 +7474,41 @@ ${isLoss ? `
     
     // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
     if (savedSignal && !savedGeneratedSignals) {
-      const signal = JSON.parse(savedSignal)
-      const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
-      const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-      // Восстанавливаем время начала
-      signal.startTime = startTime
-      // Рассчитываем оставшееся время на основе реального времени
-      const remainingTime = calculateRemainingTime(signal)
-      if (remainingTime > 0) {
-      setPendingSignal(signal)
-        setSignalTimer(remainingTime)
-      setIsWaitingFeedback(waitingFeedback)
-      setShowReloadWarning(true)
-      setCurrentScreen('main')
+      const isActivated = localStorage.getItem('signalActivated') === 'true'
+      
+      if (isActivated) {
+        // Сигнал был активирован - восстанавливаем активную сделку
+        const signal = JSON.parse(savedSignal)
+        const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
+        const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
+        signal.startTime = startTime
+        const remainingTime = calculateRemainingTime(signal)
+        
+        if (remainingTime > 0) {
+          setPendingSignal(signal)
+          setSignalTimer(remainingTime)
+          setIsWaitingFeedback(waitingFeedback)
+          setShowReloadWarning(true)
+          setCurrentScreen('main')
+        } else {
+          // Время истекло, показываем фидбек
+          setPendingSignal(signal)
+          setSignalTimer(0)
+          setIsWaitingFeedback(true)
+          setShowReloadWarning(true)
+          setCurrentScreen('main')
+        }
       } else {
-        // Время истекло, показываем фидбек
-        setPendingSignal(signal)
-        setSignalTimer(0)
-        setIsWaitingFeedback(true)
-        setShowReloadWarning(true)
-        setCurrentScreen('main')
+        // Сигнал был сгенерирован, но НЕ активирован - показываем экран выбора
+        try {
+          const signal = JSON.parse(savedSignal)
+          setGeneratedSignals([signal])
+          setCurrentScreen('signal-selection')
+          console.log('✅ Восстановлен сгенерированный (неактивированный) сигнал')
+        } catch (error) {
+          console.error('❌ Ошибка восстановления сигнала:', error)
+          localStorage.removeItem('pendingSignal')
+        }
       }
     }
   }
