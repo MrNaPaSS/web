@@ -7281,11 +7281,10 @@ ${isLoss ? `
         setGeneratedSignals([signal])
         setIsGenerating(false)
         
-        // Автоматически активируем сигнал
-        activateSignal(signal)
-        setCurrentScreen('main')
+        // ИСПРАВЛЕНО: Убрана автоматическая активация. Вместо этого - переход на экран выбора.
+        setCurrentScreen('signal-selection')
         
-        console.log('✅ Получен и активирован РЕАЛЬНЫЙ сигнал:', signal)
+        console.log('✅ Получен РЕАЛЬНЫЙ одиночный сигнал, переход к выбору:', signal)
       } else {
         // Нет подходящего сигнала
         setIsGenerating(false)
