@@ -229,11 +229,21 @@
       "pair": "EUR/USD (OTC)",
       "direction": "BUY",
       "confidence": 0.791325
+    },
+    {
+      "user_id": "8344456953",
+      "signal_id": "mock_EUR_USD (OTC)_1761007108636",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-21T02:58:02.536914",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.7930217772016726
     }
   ],
-  "last_updated": "2025-10-21T02:38:14.095424",
-  "total_signals": 23,
-  "successful_signals": 22,
+  "last_updated": "2025-10-21T02:58:02.536914",
+  "total_signals": 24,
+  "successful_signals": 23,
   "failed_signals": 1,
   "win_rate": 83.3,
   "511442168": {
@@ -273,12 +283,12 @@
     "win_rate": 100.0
   },
   "8344456953": {
-    "total_signals": 10,
+    "total_signals": 14,
     "forex_signals": 0,
-    "otc_signals": 10,
-    "successful_trades": 5,
+    "otc_signals": 14,
+    "successful_trades": 6,
     "failed_trades": 0,
-    "pending_trades": 2,
+    "pending_trades": 4,
     "win_rate": 100.0
   }
 }
