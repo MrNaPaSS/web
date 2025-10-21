@@ -9048,7 +9048,7 @@ ${isLoss ? `
                       <Badge className="bg-red-500/20 text-red-400 border-red-500/50">
                         VIP
                       </Badge>
-                      {/* VIP BUTTON FIXED - 2024 */}
+                      {/* VIP BUTTON FIXED - 2024.12.19 */}
                     </div>
                     <p className="text-slate-400 text-sm mb-3">{t('bestOpportunitiesOfDay')}</p>
                     <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-3">
