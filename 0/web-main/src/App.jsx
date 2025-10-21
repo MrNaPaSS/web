@@ -7072,12 +7072,22 @@ ${isLoss ? `
       loadUserSignalsHistory()
     }
   }, [currentScreen])
-  // КРИТИЧНО: ОТКЛЮЧАЕМ СОХРАНЕНИЕ pendingSignal В localStorage
-  // useEffect(() => {
-  //   if (pendingSignal) {
-  //     console.log('🚫 [DISABLED] Сохранение pendingSignal отключено')
-  //   }
-  // }, [pendingSignal, signalTimer, isWaitingFeedback])
+  // Сохранение активного сигнала в localStorage
+  useEffect(() => {
+    if (pendingSignal) {
+      localStorage.setItem('pendingSignal', JSON.stringify(pendingSignal))
+      localStorage.setItem('signalTimer', signalTimer.toString())
+      localStorage.setItem('isWaitingFeedback', isWaitingFeedback.toString())
+      if (pendingSignal.startTime) {
+        localStorage.setItem('signalStartTime', pendingSignal.startTime.toString())
+      }
+    } else {
+      localStorage.removeItem('pendingSignal')
+      localStorage.removeItem('signalTimer')
+      localStorage.removeItem('isWaitingFeedback')
+      localStorage.removeItem('signalStartTime')
+    }
+  }, [pendingSignal, signalTimer, isWaitingFeedback])
   // Таймер для сигнала
   useEffect(() => {
     let interval = null
@@ -7155,74 +7165,49 @@ ${isLoss ? `
     try {
       const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId,
           market: selectedMarket,
           mode: 'top3'
         })
-      })
-      const result = await response.json()
+      });
+      const result = await response.json();
 
       if (result.success && result.signals && result.signals.length > 0) {
+        // ЭТОТ БЛОК ВЫПОЛНЯЕТСЯ, КОГДА СЕРВЕР ВКЛЮЧЕН
+        console.log('[TRY-БЛОК] API вернул', result.signals.length, 'сигнала(ов).');
         const signals = result.signals.map((signal, index) => ({
           ...signal,
           id: Date.now() + index,
           status: 'generated',
           time: 'Только что'
         }));
-
         setGeneratedSignals(signals);
         localStorage.setItem('generatedSignals', JSON.stringify(signals));
         setLastTop3Generation(Date.now());
         setTop3Cooldown(600);
-        
-        // Корректное завершение: переход на экран ВЫБОРА
-        setIsGenerating(false);
-        setCurrentScreen('signal-selection');
-        console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
-        console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
-        console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
-        console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
-        console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
-        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
-
       } else {
-        // Обработка случая, когда сигналы не найдены
-        setIsGenerating(false);
+        // Сервер ответил, но сигналов нет
+        console.log('[TRY-БЛОК] API не нашел подходящих сигналов.');
+        setGeneratedSignals([]);
+        localStorage.removeItem('generatedSignals');
         setNoSignalAvailable(true);
         setSignalCooldown(30);
-        setCurrentScreen('signal-selection'); // Переходим на экран выбора, чтобы показать сообщение "Нет сигналов"
       }
     } catch (error) {
-      console.error('❌ Ошибка получения ТОП-3 сигналов:', error);
-      // Fallback логика остается без изменений, она также ведет на 'signal-selection'
-      const pairs = selectedMarket === 'forex' 
-        ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
-        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
-      const signals = [];
-      for (let i = 0; i < 3; i++) {
-        signals.push({
-          signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
-          id: Date.now() + i,
-          pair: pairs[i],
-          type: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          entry: '0.0000',
-          confidence: Math.random() * 0.3 + 0.7,
-          expiration: Math.floor(Math.random() * 5) + 1,
-          signal_type: selectedMarket,
-          timestamp: new Date().toISOString(),
-          status: 'generated',
-          time: 'Только что'
-        });
-      }
-      setGeneratedSignals(signals);
-      localStorage.setItem('generatedSignals', JSON.stringify(signals));
-      setLastTop3Generation(Date.now());
-      setTop3Cooldown(600);
+      // ЭТОТ БЛОК ВЫПОЛНЯЕТСЯ, КОГДА СЕРВЕР ВЫКЛЮЧЕН
+      console.error('❌ [CATCH-БЛОК] Ошибка сети, генерируем mock-сигналы:', error);
+      const mockSignals = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'].map((pair, i) => ({
+        signal_id: `mock_${pair.replace(/[\/() ]/g, '_')}_${Date.now()}_${i}`,
+        id: Date.now() + i, pair, type: i % 2 === 0 ? 'BUY' : 'SELL', direction: i % 2 === 0 ? 'BUY' : 'SELL', entry: '0.0000',
+        confidence: 0.7 + i * 0.05, expiration: i + 2, signal_type: 'otc', timestamp: new Date().toISOString(), status: 'generated', time: 'Только что'
+      }));
+      setGeneratedSignals(mockSignals);
+      localStorage.setItem('generatedSignals', JSON.stringify(mockSignals));
+    } finally {
+      // ЭТОТ БЛОК ВЫПОЛНЯЕТСЯ ВСЕГДА В КОНЦЕ - И ПРИ УСПЕХЕ, И ПРИ ОШИБКЕ
+      console.log('[FINALLY-БЛОК] Завершение генерации. Гарантированный переход на signal-selection.');
       setIsGenerating(false);
       setCurrentScreen('signal-selection');
     }
