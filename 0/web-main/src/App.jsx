@@ -7072,22 +7072,10 @@ ${isLoss ? `
       loadUserSignalsHistory()
     }
   }, [currentScreen])
-  // Сохранение активного сигнала в localStorage
-  useEffect(() => {
-    if (pendingSignal) {
-      localStorage.setItem('pendingSignal', JSON.stringify(pendingSignal))
-      localStorage.setItem('signalTimer', signalTimer.toString())
-      localStorage.setItem('isWaitingFeedback', isWaitingFeedback.toString())
-      if (pendingSignal.startTime) {
-        localStorage.setItem('signalStartTime', pendingSignal.startTime.toString())
-      }
-    } else {
-      localStorage.removeItem('pendingSignal')
-      localStorage.removeItem('signalTimer')
-      localStorage.removeItem('isWaitingFeedback')
-      localStorage.removeItem('signalStartTime')
-    }
-  }, [pendingSignal, signalTimer, isWaitingFeedback])
+  // КРИТИЧНО: ОТКЛЮЧАЕМ СОХРАНЕНИЕ pendingSignal В localStorage
+  // useEffect(() => {
+  //   console.log('🚫 [DISABLED] Сохранение pendingSignal отключено')
+  // }, [pendingSignal, signalTimer, isWaitingFeedback])
   // Таймер для сигнала
   useEffect(() => {
     let interval = null
