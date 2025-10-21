@@ -7071,6 +7071,12 @@ ${isLoss ? `
   useEffect(() => {
     // Автоматически запускаем генерацию для ТОП-3 при переходе на экран выбора,
     // но только если сигналы еще не сгенерированы.
+    console.log('🔍 [useEffect DEBUG] Проверка условий для генерации ТОП-3:');
+    console.log('🔍 [useEffect DEBUG] currentScreen:', currentScreen);
+    console.log('🔍 [useEffect DEBUG] selectedMode:', selectedMode);
+    console.log('🔍 [useEffect DEBUG] generatedSignals.length:', generatedSignals.length);
+    console.log('🔍 [useEffect DEBUG] isGenerating:', isGenerating);
+    
     if (currentScreen === 'signal-selection' && selectedMode === 'top3' && generatedSignals.length === 0 && !isGenerating) {
       console.log('🚀 [useEffect Trigger] Запуск генерации ТОП-3 сигналов...');
       generateTop3Signals();
@@ -7110,6 +7116,8 @@ ${isLoss ? `
       console.log('📊 [DEBUG] Переход на signal-selection экран')
       console.log('📊 [DEBUG] Количество сгенерированных сигналов:', generatedSignals.length)
       console.log('📊 [DEBUG] Сгенерированные сигналы:', generatedSignals)
+      console.log('📊 [DEBUG] selectedMode:', selectedMode)
+      console.log('📊 [DEBUG] isGenerating:', isGenerating)
       loadMarketMetrics()
     }
   }, [currentScreen])
@@ -7239,6 +7247,9 @@ ${isLoss ? `
         console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
         console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
         console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
+        console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
+        console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
+        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
 
       } else {
         // Обработка случая, когда сигналы не найдены
@@ -7325,6 +7336,7 @@ ${isLoss ? `
         setCurrentScreen('signal-selection')
         
         console.log('✅ Получен РЕАЛЬНЫЙ одиночный сигнал, переход к выбору:', signal)
+        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection')
       } else {
         // Нет подходящего сигнала
         setIsGenerating(false)
@@ -7368,6 +7380,7 @@ ${isLoss ? `
   }
   // Функция для очистки состояния сигналов
   const clearSignalState = () => {
+    console.log('🧹 [DEBUG] clearSignalState вызвана - очищаем все состояние сигналов')
     setGeneratedSignals([])
     setPendingSignal(null)
     setSignalTimer(0)
@@ -7379,12 +7392,14 @@ ${isLoss ? `
     localStorage.removeItem('signalStartTime')
     localStorage.removeItem('generatedSignals') // ДОБАВЛЕНО: очистка сгенерированных сигналов
     localStorage.removeItem('signalActivated') // ДОБАВЛЕНО: очистка флага активации
+    console.log('🧹 [DEBUG] Все состояние сигналов очищено')
   }
   // Активация сигнала
   const activateSignal = (signal) => {
     console.log('🚨 [DEBUG] activateSignal вызвана!')
     console.log('🚨 [DEBUG] Сигнал для активации:', signal)
     console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
+    console.log('🚨 [DEBUG] Это РУЧНАЯ активация пользователем - НЕ автоматическая!')
     console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
     
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
@@ -7899,6 +7914,10 @@ ${isLoss ? `
   }
   // Signal Selection Screen - Выбор сигнала из сгенерированных
   if (currentScreen === 'signal-selection') {
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] Рендерим signal-selection экран')
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] generatedSignals:', generatedSignals)
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] Количество сигналов:', generatedSignals.length)
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] selectedMode:', selectedMode)
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
