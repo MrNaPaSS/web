@@ -7153,52 +7153,36 @@ ${isLoss ? `
       await new Promise(resolve => setTimeout(resolve, delay));
     }
 
-    try {
-      const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          market: selectedMarket,
-          mode: 'top3'
-        })
-      });
-      const result = await response.json();
-
-      if (result.success && result.signals && result.signals.length > 0) {
-        // УСПЕШНЫЙ БЛОК (ВЫПОЛНЯЕТСЯ ПРИ ВКЛЮЧЕННОМ СЕРВЕРЕ)
-        const signals = result.signals.map((signal, index) => ({
-          ...signal,
-          id: Date.now() + index,
-          status: 'generated',
-          time: 'Только что'
-        }));
-        setGeneratedSignals(signals);
-        localStorage.setItem('generatedSignals', JSON.stringify(signals));
-        setLastTop3Generation(Date.now());
-        setTop3Cooldown(600);
-        // В ЭТОМ БЛОКЕ БОЛЬШЕ НЕТ ВЫЗОВОВ activateSignal() И setCurrentScreen('main')
-      } else {
-        setGeneratedSignals([]);
-        localStorage.removeItem('generatedSignals');
-        setNoSignalAvailable(true);
-        setSignalCooldown(30);
-      }
-    } catch (error) {
-      // БЛОК ОШИБКИ (ВЫПОЛНЯЕТСЯ ПРИ ВЫКЛЮЧЕННОМ СЕРВЕРЕ)
-      console.error('❌ Ошибка сети, генерируем mock-сигналы:', error);
-      const mockSignals = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'].map((pair, i) => ({
-        signal_id: `mock_${pair.replace(/[\/() ]/g, '_')}_${Date.now()}_${i}`,
-        id: Date.now() + i, pair, type: i % 2 === 0 ? 'BUY' : 'SELL', direction: i % 2 === 0 ? 'BUY' : 'SELL', entry: '0.0000',
-        confidence: 0.7 + i * 0.05, expiration: i + 2, signal_type: 'otc', timestamp: new Date().toISOString(), status: 'generated', time: 'Только что'
-      }));
-      setGeneratedSignals(mockSignals);
-      localStorage.setItem('generatedSignals', JSON.stringify(mockSignals));
-    } finally {
-      // ФИНАЛЬНЫЙ БЛОК: ГАРАНТИРОВАННЫЙ ПЕРЕХОД НА ЭКРАН ВЫБОРА
-      setIsGenerating(false);
-      setCurrentScreen('signal-selection');
-    }
+    // ВИМКНЕНО API ВИКЛИК - ГЕНЕРАЦІЯ ТІЛЬКИ MOCK-СИГНАЛІВ
+    console.log('🔧 Генерація ТОП-3 без API виклику (вимкнено)');
+    
+    const pairs = selectedMarket === 'forex' 
+      ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
+      : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
+    
+    const mockSignals = pairs.map((pair, i) => ({
+      signal_id: `mock_${pair.replace(/[\/() ]/g, '_')}_${Date.now()}_${i}`,
+      id: Date.now() + i,
+      pair: pair,
+      type: i % 2 === 0 ? 'BUY' : 'SELL',
+      direction: i % 2 === 0 ? 'BUY' : 'SELL',
+      entry: '0.0000',
+      confidence: 0.7 + i * 0.05,
+      expiration: i + 2,
+      signal_type: selectedMarket,
+      timestamp: new Date().toISOString(),
+      status: 'generated',
+      time: 'Только что'
+    }));
+    
+    setGeneratedSignals(mockSignals);
+    localStorage.setItem('generatedSignals', JSON.stringify(mockSignals));
+    setLastTop3Generation(Date.now());
+    setTop3Cooldown(600);
+    
+    // ФІНАЛЬНИЙ БЛОК: ГАРАНТОВАНИЙ ПЕРЕХІД НА ЕКРАН ВИБОРУ
+    setIsGenerating(false);
+    setCurrentScreen('signal-selection');
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
   const generateSignalForPair = async (pair) => {
