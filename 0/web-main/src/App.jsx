@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
 import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check, RefreshCw } from 'lucide-react'
-import { TelegramAuth } from '@/components/TelegramAuth.jsx'
+// import { TelegramAuth } from '@/components/TelegramAuth.jsx' // ОТКЛЮЧЕНО
 import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 function App() {
@@ -20,10 +20,17 @@ function App() {
   const [selectedMarket, setSelectedMarket] = useState(null) // forex, otc
   const [selectedMode, setSelectedMode] = useState(null) // top3, single
   const [activeTab, setActiveTab] = useState('active')
-  const [userId, setUserId] = useState(null) // Telegram User ID
-  const [isAdmin, setIsAdmin] = useState(false) // Проверяется по Telegram ID
-  const [isAuthorized, setIsAuthorized] = useState(false) // Флаг успешной авторизации
-  const [userData, setUserData] = useState(null) // Данные пользователя из Telegram
+  const [userId, setUserId] = useState(123456789) // Telegram User ID - ТЕСТОВЫЙ
+  const [isAdmin, setIsAdmin] = useState(true) // Проверяется по Telegram ID - АДМИН ДЛЯ ТЕСТИРОВАНИЯ
+  const [isAuthorized, setIsAuthorized] = useState(true) // Флаг успешной авторизации - ОТКЛЮЧЕН
+  const [userData, setUserData] = useState({
+    id: 123456789,
+    firstName: 'Test',
+    lastName: 'User',
+    username: 'testuser',
+    languageCode: 'ru',
+    isPremium: false
+  }) // Данные пользователя из Telegram - ТЕСТОВЫЕ ДАННЫЕ
   const [selectedMLModel, setSelectedMLModel] = useState('logistic-spy') // shadow-stack, forest-necromancer, gray-cardinal, logistic-spy, sniper-80x
   const [selectedUser, setSelectedUser] = useState(null) // Выбранный пользователь для детальной статистики
   const [userSubscriptions, setUserSubscriptions] = useState(['logistic-spy']) // Купленные модели пользователя (по умолчанию базовая)
