@@ -6885,26 +6885,41 @@ ${isLoss ? `
         
         // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
         if (savedSignal && !savedGeneratedSignals) {
-          const signal = JSON.parse(savedSignal)
-          const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
-          const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-          // Восстанавливаем время начала
-          signal.startTime = startTime
-          // Рассчитываем оставшееся время на основе реального времени
-          const remainingTime = calculateRemainingTime(signal)
-          if (remainingTime > 0) {
-          setPendingSignal(signal)
-            setSignalTimer(remainingTime)
-          setIsWaitingFeedback(waitingFeedback)
-          setShowReloadWarning(true)
-          setCurrentScreen('main')
+          const isActivated = localStorage.getItem('signalActivated') === 'true'
+          
+          if (isActivated) {
+            // Сигнал был активирован - восстанавливаем активную сделку
+            const signal = JSON.parse(savedSignal)
+            const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
+            const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
+            signal.startTime = startTime
+            const remainingTime = calculateRemainingTime(signal)
+            
+            if (remainingTime > 0) {
+              setPendingSignal(signal)
+              setSignalTimer(remainingTime)
+              setIsWaitingFeedback(waitingFeedback)
+              setShowReloadWarning(true)
+              setCurrentScreen('main')
+            } else {
+              // Время истекло, показываем фидбек
+              setPendingSignal(signal)
+              setSignalTimer(0)
+              setIsWaitingFeedback(true)
+              setShowReloadWarning(true)
+              setCurrentScreen('main')
+            }
           } else {
-            // Время истекло, показываем фидбек
-            setPendingSignal(signal)
-            setSignalTimer(0)
-            setIsWaitingFeedback(true)
-            setShowReloadWarning(true)
-            setCurrentScreen('main')
+            // Сигнал был сгенерирован, но НЕ активирован - показываем экран выбора
+            try {
+              const signal = JSON.parse(savedSignal)
+              setGeneratedSignals([signal])
+              setCurrentScreen('signal-selection')
+              console.log('✅ Восстановлен сгенерированный (неактивированный) сигнал')
+            } catch (error) {
+              console.error('❌ Ошибка восстановления сигнала:', error)
+              localStorage.removeItem('pendingSignal')
+            }
           }
         }
       } else {
@@ -6931,26 +6946,41 @@ ${isLoss ? `
       
       // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
       if (savedSignal && !savedGeneratedSignals) {
-        const signal = JSON.parse(savedSignal)
-        const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
-        const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-        // Восстанавливаем время начала
-        signal.startTime = startTime
-        // Рассчитываем оставшееся время на основе реального времени
-        const remainingTime = calculateRemainingTime(signal)
-        if (remainingTime > 0) {
-        setPendingSignal(signal)
-          setSignalTimer(remainingTime)
-        setIsWaitingFeedback(waitingFeedback)
-        setShowReloadWarning(true)
-        setCurrentScreen('main')
+        const isActivated = localStorage.getItem('signalActivated') === 'true'
+        
+        if (isActivated) {
+          // Сигнал был активирован - восстанавливаем активную сделку
+          const signal = JSON.parse(savedSignal)
+          const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
+          const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
+          signal.startTime = startTime
+          const remainingTime = calculateRemainingTime(signal)
+          
+          if (remainingTime > 0) {
+            setPendingSignal(signal)
+            setSignalTimer(remainingTime)
+            setIsWaitingFeedback(waitingFeedback)
+            setShowReloadWarning(true)
+            setCurrentScreen('main')
+          } else {
+            // Время истекло, показываем фидбек
+            setPendingSignal(signal)
+            setSignalTimer(0)
+            setIsWaitingFeedback(true)
+            setShowReloadWarning(true)
+            setCurrentScreen('main')
+          }
         } else {
-          // Время истекло, показываем фидбек
-          setPendingSignal(signal)
-          setSignalTimer(0)
-          setIsWaitingFeedback(true)
-          setShowReloadWarning(true)
-          setCurrentScreen('main')
+          // Сигнал был сгенерирован, но НЕ активирован - показываем экран выбора
+          try {
+            const signal = JSON.parse(savedSignal)
+            setGeneratedSignals([signal])
+            setCurrentScreen('signal-selection')
+            console.log('✅ Восстановлен сгенерированный (неактивированный) сигнал')
+          } catch (error) {
+            console.error('❌ Ошибка восстановления сигнала:', error)
+            localStorage.removeItem('pendingSignal')
+          }
         }
       }
     }
@@ -7207,6 +7237,8 @@ ${isLoss ? `
         setIsGenerating(false);
         setCurrentScreen('signal-selection');
         console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
+        console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
+        console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
 
       } else {
         // Обработка случая, когда сигналы не найдены
@@ -7346,6 +7378,7 @@ ${isLoss ? `
     localStorage.removeItem('isWaitingFeedback')
     localStorage.removeItem('signalStartTime')
     localStorage.removeItem('generatedSignals') // ДОБАВЛЕНО: очистка сгенерированных сигналов
+    localStorage.removeItem('signalActivated') // ДОБАВЛЕНО: очистка флага активации
   }
   // Активация сигнала
   const activateSignal = (signal) => {
@@ -7366,6 +7399,8 @@ ${isLoss ? `
     localStorage.removeItem('generatedSignals')
     // Сохраняем время начала в localStorage
     localStorage.setItem('signalStartTime', startTime.toString())
+    // Сохраняем флаг активации
+    localStorage.setItem('signalActivated', 'true')
     // Переходим на экран активной сделки
     setCurrentScreen('main')
   }
@@ -7899,7 +7934,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      setCurrentScreen('main')
+                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
@@ -7986,7 +8021,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      setCurrentScreen('main')
+                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
