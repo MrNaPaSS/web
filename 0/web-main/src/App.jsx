@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
 import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check, RefreshCw } from 'lucide-react'
-// import { TelegramAuth } from '@/components/TelegramAuth.jsx' // ОТКЛЮЧЕНО
+import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 function App() {
@@ -15,22 +15,15 @@ function App() {
     // Используем API поддомен
     return `https://bot.nomoneynohoney.online`
   }
-  const [currentScreen, setCurrentScreen] = useState('language-select') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
+  const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
   const [selectedLanguage, setSelectedLanguage] = useState(null) // ru, en, es, fr, de, it, pt, zh, ja, ko, ar, hi
   const [selectedMarket, setSelectedMarket] = useState(null) // forex, otc
   const [selectedMode, setSelectedMode] = useState(null) // top3, single
   const [activeTab, setActiveTab] = useState('active')
-  const [userId, setUserId] = useState(123456789) // Telegram User ID - ТЕСТОВЫЙ
-  const [isAdmin, setIsAdmin] = useState(true) // Проверяется по Telegram ID - АДМИН ДЛЯ ТЕСТИРОВАНИЯ
-  const [isAuthorized, setIsAuthorized] = useState(true) // Флаг успешной авторизации - ОТКЛЮЧЕН
-  const [userData, setUserData] = useState({
-    id: 123456789,
-    firstName: 'Test',
-    lastName: 'User',
-    username: 'testuser',
-    languageCode: 'ru',
-    isPremium: false
-  }) // Данные пользователя из Telegram - ТЕСТОВЫЕ ДАННЫЕ
+  const [userId, setUserId] = useState(null) // Telegram User ID
+  const [isAdmin, setIsAdmin] = useState(false) // Проверяется по Telegram ID
+  const [isAuthorized, setIsAuthorized] = useState(false) // Флаг успешной авторизации
+  const [userData, setUserData] = useState(null) // Данные пользователя из Telegram
   const [selectedMLModel, setSelectedMLModel] = useState('logistic-spy') // shadow-stack, forest-necromancer, gray-cardinal, logistic-spy, sniper-80x
   const [selectedUser, setSelectedUser] = useState(null) // Выбранный пользователь для детальной статистики
   const [userSubscriptions, setUserSubscriptions] = useState(['logistic-spy']) // Купленные модели пользователя (по умолчанию базовая)
@@ -95,29 +88,6 @@ function App() {
   const [selectedSignalForAnalysis, setSelectedSignalForAnalysis] = useState(null) // Выбранный сигнал для анализа
   const [analysisResult, setAnalysisResult] = useState(null) // Результат анализа от GPT
   const [isAnalyzing, setIsAnalyzing] = useState(false) // Флаг процесса анализа
-  // Автоматическая авторизация при загрузке приложения
-  useEffect(() => {
-    console.log('🚀 [DISABLED] Автоматическая авторизация при загрузке приложения')
-    
-    // Автоматически авторизуем пользователя
-    const testUserData = {
-      id: 123456789,
-      firstName: 'Test',
-      lastName: 'User',
-      username: 'testuser',
-      languageCode: 'ru',
-      isPremium: false
-    }
-    
-    setUserId(testUserData.id)
-    setIsAdmin(true) // Даем админские права для тестирования
-    setUserData(testUserData)
-    setUserSubscriptions(['logistic-spy']) // Устанавливаем подписку
-    setIsAuthorized(true)
-    
-    console.log('✅ [DISABLED] Пользователь авторизован автоматически')
-  }, [])
-
   // Автоматическая загрузка подписок при возврате в меню
   useEffect(() => {
     if (currentScreen === 'menu' && userData?.id) {
@@ -6847,39 +6817,103 @@ ${isLoss ? `
   }
   // Авторизация через бэкенд API
   const authorizeUser = async (userData, initData = '') => {
-    console.log('🔐 [DISABLED] Авторизация отключена - переход в режим разработки')
-    
-    // ОТКЛЮЧАЕМ АВТОРИЗАЦИЮ - сразу переходим в режим разработки
-    console.warn('⚠️ Авторизация отключена - работа без бэкенда (режим разработки)')
-    
-    // Показываем экран авторизации минимум 2 секунды
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Устанавливаем тестовые данные пользователя
-    const testUserData = {
-      id: 123456789,
-      firstName: 'Test',
-      lastName: 'User',
-      username: 'testuser',
-      languageCode: 'ru',
-      isPremium: false
+    try {
+      // Показываем процесс авторизации минимум 2 секунды
+      const startTime = Date.now()
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          initData: initData,
+          userData: userData
+        })
+      })
+      const result = await response.json()
+      if (result.success) {
+        const user = result.user
+        // Сохраняем данные пользователя
+        setUserId(user.telegram_id)
+        setUserData({
+          id: user.telegram_id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          username: user.username,
+          languageCode: user.language_code,
+          isPremium: user.is_premium
+        })
+        // Устанавливаем админские права
+        setIsAdmin(user.is_admin)
+        // Загружаем подписки
+        setUserSubscriptions(user.subscriptions || ['logistic-spy'])
+        // Успешная авторизация
+        setIsAuthorized(true)
+        console.log('✅ Авторизация через API успешна:', user.first_name)
+        if (user.is_new_user) {
+          console.log('🆕 Новый пользователь зарегистрирован!')
+        }
+        // Ждем минимум 2 секунды для показа экрана авторизации
+        const elapsed = Date.now() - startTime
+        const remainingTime = Math.max(2000 - elapsed, 0)
+        await new Promise(resolve => setTimeout(resolve, remainingTime))
+        // Проверяем сохраненный язык
+        const savedLanguage = localStorage.getItem('selectedLanguage')
+        if (savedLanguage) {
+          setSelectedLanguage(savedLanguage)
+          setCurrentScreen('welcome')
+        } else {
+          // Если нет сохраненного языка - показываем выбор языка
+          setCurrentScreen('language-select')
+        }
+        // Проверяем активный сигнал после авторизации
+        const savedSignal = localStorage.getItem('pendingSignal')
+        const savedGeneratedSignals = localStorage.getItem('generatedSignals')
+        
+        // Восстанавливаем сгенерированные сигналы если они есть
+        if (savedGeneratedSignals) {
+          try {
+            const signals = JSON.parse(savedGeneratedSignals)
+            setGeneratedSignals(signals)
+            setCurrentScreen('signal-selection')
+            console.log('✅ Восстановлены сгенерированные сигналы из localStorage:', signals.length)
+          } catch (error) {
+            console.error('❌ Ошибка восстановления generatedSignals:', error)
+            localStorage.removeItem('generatedSignals')
+          }
+        }
+        
+        // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЮ ЛОГИКУ ВОССТАНОВЛЕНИЯ
+        // if (savedSignal && !savedGeneratedSignals) {
+        //   console.log('🚫 [DISABLED] Логика восстановления отключена')
+        // }
+      } else {
+        console.error('❌ Ошибка авторизации:', result.error)
+        setIsAuthorized(false)
+      }
+    } catch (error) {
+      console.error('❌ Ошибка подключения к API:', error)
+      // В режиме разработки разрешаем доступ без бэкенда
+      console.warn('⚠️ Работа без бэкенда (режим разработки)')
+      // Показываем экран авторизации минимум 2 секунды
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      setIsAuthorized(true)
+      const savedLanguage = localStorage.getItem('selectedLanguage')
+      if (savedLanguage) {
+        setSelectedLanguage(savedLanguage)
+        setCurrentScreen('welcome')
+      } else {
+        setCurrentScreen('language-select')
+      }
+      // Проверяем активный сигнал после авторизации
+      const savedSignal = localStorage.getItem('pendingSignal')
+      const savedGeneratedSignals = localStorage.getItem('generatedSignals')
+      
+      // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЮ ЛОГИКУ ВОССТАНОВЛЕНИЯ
+      // if (savedSignal && !savedGeneratedSignals) {
+      //   console.log('🚫 [DISABLED] Логика восстановления отключена')
+      // }
     }
-    
-    setUserId(testUserData.id)
-    setUserData(testUserData)
-    setIsAdmin(true) // Даем админские права для тестирования
-    setUserSubscriptions(['logistic-spy']) // Устанавливаем подписку
-    setIsAuthorized(true)
-    
-    const savedLanguage = localStorage.getItem('selectedLanguage')
-    if (savedLanguage) {
-      setSelectedLanguage(savedLanguage)
-      setCurrentScreen('welcome')
-    } else {
-      setCurrentScreen('language-select')
-    }
-    
-    console.log('✅ [DISABLED] Авторизация пропущена - пользователь авторизован автоматически')
   }
   // Получение Telegram User ID и авторизация
   // ОТКЛЮЧЕНО: Логика перенесена в компонент TelegramAuth
@@ -6981,7 +7015,6 @@ ${isLoss ? `
     console.log('🔍 [useEffect DEBUG] selectedMode:', selectedMode);
     console.log('🔍 [useEffect DEBUG] generatedSignals.length:', generatedSignals.length);
     console.log('🔍 [useEffect DEBUG] isGenerating:', isGenerating);
-    console.log('🔍 [useEffect DEBUG] Время проверки:', new Date().toISOString());
     
     // КРИТИЧНО: Убираем generatedSignals из зависимостей, чтобы избежать повторных вызовов
     if (currentScreen === 'signal-selection' && selectedMode === 'top3' && generatedSignals.length === 0 && !isGenerating) {
@@ -7025,7 +7058,6 @@ ${isLoss ? `
       console.log('📊 [DEBUG] Сгенерированные сигналы:', generatedSignals)
       console.log('📊 [DEBUG] selectedMode:', selectedMode)
       console.log('📊 [DEBUG] isGenerating:', isGenerating)
-      console.log('📊 [DEBUG] Время перехода:', new Date().toISOString())
       loadMarketMetrics()
     }
   }, [currentScreen])
@@ -7104,19 +7136,10 @@ ${isLoss ? `
   }, [noSignalAvailable])
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
   const generateTop3Signals = async () => {
-    // КРИТИЧНО: Полностью очищаем localStorage перед генерацией
-    localStorage.removeItem('pendingSignal')
-    localStorage.removeItem('signalActivated')
-    localStorage.removeItem('signalTimer')
-    localStorage.removeItem('isWaitingFeedback')
-    localStorage.removeItem('signalStartTime')
-    localStorage.removeItem('generatedSignals')
+    setIsGenerating(true);
+    setCurrentScreen('generating');
+    setLastTop3Generation(new Date().toISOString());
     
-    setIsGenerating(true)
-    setCurrentScreen('generating')
-    setLastTop3Generation(new Date().toISOString())
-    
-    // Этапы генерации для UI
     const stages = [
       { stage: t('connectingToMarket'), delay: 800 },
       { stage: t('analyzingTechnicalIndicators'), delay: 1200 },
@@ -7124,86 +7147,55 @@ ${isLoss ? `
       { stage: t('calculatingOptimalExpiration'), delay: 900 },
       { stage: t('applyingMLModels'), delay: 1100 },
       { stage: t('formingTop3Signals'), delay: 1000 }
-    ]
+    ];
     for (const { stage, delay } of stages) {
-      setGenerationStage(stage)
-      await new Promise(resolve => setTimeout(resolve, delay))
+      setGenerationStage(stage);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
 
     try {
       const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId,
           market: selectedMarket,
           mode: 'top3'
         })
-      })
-      const result = await response.json()
+      });
+      const result = await response.json();
 
       if (result.success && result.signals && result.signals.length > 0) {
+        // УСПЕШНЫЙ БЛОК (ВЫПОЛНЯЕТСЯ ПРИ ВКЛЮЧЕННОМ СЕРВЕРЕ)
         const signals = result.signals.map((signal, index) => ({
           ...signal,
           id: Date.now() + index,
           status: 'generated',
           time: 'Только что'
         }));
-
-        console.log('🔄 [DEBUG] setGeneratedSignals вызывается с сигналами:', signals);
         setGeneratedSignals(signals);
         localStorage.setItem('generatedSignals', JSON.stringify(signals));
         setLastTop3Generation(Date.now());
         setTop3Cooldown(600);
-        
-        // Корректное завершение: переход на экран ВЫБОРА
-        setIsGenerating(false);
-        setCurrentScreen('signal-selection');
-        console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
-        console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
-        console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
-        console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
-        console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
-        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
-        console.log('🔍 [DEBUG] Время завершения генерации:', new Date().toISOString());
-
+        // В ЭТОМ БЛОКЕ БОЛЬШЕ НЕТ ВЫЗОВОВ activateSignal() И setCurrentScreen('main')
       } else {
-        // Обработка случая, когда сигналы не найдены
-        setIsGenerating(false);
+        setGeneratedSignals([]);
+        localStorage.removeItem('generatedSignals');
         setNoSignalAvailable(true);
         setSignalCooldown(30);
-        setCurrentScreen('signal-selection'); // Переходим на экран выбора, чтобы показать сообщение "Нет сигналов"
       }
     } catch (error) {
-      console.error('❌ Ошибка получения ТОП-3 сигналов:', error);
-      // Fallback логика остается без изменений, она также ведет на 'signal-selection'
-      const pairs = selectedMarket === 'forex' 
-        ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
-        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
-      const signals = [];
-      for (let i = 0; i < 3; i++) {
-        signals.push({
-          signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
-          id: Date.now() + i,
-          pair: pairs[i],
-          type: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          entry: '0.0000',
-          confidence: Math.random() * 0.3 + 0.7,
-          expiration: Math.floor(Math.random() * 5) + 1,
-          signal_type: selectedMarket,
-          timestamp: new Date().toISOString(),
-          status: 'generated',
-          time: 'Только что'
-        });
-      }
-      console.log('🔄 [DEBUG] setGeneratedSignals вызывается с fallback сигналами:', signals);
-      setGeneratedSignals(signals);
-      localStorage.setItem('generatedSignals', JSON.stringify(signals));
-      setLastTop3Generation(Date.now());
-      setTop3Cooldown(600);
+      // БЛОК ОШИБКИ (ВЫПОЛНЯЕТСЯ ПРИ ВЫКЛЮЧЕННОМ СЕРВЕРЕ)
+      console.error('❌ Ошибка сети, генерируем mock-сигналы:', error);
+      const mockSignals = ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'].map((pair, i) => ({
+        signal_id: `mock_${pair.replace(/[\/() ]/g, '_')}_${Date.now()}_${i}`,
+        id: Date.now() + i, pair, type: i % 2 === 0 ? 'BUY' : 'SELL', direction: i % 2 === 0 ? 'BUY' : 'SELL', entry: '0.0000',
+        confidence: 0.7 + i * 0.05, expiration: i + 2, signal_type: 'otc', timestamp: new Date().toISOString(), status: 'generated', time: 'Только что'
+      }));
+      setGeneratedSignals(mockSignals);
+      localStorage.setItem('generatedSignals', JSON.stringify(mockSignals));
+    } finally {
+      // ФИНАЛЬНЫЙ БЛОК: ГАРАНТИРОВАННЫЙ ПЕРЕХОД НА ЭКРАН ВЫБОРА
       setIsGenerating(false);
       setCurrentScreen('signal-selection');
     }
@@ -7247,7 +7239,6 @@ ${isLoss ? `
           status: 'generated',
           time: 'Только что'
         }
-        console.log('🔄 [DEBUG] setGeneratedSignals вызывается с одиночным сигналом:', signal);
         setGeneratedSignals([signal])
         localStorage.setItem('generatedSignals', JSON.stringify([signal])) // ДОБАВЛЕНО: сохранение в localStorage
         setIsGenerating(false)
@@ -7257,7 +7248,6 @@ ${isLoss ? `
         
         console.log('✅ Получен РЕАЛЬНЫЙ одиночный сигнал, переход к выбору:', signal)
         console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection')
-        console.log('🔍 [DEBUG] Время завершения генерации одиночного сигнала:', new Date().toISOString())
       } else {
         // Нет подходящего сигнала
         setIsGenerating(false)
@@ -7283,7 +7273,6 @@ ${isLoss ? `
         status: 'generated',
         time: 'Только что'
       }
-      console.log('🔄 [DEBUG] setGeneratedSignals вызывается с mock сигналом:', mockSignal);
       setGeneratedSignals([mockSignal])
       setIsGenerating(false)
       setCurrentScreen('signal-selection')
@@ -7317,17 +7306,11 @@ ${isLoss ? `
     console.log('🧹 [DEBUG] Все состояние сигналов очищено')
   }
   // Активация сигнала
-  const activateSignal = (signal, event = null) => {
+  const activateSignal = (signal) => {
     console.log('🚨 [DEBUG] activateSignal вызвана!')
     console.log('🚨 [DEBUG] Сигнал для активации:', signal)
     console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
     console.log('🚨 [DEBUG] Это РУЧНАЯ активация пользователем - НЕ автоматическая!')
-    console.log('🚨 [DEBUG] Время вызова:', new Date().toISOString())
-    console.log('🚨 [DEBUG] Event:', event)
-    console.log('🚨 [DEBUG] Target:', event?.target)
-    console.log('🚨 [DEBUG] Current Target:', event?.currentTarget)
-    console.log('🚨 [DEBUG] Event type:', event?.type)
-    console.log('🚨 [DEBUG] Event isTrusted:', event?.isTrusted)
     console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
     
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
@@ -7398,24 +7381,12 @@ ${isLoss ? `
   }
   // Обработчик успешной авторизации
   const handleAuthSuccess = (authData) => {
-    console.log('🔐 [DISABLED] handleAuthSuccess отключен - авторизация пропускается')
-    
-    // ОТКЛЮЧАЕМ АВТОРИЗАЦИЮ - используем тестовые данные
-    const testUserData = {
-      id: 123456789,
-      firstName: 'Test',
-      lastName: 'User',
-      username: 'testuser',
-      languageCode: 'ru',
-      isPremium: false
-    }
-    
-    setUserId(testUserData.id)
-    setIsAdmin(true) // Даем админские права для тестирования
-    setUserData(testUserData)
-    setUserSubscriptions(['logistic-spy']) // Устанавливаем подписку
+    setUserId(authData.userId)
+    setIsAdmin(authData.isAdmin)
+    setUserData(authData.userData)
+    setUserSubscriptions(authData.subscriptions)
     setIsAuthorized(true)
-    
+    // Проверяем сохраненный язык
     const savedLanguage = localStorage.getItem('selectedLanguage')
     if (savedLanguage) {
       setSelectedLanguage(savedLanguage)
@@ -7423,30 +7394,26 @@ ${isLoss ? `
     } else {
       setCurrentScreen('language-select')
     }
+    // Проверяем активный сигнал после авторизации
+    const savedSignal = localStorage.getItem('pendingSignal')
+    const savedGeneratedSignals = localStorage.getItem('generatedSignals')
     
-    console.log('✅ [DISABLED] Авторизация пропущена - пользователь авторизован автоматически')
+    // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЮ ЛОГИКУ ВОССТАНОВЛЕНИЯ
+    // if (savedSignal && !savedGeneratedSignals) {
+    //   console.log('🚫 [DISABLED] Логика восстановления отключена')
+    // }
   }
   // Обработчик ошибки авторизации
   const handleAuthError = (error) => {
     console.error('❌ Ошибка авторизации:', error)
   }
-  // Authorization Screen - ОТКЛЮЧЕН
+  // Authorization Screen
   if (currentScreen === 'auth') {
-    console.log('🔐 [DISABLED] Экран авторизации отключен - автоматический переход')
-    
-    // Автоматически вызываем успешную авторизацию
-    React.useEffect(() => {
-      handleAuthSuccess({})
-    }, [])
-    
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Авторизация отключена...</p>
-          <p className="text-slate-400 text-sm">Переход в режим разработки</p>
-        </div>
-      </div>
+      <TelegramAuth 
+        onAuthSuccess={handleAuthSuccess}
+        onAuthError={handleAuthError}
+      />
     )
   }
   // Language Selection Screen
@@ -7872,20 +7839,15 @@ ${isLoss ? `
                 <p className="text-slate-400">{t('selectSignalForActivation')}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {generatedSignals.map((signal, index) => {
-                  console.log('🎨 [DEBUG] Рендер карточки сигнала:', signal.id, 'индекс:', index)
-                  return (
-                    <Card 
-                      key={signal.id}
-                      onClick={(event) => {
-                        console.log('🎯 [DEBUG] onClick карточки сигнала вызван!')
-                        console.log('🎯 [DEBUG] Event:', event)
-                        console.log('🎯 [DEBUG] Event isTrusted:', event?.isTrusted)
-                        activateSignal(signal, event)
-                        // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
-                      }}
-                      className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
-                    >
+                {generatedSignals.map((signal, index) => (
+                  <Card 
+                    key={signal.id}
+                    onClick={() => {
+                      activateSignal(signal)
+                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
+                    }}
+                    className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
+                  >
                     <div className="space-y-4">
                       {/* Header */}
                       <div className="flex items-center justify-between">
@@ -7951,8 +7913,7 @@ ${isLoss ? `
                       </div>
                     </div>
                   </Card>
-                  )
-                })}
+                ))}
               </div>
             </>
           ) : generatedSignals.length > 0 ? (
@@ -7965,20 +7926,15 @@ ${isLoss ? `
                 <p className="text-slate-400">{t('activateSignalForTrading')}</p>
               </div>
               <div className="max-w-md mx-auto">
-                {generatedSignals.map((signal, index) => {
-                  console.log('🎨 [DEBUG] Рендер карточки одиночного сигнала:', signal.id, 'индекс:', index)
-                  return (
-                    <Card 
-                      key={signal.id}
-                      onClick={(event) => {
-                        console.log('🎯 [DEBUG] onClick карточки сигнала вызван!')
-                        console.log('🎯 [DEBUG] Event:', event)
-                        console.log('🎯 [DEBUG] Event isTrusted:', event?.isTrusted)
-                        activateSignal(signal, event)
-                        // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
-                      }}
-                      className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
-                    >
+                {generatedSignals.map((signal, index) => (
+                  <Card 
+                    key={signal.id}
+                    onClick={() => {
+                      activateSignal(signal)
+                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
+                    }}
+                    className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
+                  >
                     <div className="space-y-4">
                       {/* Header */}
                       <div className="flex items-center justify-between">
@@ -8044,8 +8000,7 @@ ${isLoss ? `
                       </div>
                     </div>
                   </Card>
-                  )
-                })}
+                ))}
               </div>
             </>
           ) : (
