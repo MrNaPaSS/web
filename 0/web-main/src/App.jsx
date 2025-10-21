@@ -7162,43 +7162,80 @@ ${isLoss ? `
       await new Promise(resolve => setTimeout(resolve, delay))
     }
 
-    // ОТКЛЮЧЕН ВЫЗОВ API - используем только моковые данные
-    console.log('🚫 API вызов отключен для ТОП-3. Используем моковые данные.');
-    
-    // Fallback логика - генерируем моковые сигналы без API
-    const pairs = selectedMarket === 'forex' 
-      ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
-      : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
-    const signals = [];
-    for (let i = 0; i < 3; i++) {
-      signals.push({
-        signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
-        id: Date.now() + i,
-        pair: pairs[i],
-        type: Math.random() > 0.5 ? 'BUY' : 'SELL',
-        direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
-        entry: '0.0000',
-        confidence: Math.random() * 0.3 + 0.7,
-        expiration: Math.floor(Math.random() * 5) + 1,
-        signal_type: selectedMarket,
-        timestamp: new Date().toISOString(),
-        status: 'generated',
-        time: 'Только что'
-      });
+    try {
+      const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          market: selectedMarket,
+          mode: 'top3'
+        })
+      })
+      const result = await response.json()
+
+      if (result.success && result.signals && result.signals.length > 0) {
+        const signals = result.signals.map((signal, index) => ({
+          ...signal,
+          id: Date.now() + index,
+          status: 'generated',
+          time: 'Только что'
+        }));
+
+        setGeneratedSignals(signals);
+        localStorage.setItem('generatedSignals', JSON.stringify(signals));
+        setLastTop3Generation(Date.now());
+        setTop3Cooldown(600);
+        
+        // Корректное завершение: переход на экран ВЫБОРА
+        setIsGenerating(false);
+        setCurrentScreen('signal-selection');
+        console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
+        console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
+        console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
+        console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
+        console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
+        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
+
+      } else {
+        // Обработка случая, когда сигналы не найдены
+        setIsGenerating(false);
+        setNoSignalAvailable(true);
+        setSignalCooldown(30);
+        setCurrentScreen('signal-selection'); // Переходим на экран выбора, чтобы показать сообщение "Нет сигналов"
+      }
+    } catch (error) {
+      console.error('❌ Ошибка получения ТОП-3 сигналов:', error);
+      // Fallback логика остается без изменений, она также ведет на 'signal-selection'
+      const pairs = selectedMarket === 'forex' 
+        ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
+        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
+      const signals = [];
+      for (let i = 0; i < 3; i++) {
+        signals.push({
+          signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
+          id: Date.now() + i,
+          pair: pairs[i],
+          type: Math.random() > 0.5 ? 'BUY' : 'SELL',
+          direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
+          entry: '0.0000',
+          confidence: Math.random() * 0.3 + 0.7,
+          expiration: Math.floor(Math.random() * 5) + 1,
+          signal_type: selectedMarket,
+          timestamp: new Date().toISOString(),
+          status: 'generated',
+          time: 'Только что'
+        });
+      }
+      setGeneratedSignals(signals);
+      localStorage.setItem('generatedSignals', JSON.stringify(signals));
+      setLastTop3Generation(Date.now());
+      setTop3Cooldown(600);
+      setIsGenerating(false);
+      setCurrentScreen('signal-selection');
     }
-    setGeneratedSignals(signals);
-    localStorage.setItem('generatedSignals', JSON.stringify(signals));
-    setLastTop3Generation(Date.now());
-    setTop3Cooldown(600);
-    setIsGenerating(false);
-    setCurrentScreen('signal-selection');
-    
-    console.log('✅ ТОП-3 моковые сигналы сгенерированы. Переход на экран выбора.');
-    console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
-    console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
-    console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
-    console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
-    console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
   const generateSignalForPair = async (pair) => {
@@ -8991,31 +9028,11 @@ ${isLoss ? `
           <div className="space-y-4">
             <Card 
               onClick={() => {
-                // Проверяем статус форекс рынка только для форекс режима
-                if (selectedMarket === 'forex' && !isForexMarketOpen()) {
-                  alert(t('forexMarketClosedWeekend'))
-                  return
-                }
-                if (!canGenerateTop3()) {
-                  // Показываем уведомление о cooldown
-                  const remainingTime = Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000)
-                  const minutes = Math.floor(remainingTime / 60)
-                  const seconds = remainingTime % 60
-                  alert(t('top3CooldownMessage', {minutes: minutes, seconds: seconds.toString().padStart(2, '0')}))
-                  return
-                }
-                // ИСПРАВЛЕНО: Убираем прямой вызов генерации.
-                // Только устанавливаем режим и переходим на следующий экран.
-                setSelectedMode('top3')
-                // Очищаем состояние сгенерированных сигналов
-                clearSignalState()
-                setCurrentScreen('signal-selection')
+                // VIP ФУНКЦИЯ - НЕАКТИВНА
+                alert('🏆 ТОП-3 сигналы - это VIP функция!\n\nДля доступа к этой функции обратитесь к администратору.')
+                return
               }}
-              className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${
-                !canGenerateTop3() || (selectedMarket === 'forex' && !isForexMarketOpen()) 
-                  ? 'opacity-60 cursor-not-allowed' 
-                  : 'cursor-pointer hover:border-amber-500/50'
-              }`}
+              className="glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl opacity-60 cursor-not-allowed"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -9025,11 +9042,20 @@ ${isLoss ? `
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-xl font-bold text-white">{t('top3Signals')}</h3>
-                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
-                        {t('popular')}
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/50">
+                        VIP
                       </Badge>
                     </div>
                     <p className="text-slate-400 text-sm mb-3">{t('bestOpportunitiesOfDay')}</p>
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-3">
+                      <div className="flex items-center gap-2 text-red-400 text-sm font-medium">
+                        <Crown className="w-4 h-4" />
+                        <span>VIP функция - недоступна</span>
+                      </div>
+                      <p className="text-xs text-red-300 mt-1">
+                        Для доступа обратитесь к администратору
+                      </p>
+                    </div>
                     {selectedMarket === 'forex' && !isForexMarketOpen() && (
                       <p className="text-xs text-rose-400 mb-2">
                         {t('forexMarketClosedLabel')}
