@@ -7188,6 +7188,7 @@ ${isLoss ? `
           time: 'Только что'
         }))
         setGeneratedSignals(signals)
+        localStorage.setItem('generatedSignals', JSON.stringify(signals)) // ДОБАВЛЕНО: сохранение в localStorage
         setLastTop3Generation(Date.now())
         setTop3Cooldown(600)
         setIsGenerating(false)
@@ -7232,6 +7233,7 @@ ${isLoss ? `
         })
       }
       setGeneratedSignals(signals)
+      localStorage.setItem('generatedSignals', JSON.stringify(signals)) // ДОБАВЛЕНО: сохранение в localStorage
       setLastTop3Generation(Date.now())
       setTop3Cooldown(600)
       setIsGenerating(false)
@@ -7279,6 +7281,7 @@ ${isLoss ? `
           time: 'Только что'
         }
         setGeneratedSignals([signal])
+        localStorage.setItem('generatedSignals', JSON.stringify([signal])) // ДОБАВЛЕНО: сохранение в localStorage
         setIsGenerating(false)
         
         // ИСПРАВЛЕНО: Убрана автоматическая активация. Вместо этого - переход на экран выбора.
@@ -7337,6 +7340,7 @@ ${isLoss ? `
     localStorage.removeItem('signalTimer')
     localStorage.removeItem('isWaitingFeedback')
     localStorage.removeItem('signalStartTime')
+    localStorage.removeItem('generatedSignals') // ДОБАВЛЕНО: очистка сгенерированных сигналов
   }
   // Активация сигнала
   const activateSignal = (signal) => {
