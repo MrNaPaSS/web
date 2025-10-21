@@ -7136,10 +7136,19 @@ ${isLoss ? `
   }, [noSignalAvailable])
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
   const generateTop3Signals = async () => {
-    setIsGenerating(true);
-    setCurrentScreen('generating');
-    setLastTop3Generation(new Date().toISOString());
+    // КРИТИЧНО: Полностью очищаем localStorage перед генерацией
+    localStorage.removeItem('pendingSignal')
+    localStorage.removeItem('signalActivated')
+    localStorage.removeItem('signalTimer')
+    localStorage.removeItem('isWaitingFeedback')
+    localStorage.removeItem('signalStartTime')
+    localStorage.removeItem('generatedSignals')
     
+    setIsGenerating(true)
+    setCurrentScreen('generating')
+    setLastTop3Generation(new Date().toISOString())
+    
+    // Этапы генерации для UI
     const stages = [
       { stage: t('connectingToMarket'), delay: 800 },
       { stage: t('analyzingTechnicalIndicators'), delay: 1200 },
@@ -7147,43 +7156,49 @@ ${isLoss ? `
       { stage: t('calculatingOptimalExpiration'), delay: 900 },
       { stage: t('applyingMLModels'), delay: 1100 },
       { stage: t('formingTop3Signals'), delay: 1000 }
-    ];
+    ]
     for (const { stage, delay } of stages) {
-      setGenerationStage(stage);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      setGenerationStage(stage)
+      await new Promise(resolve => setTimeout(resolve, delay))
     }
 
-    // ВИМКНЕНО API ВИКЛИК - ГЕНЕРАЦІЯ ТІЛЬКИ MOCK-СИГНАЛІВ
-    console.log('🔧 Генерація ТОП-3 без API виклику (вимкнено)');
-    console.log('🚫 НЕ РОБИМО API ВИКЛИКІВ - ТІЛЬКИ MOCK-СИГНАЛИ');
+    // ОТКЛЮЧЕН ВЫЗОВ API - используем только моковые данные
+    console.log('🚫 API вызов отключен для ТОП-3. Используем моковые данные.');
     
+    // Fallback логика - генерируем моковые сигналы без API
     const pairs = selectedMarket === 'forex' 
       ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
       : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
-    
-    const mockSignals = pairs.map((pair, i) => ({
-      signal_id: `mock_${pair.replace(/[\/() ]/g, '_')}_${Date.now()}_${i}`,
-      id: Date.now() + i,
-      pair: pair,
-      type: i % 2 === 0 ? 'BUY' : 'SELL',
-      direction: i % 2 === 0 ? 'BUY' : 'SELL',
-      entry: '0.0000',
-      confidence: 0.7 + i * 0.05,
-      expiration: i + 2,
-      signal_type: selectedMarket,
-      timestamp: new Date().toISOString(),
-      status: 'generated',
-      time: 'Только что'
-    }));
-    
-    setGeneratedSignals(mockSignals);
-    localStorage.setItem('generatedSignals', JSON.stringify(mockSignals));
+    const signals = [];
+    for (let i = 0; i < 3; i++) {
+      signals.push({
+        signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
+        id: Date.now() + i,
+        pair: pairs[i],
+        type: Math.random() > 0.5 ? 'BUY' : 'SELL',
+        direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
+        entry: '0.0000',
+        confidence: Math.random() * 0.3 + 0.7,
+        expiration: Math.floor(Math.random() * 5) + 1,
+        signal_type: selectedMarket,
+        timestamp: new Date().toISOString(),
+        status: 'generated',
+        time: 'Только что'
+      });
+    }
+    setGeneratedSignals(signals);
+    localStorage.setItem('generatedSignals', JSON.stringify(signals));
     setLastTop3Generation(Date.now());
     setTop3Cooldown(600);
-    
-    // ФІНАЛЬНИЙ БЛОК: ГАРАНТОВАНИЙ ПЕРЕХІД НА ЕКРАН ВИБОРУ
     setIsGenerating(false);
     setCurrentScreen('signal-selection');
+    
+    console.log('✅ ТОП-3 моковые сигналы сгенерированы. Переход на экран выбора.');
+    console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
+    console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
+    console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
+    console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
+    console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
   const generateSignalForPair = async (pair) => {
