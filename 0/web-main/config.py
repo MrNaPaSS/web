@@ -15,7 +15,14 @@ class BotConfig:
     BOT_TOKEN = "8365963410:AAFVnrFboehOUxWmkeivDVvC4nft_hjjcCQ"
     
     # OpenRouter API Key для GPT-4o mini анализа
-    OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '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')
+    # Устанавливается через переменную окружения OPENROUTER_API_KEY
+    OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+    
+    # Fallback ключ (будет удален после настройки переменной окружения)
+    if not OPENROUTER_API_KEY:
+        print("⚠️ WARNING: OPENROUTER_API_KEY not set in environment variables!")
+        print("⚠️ Set OPENROUTER_API_KEY=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")
+        OPENROUTER_API_KEY = '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'
     
     # Twelvedata API Keys (ротация для избежания лимитов)
     TWELVEDATA_API_KEYS = [
