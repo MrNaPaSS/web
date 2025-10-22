@@ -527,12 +527,12 @@
   "failed_signals": 7,
   "win_rate": 90.7,
   "511442168": {
-    "total_signals": 83,
-    "forex_signals": 11,
+    "total_signals": 85,
+    "forex_signals": 13,
     "otc_signals": 72,
     "successful_trades": 23,
     "failed_trades": 5,
-    "pending_trades": 32,
+    "pending_trades": 34,
     "win_rate": 82.14285714285714
   },
   "8428349451": {
