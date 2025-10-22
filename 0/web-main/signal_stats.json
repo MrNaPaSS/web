@@ -429,11 +429,31 @@
       "pair": "EUR/USD (OTC)",
       "direction": "SELL",
       "confidence": 0.74574
+    },
+    {
+      "user_id": "7613535490",
+      "signal_id": "otc_EUR_USD_(OTC)_1761079465",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-22T03:05:44.853828",
+      "pair": "EUR/USD (OTC)",
+      "direction": "SELL",
+      "confidence": 0.7452
+    },
+    {
+      "user_id": "8344456953",
+      "signal_id": "mock_USD_CHF (OTC)_1761078044133_2",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-22T03:06:12.859735",
+      "pair": "USD/CHF (OTC)",
+      "direction": "BUY",
+      "confidence": 0.8677395026508509
     }
   ],
-  "last_updated": "2025-10-22T01:24:12.279496",
-  "total_signals": 43,
-  "successful_signals": 39,
+  "last_updated": "2025-10-22T03:06:12.859735",
+  "total_signals": 45,
+  "successful_signals": 41,
   "failed_signals": 4,
   "win_rate": 90.7,
   "511442168": {
@@ -446,21 +466,21 @@
     "win_rate": 84.0
   },
   "8428349451": {
-    "total_signals": 29,
+    "total_signals": 32,
     "forex_signals": 3,
-    "otc_signals": 26,
+    "otc_signals": 29,
     "successful_trades": 8,
     "failed_trades": 0,
-    "pending_trades": 14,
+    "pending_trades": 17,
     "win_rate": 100.0
   },
   "8344456953": {
-    "total_signals": 18,
+    "total_signals": 19,
     "forex_signals": 0,
-    "otc_signals": 18,
-    "successful_trades": 7,
+    "otc_signals": 19,
+    "successful_trades": 8,
     "failed_trades": 0,
-    "pending_trades": 6,
+    "pending_trades": 5,
     "win_rate": 100.0
   },
   "292375460": {
@@ -471,5 +491,14 @@
     "failed_trades": 0,
     "pending_trades": 5,
     "win_rate": 0.0
+  },
+  "7613535490": {
+    "total_signals": 1,
+    "forex_signals": 0,
+    "otc_signals": 1,
+    "successful_trades": 1,
+    "failed_trades": 0,
+    "pending_trades": 0,
+    "win_rate": 100.0
   }
 }

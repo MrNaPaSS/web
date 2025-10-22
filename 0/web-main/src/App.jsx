@@ -7211,6 +7211,9 @@ function App() {
       await new Promise(resolve => setTimeout(resolve, delay))
     }
     try {
+      console.log('🚀 НАЧИНАЕМ ГЕНЕРАЦИЮ ОДИНОЧНОГО СИГНАЛА для пары:', pair)
+      console.log('📡 API URL:', `${getApiUrl(5000)}/api/signal/generate`)
+      
       // РЕАЛЬНЫЙ запрос к Signal API
       const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
         method: 'POST',
@@ -7224,9 +7227,13 @@ function App() {
           pair: pair
         })
       })
+      
+      console.log('📡 Response status:', response.status)
       const result = await response.json()
+      console.log('📡 API Response:', result)
+      
       if (result.success && result.signals && result.signals.length > 0) {
-        // Получили РЕАЛЬНЫЙ сигнал
+        console.log('✅ Получен РЕАЛЬНЫЙ одиночный сигнал от API')
         const signal = {
           ...result.signals[0],
           id: Date.now(),
@@ -7234,25 +7241,19 @@ function App() {
           time: 'Только что'
         }
         setGeneratedSignals([signal])
-        localStorage.setItem('generatedSignals', JSON.stringify([signal])) // ДОБАВЛЕНО: сохранение в localStorage
+        localStorage.setItem('generatedSignals', JSON.stringify([signal]))
         setIsGenerating(false)
-        
-        // ИСПРАВЛЕНО: Убрана автоматическая активация. Вместо этого - переход на экран выбора.
         setCurrentScreen('signal-selection')
-        
-        console.log('✅ Получен РЕАЛЬНЫЙ одиночный сигнал, переход к выбору:', signal)
-        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection')
+        console.log('✅ РЕАЛЬНЫЙ сигнал установлен:', signal)
       } else {
-        // Нет подходящего сигнала
-        setIsGenerating(false)
-        setNoSignalAvailable(true)
-        setSignalCooldown(30)
-        setCurrentScreen('signal-selection')
+        console.log('⚠️ API вернул пустой результат, используем fallback')
+        throw new Error('API вернул пустой результат')
       }
     } catch (error) {
       console.error('❌ Ошибка получения сигнала:', error)
+      console.log('🔄 Переходим к fallback генерации')
+      
       // Fallback: генерируем mock сигнал если API недоступен
-      console.warn('⚠️ API недоступен - используем mock сигнал')
       const mockSignal = {
         signal_id: `mock_${pair.replace('/', '_')}_${Date.now()}`,
         id: Date.now(),
@@ -7267,10 +7268,12 @@ function App() {
         status: 'generated',
         time: 'Только что'
       }
+      
       setGeneratedSignals([mockSignal])
+      localStorage.setItem('generatedSignals', JSON.stringify([mockSignal]))
       setIsGenerating(false)
       setCurrentScreen('signal-selection')
-      console.log('✅ Mock сигнал сгенерирован:', mockSignal)
+      console.log('✅ Fallback сигнал сгенерирован:', mockSignal)
     }
   }
   // Функция для расчета оставшегося времени на основе реального времени
