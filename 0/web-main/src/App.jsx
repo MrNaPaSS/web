@@ -6710,9 +6710,11 @@ function App() {
   }
   // Функция анализа сигнала через OpenRouter GPT-4o mini
   const analyzeSignal = async (signal) => {
+    console.log('🚀 НАЧИНАЕМ АНАЛИЗ СИГНАЛА:', signal)
     setIsAnalyzing(true)
     setAnalysisResult(null)
     const isLoss = signal.result === 'loss' || signal.feedback === 'failure'
+    console.log('🔍 isLoss:', isLoss)
     const prompt = `Ты строгий профессиональный аналитик бинарных опционов. Проанализируй ${isLoss ? 'УБЫТОЧНУЮ' : 'успешную'} сделку трейдера.
 ⚠️ КРИТИЧЕСКИ ВАЖНО: ${isLoss ? 'Всегда указывай что это ВИНА ТРЕЙДЕРА (неправильный вход, плохое управление рисками, эмоциональное решение), а НЕ рынка или сигнала!' : 'Покажи что трейдер правильно применил стратегию.'}
 📊 ДАННЫЕ СДЕЛКИ:
@@ -6762,13 +6764,20 @@ ${isLoss ? `
 Тон: СТРОГИЙ, ПРЯМОЙ, ПРОФЕССИОНАЛЬНЫЙ. Минимум воды, максимум конкретики!
 ВАЖНО: Ответ должен быть максимум 5 строк!`
     try {
+      console.log('📤 ОТПРАВЛЯЕМ ЗАПРОС К OPENROUTER...')
+      console.log('🔑 API KEY:', process.env.REACT_APP_OPENROUTER_API_KEY ? 'ЕСТЬ' : 'НЕТ')
+      
       // Создаем AbortController для таймаута
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 секунд таймаут
+      
+      const apiKey = process.env.REACT_APP_OPENROUTER_API_KEY || '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'
+      console.log('🔑 ИСПОЛЬЗУЕМ КЛЮЧ:', apiKey.substring(0, 20) + '...')
+      
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': window.location.origin,
           'X-Title': 'Forex Signals Pro'
@@ -6787,29 +6796,48 @@ ${isLoss ? `
         signal: controller.signal
       })
       clearTimeout(timeoutId)
+      
+      console.log('📡 HTTP Status:', response.status, response.statusText)
+      
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ HTTP Error:', response.status, errorText)
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
+      
       const data = await response.json()
+      console.log('📥 ПОЛУЧЕН ОТВЕТ:', data)
+      
       if (data.choices && data.choices[0] && data.choices[0].message) {
+        console.log('✅ АНАЛИЗ УСПЕШЕН:', data.choices[0].message.content)
         setAnalysisResult(data.choices[0].message.content)
       } else if (data.error) {
+        console.error('❌ API Error:', data.error)
         setAnalysisResult(`${t('apiError')}: ${data.error.message || t('unknownError')}`)
       } else {
+        console.error('❌ Unknown response format:', data)
         setAnalysisResult(t('analysisError'))
       }
     } catch (error) {
-      console.error('Ошибка анализа:', error)
+      console.error('❌ ОШИБКА АНАЛИЗА:', error)
+      console.error('❌ Error name:', error.name)
+      console.error('❌ Error message:', error.message)
+      
       if (error.name === 'AbortError') {
+        console.log('⏰ ТАЙМАУТ')
         setAnalysisResult(t('timeoutError'))
       } else if (error.message.includes('HTTP')) {
+        console.log('🌐 HTTP ОШИБКА')
         setAnalysisResult(`${t('serverError')}: ${error.message}`)
       } else if (error.message.includes('Failed to fetch')) {
+        console.log('🌐 СЕТЕВАЯ ОШИБКА')
         setAnalysisResult(t('networkError'))
       } else {
+        console.log('❓ ОБЩАЯ ОШИБКА')
         setAnalysisResult(`${t('generalError')}: ${error.message}`)
       }
     } finally {
+      console.log('🏁 АНАЛИЗ ЗАВЕРШЕН')
       setIsAnalyzing(false)
     }
   }
