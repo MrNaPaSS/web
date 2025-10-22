@@ -316,6 +316,15 @@ function App() {
       console.log('🚫 [BLOCK] generatedSignals:', generatedSignals)
       console.log('🚫 [BLOCK] pendingSignal:', pendingSignal)
       console.log('🚫 [BLOCK] currentScreen:', currentScreen)
+      
+      // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем, что это НЕ автоматическая активация
+      const stack = new Error().stack
+      if (stack && stack.includes('useEffect')) {
+        console.error('❌ [ЗАЩИТА] Блокируем автоматическую активацию из useEffect!')
+        console.error('❌ [ЗАЩИТА] Стек вызовов:', stack)
+        return
+      }
+      
       // НЕ ВЫЗЫВАЕМ activateSignal() - только логируем
     }
   }, [generatedSignals])
@@ -6912,17 +6921,11 @@ function App() {
         const savedSignal = localStorage.getItem('pendingSignal')
         const savedGeneratedSignals = localStorage.getItem('generatedSignals')
         
-        // Восстанавливаем сгенерированные сигналы если они есть
+        // КРИТИЧНО: НЕ ВОССТАНАВЛИВАЕМ СГЕНЕРИРОВАННЫЕ СИГНАЛЫ
+        // Это предотвращает автоматическую активацию
         if (savedGeneratedSignals) {
-          try {
-            const signals = JSON.parse(savedGeneratedSignals)
-            setGeneratedSignals(signals)
-            setCurrentScreen('signal-selection')
-            console.log('✅ Восстановлены сгенерированные сигналы из localStorage:', signals.length)
-          } catch (error) {
-            console.error('❌ Ошибка восстановления generatedSignals:', error)
-            localStorage.removeItem('generatedSignals')
-          }
+          console.log('🚫 [BLOCK] Блокируем восстановление generatedSignals для предотвращения автоактивации')
+          localStorage.removeItem('generatedSignals')
         }
         
         // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЮ ЛОГИКУ ВОССТАНОВЛЕНИЯ
