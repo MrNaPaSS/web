@@ -8971,6 +8971,7 @@ function App() {
   if (currentScreen === 'market-select') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
+        <MarketStatusBadge />
         {/* Animated background */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
@@ -8986,10 +8987,24 @@ function App() {
           <div className="space-y-4">
             <Card 
               onClick={() => {
+                // Проверяем статус форекс рынка перед выбором
+                if (!isForexMarketOpen()) {
+                  const now = new Date()
+                  const europeanTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Berlin"}))
+                  const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+                  const currentDay = dayNames[europeanTime.getDay()]
+                  const currentTime = europeanTime.toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })
+                  
+                  alert(`🔴 Форекс рынок закрыт!\n\nТекущее время: ${currentTime} (${currentDay})\nРынок работает: Пн-Пт 06:00-22:00 (Europe/Berlin)\n\nПопробуйте OTC режим - работает 24/7!`)
+                  return
+                }
                 setSelectedMarket('forex')
                 setCurrentScreen('mode-select')
               }}
-              className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl"
+              className={`glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${!isForexMarketOpen() ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -8997,8 +9012,13 @@ function App() {
                     <TrendingUp className="w-8 h-8 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-1">Forex</h3>
-                    <p className="text-slate-400 text-sm">{t('forexSchedule')}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-xl font-bold text-white">Forex</h3>
+                      <div className={`w-2 h-2 rounded-full ${isForexMarketOpen() ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
+                    </div>
+                    <p className="text-slate-400 text-sm">
+                      {isForexMarketOpen() ? '🟢 Рынок открыт' : '🔴 Рынок закрыт'} • {t('forexSchedule')}
+                    </p>
                     <div className="flex gap-2 mt-2">
                       <Badge variant="outline" className="border-emerald-500/50 text-emerald-400 text-xs">
                         EUR/USD
