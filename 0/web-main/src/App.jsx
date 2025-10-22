@@ -300,6 +300,42 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false) // Флаг процесса генерации
   const [generationStage, setGenerationStage] = useState('') // Текущая стадия генерации
   const [generatedSignals, setGeneratedSignals] = useState([]) // Сгенерированные сигналы
+  
+  // ОТСЛЕЖИВАНИЕ: Логируем ВСЕ изменения generatedSignals
+  useEffect(() => {
+    console.log('🔄 [GENERATED_SIGNALS_CHANGE] generatedSignals изменились:', generatedSignals)
+    console.log('🔄 [GENERATED_SIGNALS_CHANGE] Количество:', generatedSignals.length)
+    console.log('🔄 [GENERATED_SIGNALS_CHANGE] currentScreen:', currentScreen)
+    console.log('🔄 [GENERATED_SIGNALS_CHANGE] pendingSignal:', pendingSignal)
+    console.trace('🔄 [GENERATED_SIGNALS_CHANGE] Стек вызовов:')
+    
+    // КРИТИЧНО: БЛОКИРУЕМ АВТОМАТИЧЕСКУЮ АКТИВАЦИЮ
+    if (generatedSignals.length > 0 && !pendingSignal) {
+      console.log('🚫 [BLOCK] Блокируем автоматическую активацию сигнала!')
+      console.log('🚫 [BLOCK] Пользователь должен кликнуть на сигнал вручную!')
+      console.log('🚫 [BLOCK] generatedSignals:', generatedSignals)
+      console.log('🚫 [BLOCK] pendingSignal:', pendingSignal)
+      console.log('🚫 [BLOCK] currentScreen:', currentScreen)
+      // НЕ ВЫЗЫВАЕМ activateSignal() - только логируем
+    }
+  }, [generatedSignals])
+  
+  // ОТСЛЕЖИВАНИЕ: Логируем ВСЕ изменения currentScreen
+  useEffect(() => {
+    console.log('🔄 [SCREEN_CHANGE] currentScreen изменился на:', currentScreen)
+    console.log('🔄 [SCREEN_CHANGE] generatedSignals.length:', generatedSignals.length)
+    console.log('🔄 [SCREEN_CHANGE] pendingSignal:', pendingSignal)
+    console.log('🔄 [SCREEN_CHANGE] localStorage signalActivated:', localStorage.getItem('signalActivated'))
+    console.trace('🔄 [SCREEN_CHANGE] Стек вызовов:')
+  }, [currentScreen])
+  
+  // ОТСЛЕЖИВАНИЕ: Логируем ВСЕ изменения pendingSignal
+  useEffect(() => {
+    console.log('🔄 [PENDING_SIGNAL_CHANGE] pendingSignal изменился:', pendingSignal)
+    console.log('🔄 [PENDING_SIGNAL_CHANGE] currentScreen:', currentScreen)
+    console.log('🔄 [PENDING_SIGNAL_CHANGE] generatedSignals.length:', generatedSignals.length)
+    console.trace('🔄 [PENDING_SIGNAL_CHANGE] Стек вызовов:')
+  }, [pendingSignal])
   const [showReloadWarning, setShowReloadWarning] = useState(false) // Предупреждение при перезагрузке
   // Notification settings
   const [notificationSettings, setNotificationSettings] = useState({
@@ -7203,6 +7239,10 @@ function App() {
           time: 'Только что'
         }));
 
+        console.log('🔍 [API RESPONSE] Получены сигналы от API:', signals);
+        console.log('🔍 [API RESPONSE] Количество сигналов:', signals.length);
+        console.log('🔍 [API RESPONSE] Первый сигнал:', signals[0]);
+        
         setGeneratedSignals(signals);
         localStorage.setItem('generatedSignals', JSON.stringify(signals));
         setLastTop3Generation(Date.now());
@@ -7217,6 +7257,8 @@ function App() {
         console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
         console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
         console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
+        console.log('🔍 [DEBUG] pendingSignal в момент установки:', pendingSignal);
+        console.log('🔍 [DEBUG] localStorage signalActivated:', localStorage.getItem('signalActivated'));
 
       } else {
         // Обработка случая, когда сигналы не найдены
@@ -7385,14 +7427,55 @@ function App() {
   }
   // Активация сигнала
   const activateSignal = (signal) => {
+    console.log('🚨🚨🚨 [ACTIVATE_SIGNAL_CALLED] activateSignal вызвана!')
+    console.log('🚨🚨🚨 [ACTIVATE_SIGNAL_CALLED] Сигнал:', signal)
+    console.log('🚨🚨🚨 [ACTIVATE_SIGNAL_CALLED] Текущий экран:', currentScreen)
+    console.log('🚨🚨🚨 [ACTIVATE_SIGNAL_CALLED] pendingSignal:', pendingSignal)
+    console.log('🚨🚨🚨 [ACTIVATE_SIGNAL_CALLED] generatedSignals.length:', generatedSignals.length)
+    console.trace('🚨🚨🚨 [ACTIVATE_SIGNAL_CALLED] ПОЛНЫЙ СТЕК ВЫЗОВОВ:')
+    
+    // ЗАЩИТА: Проверяем, нет ли уже активного сигнала
+    if (pendingSignal) {
+      console.warn('⛔ [ЗАЩИТА] Попытка активировать сигнал при уже активном сигнале!')
+      console.warn('⛔ [ЗАЩИТА] Текущий активный сигнал:', pendingSignal)
+      console.warn('⛔ [ЗАЩИТА] Новый сигнал заблокирован:', signal)
+      return
+    }
+    
+    // ЗАЩИТА: Проверяем флаг активации в localStorage
+    const isAlreadyActivated = localStorage.getItem('signalActivated')
+    if (isAlreadyActivated === 'true') {
+      console.warn('⛔ [ЗАЩИТА] Сигнал уже был активирован согласно localStorage!')
+      console.warn('⛔ [ЗАЩИТА] Блокируем повторную активацию')
+      return
+    }
+    
     console.log('🚨 [DEBUG] activateSignal вызвана!')
     console.log('🚨 [DEBUG] Сигнал для активации:', signal)
     console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
     console.log('🚨 [DEBUG] Это РУЧНАЯ активация пользователем - НЕ автоматическая!')
     console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
     
+    // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем, что это НЕ автоматическая активация
+    if (!signal || typeof signal !== 'object') {
+      console.error('❌ [ЗАЩИТА] Некорректный сигнал для активации!')
+      return
+    }
+    
+    // ЗАЩИТА: Проверяем, что это НЕ автоматическая активация из useEffect
+    const stack = new Error().stack
+    if (stack && stack.includes('useEffect')) {
+      console.error('❌ [ЗАЩИТА] Блокируем автоматическую активацию из useEffect!')
+      console.error('❌ [ЗАЩИТА] Стек вызовов:', stack)
+      return
+    }
+    
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
     const startTime = Date.now() // Время начала сигнала
+    
+    // Сначала сохраняем флаг активации
+    localStorage.setItem('signalActivated', 'true')
+    
     setPendingSignal({
       ...signal,
       startTime: startTime
@@ -7401,12 +7484,13 @@ function App() {
     setIsWaitingFeedback(false)
     // Очищаем сгенерированные сигналы из localStorage
     localStorage.removeItem('generatedSignals')
+    setGeneratedSignals([])
     // Сохраняем время начала в localStorage
     localStorage.setItem('signalStartTime', startTime.toString())
-    // Сохраняем флаг активации
-    localStorage.setItem('signalActivated', 'true')
     // Переходим на экран активной сделки
     setCurrentScreen('main')
+    
+    console.log('✅ [DEBUG] Сигнал успешно активирован!')
   }
   // Отправка фидбека на бэкенд
   const submitFeedback = async (isSuccess) => {
@@ -7872,6 +7956,9 @@ function App() {
     console.log('🔍 [SIGNAL-SELECTION DEBUG] generatedSignals:', generatedSignals)
     console.log('🔍 [SIGNAL-SELECTION DEBUG] Количество сигналов:', generatedSignals.length)
     console.log('🔍 [SIGNAL-SELECTION DEBUG] selectedMode:', selectedMode)
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] pendingSignal:', pendingSignal)
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] localStorage signalActivated:', localStorage.getItem('signalActivated'))
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] localStorage generatedSignals:', localStorage.getItem('generatedSignals'))
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -7921,6 +8008,9 @@ function App() {
                   <Card 
                     key={signal.id}
                     onClick={() => {
+                      console.log(`🖱️ [КЛИК TOP3] Пользователь кликнул на сигнал ${signal.pair} ${signal.type}`)
+                      console.log('🖱️ [КЛИК] pendingSignal:', pendingSignal)
+                      console.log('🖱️ [КЛИК] localStorage signalActivated:', localStorage.getItem('signalActivated'))
                       activateSignal(signal)
                       // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
                     }}
@@ -8008,6 +8098,9 @@ function App() {
                   <Card 
                     key={signal.id}
                     onClick={() => {
+                      console.log(`🖱️ [КЛИК SINGLE] Пользователь кликнул на сигнал ${signal.pair} ${signal.type}`)
+                      console.log('🖱️ [КЛИК] pendingSignal:', pendingSignal)
+                      console.log('🖱️ [КЛИК] localStorage signalActivated:', localStorage.getItem('signalActivated'))
                       activateSignal(signal)
                       // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
                     }}
