@@ -519,21 +519,31 @@
       "pair": "GBP/USD",
       "direction": "SELL",
       "confidence": 85.542
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "otc_EUR_USD_(OTC)_1761161798",
+      "signal_type": "otc",
+      "feedback": "failed",
+      "timestamp": "2025-10-22T21:45:17.769182",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.75198
     }
   ],
-  "last_updated": "2025-10-22T21:03:35.656313",
-  "total_signals": 52,
+  "last_updated": "2025-10-22T21:45:17.769182",
+  "total_signals": 53,
   "successful_signals": 45,
-  "failed_signals": 7,
+  "failed_signals": 8,
   "win_rate": 90.7,
   "511442168": {
-    "total_signals": 85,
+    "total_signals": 89,
     "forex_signals": 13,
-    "otc_signals": 72,
+    "otc_signals": 76,
     "successful_trades": 23,
-    "failed_trades": 5,
-    "pending_trades": 34,
-    "win_rate": 82.14285714285714
+    "failed_trades": 6,
+    "pending_trades": 36,
+    "win_rate": 79.3103448275862
   },
   "8428349451": {
     "total_signals": 40,

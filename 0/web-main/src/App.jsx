@@ -301,49 +301,28 @@ function App() {
   const [generationStage, setGenerationStage] = useState('') // Текущая стадия генерации
   const [generatedSignals, setGeneratedSignals] = useState([]) // Сгенерированные сигналы
   
-  // ОТСЛЕЖИВАНИЕ: Логируем ВСЕ изменения generatedSignals
+  // ОТСЛЕЖИВАНИЕ: Логируем изменения generatedSignals
   useEffect(() => {
-    console.log('🔄 [GENERATED_SIGNALS_CHANGE] generatedSignals изменились:', generatedSignals)
-    console.log('🔄 [GENERATED_SIGNALS_CHANGE] Количество:', generatedSignals.length)
-    console.log('🔄 [GENERATED_SIGNALS_CHANGE] currentScreen:', currentScreen)
-    console.log('🔄 [GENERATED_SIGNALS_CHANGE] pendingSignal:', pendingSignal)
-    console.trace('🔄 [GENERATED_SIGNALS_CHANGE] Стек вызовов:')
-    
-    // КРИТИЧНО: БЛОКИРУЕМ АВТОМАТИЧЕСКУЮ АКТИВАЦИЮ
-    if (generatedSignals.length > 0 && !pendingSignal) {
-      console.log('🚫 [BLOCK] Блокируем автоматическую активацию сигнала!')
-      console.log('🚫 [BLOCK] Пользователь должен кликнуть на сигнал вручную!')
-      console.log('🚫 [BLOCK] generatedSignals:', generatedSignals)
-      console.log('🚫 [BLOCK] pendingSignal:', pendingSignal)
-      console.log('🚫 [BLOCK] currentScreen:', currentScreen)
-      
-      // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА: Проверяем, что это НЕ автоматическая активация
-      const stack = new Error().stack
-      if (stack && stack.includes('useEffect')) {
-        console.error('❌ [ЗАЩИТА] Блокируем автоматическую активацию из useEffect!')
-        console.error('❌ [ЗАЩИТА] Стек вызовов:', stack)
-        return
-      }
-      
-      // НЕ ВЫЗЫВАЕМ activateSignal() - только логируем
+    if (generatedSignals.length > 0) {
+      console.log('📡 Сигналы обновлены:', generatedSignals.length, 'шт.')
+      console.log('🖥️ Текущий экран:', currentScreen)
+      console.log('⏳ Активный сигнал:', pendingSignal ? 'Да' : 'Нет')
     }
   }, [generatedSignals])
   
-  // ОТСЛЕЖИВАНИЕ: Логируем ВСЕ изменения currentScreen
+  // ОТСЛЕЖИВАНИЕ: Логируем изменения currentScreen
   useEffect(() => {
-    console.log('🔄 [SCREEN_CHANGE] currentScreen изменился на:', currentScreen)
-    console.log('🔄 [SCREEN_CHANGE] generatedSignals.length:', generatedSignals.length)
-    console.log('🔄 [SCREEN_CHANGE] pendingSignal:', pendingSignal)
-    console.log('🔄 [SCREEN_CHANGE] localStorage signalActivated:', localStorage.getItem('signalActivated'))
-    console.trace('🔄 [SCREEN_CHANGE] Стек вызовов:')
+    console.log('📱 Переход на экран:', currentScreen)
+    if (currentScreen === 'signal-selection' && generatedSignals.length > 0) {
+      console.log('✅ Сигналы готовы к выбору:', generatedSignals.length, 'шт.')
+    }
   }, [currentScreen])
   
-  // ОТСЛЕЖИВАНИЕ: Логируем ВСЕ изменения pendingSignal
+  // ОТСЛЕЖИВАНИЕ: Логируем изменения pendingSignal
   useEffect(() => {
-    console.log('🔄 [PENDING_SIGNAL_CHANGE] pendingSignal изменился:', pendingSignal)
-    console.log('🔄 [PENDING_SIGNAL_CHANGE] currentScreen:', currentScreen)
-    console.log('🔄 [PENDING_SIGNAL_CHANGE] generatedSignals.length:', generatedSignals.length)
-    console.trace('🔄 [PENDING_SIGNAL_CHANGE] Стек вызовов:')
+    if (pendingSignal) {
+      console.log('🎯 Сигнал активирован:', pendingSignal.pair, pendingSignal.direction)
+    }
   }, [pendingSignal])
   const [showReloadWarning, setShowReloadWarning] = useState(false) // Предупреждение при перезагрузке
   // Notification settings
@@ -7242,26 +7221,23 @@ function App() {
           time: 'Только что'
         }));
 
-        console.log('🔍 [API RESPONSE] Получены сигналы от API:', signals);
-        console.log('🔍 [API RESPONSE] Количество сигналов:', signals.length);
-        console.log('🔍 [API RESPONSE] Первый сигнал:', signals[0]);
+        console.log('✅ Получены РЕАЛЬНЫЕ сигналы:', signals);
+        console.log('📊 Количество сигналов:', signals.length);
+        console.log('🎯 Первый сигнал:', signals[0]);
         
+        // КРИТИЧНО: Сначала устанавливаем сигналы
         setGeneratedSignals(signals);
         localStorage.setItem('generatedSignals', JSON.stringify(signals));
         setLastTop3Generation(Date.now());
         setTop3Cooldown(600);
         
-        // Корректное завершение: переход на экран ВЫБОРА
+        // Затем переходим на экран выбора
         setIsGenerating(false);
         setCurrentScreen('signal-selection');
-        console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
-        console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
-        console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
-        console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
-        console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
-        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
-        console.log('🔍 [DEBUG] pendingSignal в момент установки:', pendingSignal);
-        console.log('🔍 [DEBUG] localStorage signalActivated:', localStorage.getItem('signalActivated'));
+        
+        console.log('✅ ТОП-3 сигналы готовы к выбору');
+        console.log('📍 Экран: signal-selection');
+        console.log('🔢 Сигналов в массиве:', signals.length);
 
       } else {
         // Обработка случая, когда сигналы не найдены
