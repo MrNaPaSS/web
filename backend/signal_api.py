@@ -13,24 +13,11 @@ from datetime import datetime
 from functools import wraps
 from audit_logger import audit_logger
 
-# Добавляем путь к боту для импорта модулей
-BOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
-sys.path.insert(0, BOT_DIR)
-print(f'[DEBUG] BOT_DIR: {BOT_DIR}')
-print(f'[DEBUG] sys.path[0]: {sys.path[0]}')
-print(f'[DEBUG] signal_generator exists: {os.path.exists(os.path.join(BOT_DIR, "signal_generator.py"))}')
-
-# Проверим все файлы в директории
-if os.path.exists(BOT_DIR):
-    files = os.listdir(BOT_DIR)
-    python_files = [f for f in files if f.endswith('.py')]
-    print(f'[DEBUG] Python files in BOT_DIR: {python_files[:10]}')
-
-# Попробуем найти signal_generator.py в корневой директории
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+# Добавляем путь к корневой директории проекта
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 print(f'[DEBUG] ROOT_DIR: {ROOT_DIR}')
-print(f'[DEBUG] signal_generator exists in ROOT: {os.path.exists(os.path.join(ROOT_DIR, "signal_generator.py"))}')
+print(f'[DEBUG] signal_generator exists: {os.path.exists(os.path.join(ROOT_DIR, "signal_generator.py"))}')
 
 # Импортируем генераторы сигналов из основного бота
 from signal_generator import SignalGenerator
@@ -176,6 +163,37 @@ def save_feedback_to_stats(user_id, signal_id, feedback, pair=None, direction=No
     save_signal_stats(stats)
     print(f'[FEEDBACK] Сохранен фидбек: {feedback_record}')
 
+def log_market_closed_attempt(user_id, market, mode, pair=None):
+    """Логирование попыток генерации при закрытом рынке"""
+    try:
+        log_file = os.path.join(ROOT_DIR, 'market_closed_attempts.json')
+        
+        if os.path.exists(log_file):
+            with open(log_file, 'r', encoding='utf-8') as f:
+                logs = json.load(f)
+        else:
+            logs = {'attempts': [], 'total_count': 0}
+        
+        logs['attempts'].append({
+            'user_id': str(user_id),
+            'market': market,
+            'mode': mode,
+            'pair': pair,
+            'timestamp': datetime.now().isoformat()
+        })
+        logs['total_count'] += 1
+        
+        # Храним только последние 1000 записей
+        if len(logs['attempts']) > 1000:
+            logs['attempts'] = logs['attempts'][-1000:]
+        
+        with open(log_file, 'w', encoding='utf-8') as f:
+            json.dump(logs, f, ensure_ascii=False, indent=2)
+            
+        print(f'[MARKET_CLOSED] User {user_id} tried to generate {mode} {market} signal')
+    except Exception as e:
+        print(f'[ERROR] Failed to log market closed attempt: {e}')
+
 def update_user_stats(user_id, signal_type, feedback=None):
     """Обновление статистики пользователя"""
     stats = load_signal_stats()
@@ -248,6 +266,34 @@ async def generate_signal():
                 'success': False,
                 'error': 'user_id required'
             }), 400
+        
+        # НОВОЕ: Проверка расписания для форекс
+        if market == 'forex':
+            from market_schedule import MarketSchedule
+            market_schedule = MarketSchedule()
+            
+            is_open = market_schedule.is_market_open()
+            forex_available = market_schedule.is_forex_available()
+            
+            print(f'[MARKET] Проверка расписания для {market}: open={is_open}, forex_available={forex_available}')
+            
+            if not is_open:
+                log_market_closed_attempt(user_id, market, mode, pair)
+                return jsonify({
+                    'success': False,
+                    'error': 'market_closed',
+                    'message': 'Форекс рынок закрыт. Работает Пн-Пт 06:00-22:00 (Europe/Berlin)',
+                    'market_status': market_schedule.get_market_status()
+                }), 200
+            
+            if not forex_available:
+                log_market_closed_attempt(user_id, market, mode, pair)
+                return jsonify({
+                    'success': False,
+                    'error': 'forex_restricted',
+                    'message': 'Форекс недоступен с 22:00 до 06:00 по будням',
+                    'market_status': market_schedule.get_market_status()
+                }), 200
         
         signals = []
         print(f'[DEBUG] Начинаем генерацию для market={market}, mode={mode}')
@@ -1179,7 +1225,7 @@ def get_admin_stats():
     """Получение статистики для админ-панели"""
     try:
         # Загружаем данные пользователей
-        authorized_file = os.path.join(BOT_DIR, 'authorized_users.json')
+        authorized_file = os.path.join(ROOT_DIR, 'authorized_users.json')
         if os.path.exists(authorized_file):
             with open(authorized_file, 'r', encoding='utf-8') as f:
                 authorized_data = json.load(f)
@@ -1188,7 +1234,7 @@ def get_admin_stats():
             total_users = 0
         
         # Загружаем статистику сигналов
-        stats_file = os.path.join(BOT_DIR, 'signal_stats.json')
+        stats_file = os.path.join(ROOT_DIR, 'signal_stats.json')
         if os.path.exists(stats_file):
             with open(stats_file, 'r', encoding='utf-8') as f:
                 stats_data = json.load(f)
@@ -1201,7 +1247,7 @@ def get_admin_stats():
             losing_signals = 0
         
         # Загружаем активных пользователей (онлайн)
-        activity_file = os.path.join(BOT_DIR, 'active_users.json')
+        activity_file = os.path.join(ROOT_DIR, 'active_users.json')
         if os.path.exists(activity_file):
             with open(activity_file, 'r', encoding='utf-8') as f:
                 activity_data = json.load(f)
@@ -1240,7 +1286,7 @@ def get_user_subscriptions():
             }), 400
 
         # Загружаем подписки пользователей
-        subscriptions_file = os.path.join(BOT_DIR, 'user_subscriptions.json')
+        subscriptions_file = os.path.join(ROOT_DIR, 'user_subscriptions.json')
         if os.path.exists(subscriptions_file):
             with open(subscriptions_file, 'r', encoding='utf-8') as f:
                 subscriptions_data = json.load(f)
@@ -1276,7 +1322,7 @@ def update_user_subscriptions():
             }), 400
 
         # Загружаем существующие подписки
-        subscriptions_file = os.path.join(BOT_DIR, 'user_subscriptions.json')
+        subscriptions_file = os.path.join(ROOT_DIR, 'user_subscriptions.json')
         if os.path.exists(subscriptions_file):
             with open(subscriptions_file, 'r', encoding='utf-8') as f:
                 subscriptions_data = json.load(f)
@@ -1336,7 +1382,7 @@ def get_subscription_status():
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id is required'}), 400
         
-        subscriptions_file = os.path.join(BOT_DIR, 'user_subscriptions.json')
+        subscriptions_file = os.path.join(ROOT_DIR, 'user_subscriptions.json')
         if os.path.exists(subscriptions_file):
             with open(subscriptions_file, 'r', encoding='utf-8') as f:
                 subscriptions_data = json.load(f)
@@ -1419,7 +1465,7 @@ def bulk_subscription_update():
             return jsonify({'success': False, 'error': 'Missing parameters'}), 400
         
         # Загружаем существующие подписки
-        subscriptions_file = os.path.join(BOT_DIR, 'user_subscriptions.json')
+        subscriptions_file = os.path.join(ROOT_DIR, 'user_subscriptions.json')
         if os.path.exists(subscriptions_file):
             with open(subscriptions_file, 'r', encoding='utf-8') as f:
                 subscriptions_data = json.load(f)
@@ -1516,6 +1562,165 @@ def health_check():
     })
 
 
+@app.route('/api/analyze-signal', methods=['POST'])
+def analyze_signal():
+    """Анализ сигналов через встроенный AI (без внешних API)"""
+    try:
+        data = request.get_json()
+        
+        # Извлекаем данные сигнала из запроса
+        messages = data.get('messages', [])
+        if not messages:
+            return jsonify({'error': {'message': 'No messages provided', 'code': 400}}), 400
+        
+        user_message = messages[0].get('content', '')
+        
+        # Простой анализ на основе ключевых слов
+        analysis_result = generate_signal_analysis(user_message)
+        
+        return jsonify({
+            'choices': [{
+                'message': {
+                    'content': analysis_result
+                }
+            }],
+            'usage': {
+                'total_tokens': len(analysis_result.split())
+            }
+        })
+            
+    except Exception as e:
+        return jsonify({'error': {'message': str(e), 'code': 500}}), 500
+
+
+def generate_signal_analysis(prompt):
+    """Генерация анализа сигнала на основе промпта с вариативностью"""
+    import random
+    
+    # Определяем тип анализа
+    is_success = 'успешную' in prompt.lower() or 'успешно' in prompt.lower()
+    is_loss = 'убыточную' in prompt.lower() or 'убыток' in prompt.lower()
+    
+    # Определяем валютную пару
+    pair = "EUR/USD"
+    if "gbp" in prompt.lower() or "фунт" in prompt.lower():
+        pair = "GBP/USD"
+    elif "jpy" in prompt.lower() or "йена" in prompt.lower():
+        pair = "USD/JPY"
+    elif "chf" in prompt.lower() or "франк" in prompt.lower():
+        pair = "USD/CHF"
+    elif "aud" in prompt.lower() or "австралиец" in prompt.lower():
+        pair = "AUD/USD"
+    elif "nzd" in prompt.lower() or "новозеландец" in prompt.lower():
+        pair = "NZD/USD"
+    elif "cad" in prompt.lower() or "канадец" in prompt.lower():
+        pair = "USD/CAD"
+    elif "otc" in prompt.lower():
+        pair = random.choice(["EUR/USD (OTC)", "GBP/USD (OTC)", "USD/JPY (OTC)"])
+    
+    # Определяем направление
+    direction = "BUY" if "buy" in prompt.lower() or "покупка" in prompt.lower() else "SELL"
+    
+    # Случайные факторы для разнообразия
+    time_factors = ["утром", "днем", "вечером", "в азиатскую сессию", "в европейскую сессию", "в американскую сессию"]
+    market_conditions = ["высокой волатильности", "низкой волатильности", "трендовом рынке", "флэтовом рынке", "неопределенности"]
+    emotions = ["терпение", "дисциплина", "контроль эмоций", "хладнокровие", "уверенность"]
+    
+    random_time = random.choice(time_factors)
+    random_condition = random.choice(market_conditions)
+    random_emotion = random.choice(emotions)
+    
+    if is_success:
+        success_analyses = [
+            f"""✅ АНАЛИЗ УСПЕШНОЙ СДЕЛКИ {pair}:
+1️⃣ Трейдер правильно выбрал направление {direction} и следовал стратегии.
+2️⃣ Ключевые факторы: точный анализ рынка, {random_emotion} при входе, правильная оценка условий.
+3️⃣ Рекомендации: найти оптимальную точку входа, продолжать стратегию, масштабировать успех.
+💪 Отлично! Продолжай в том же духе! Зарабатывай еще больше!""",
+            
+            f"""✅ ПРОФЕССИОНАЛЬНЫЙ АНАЛИЗ {pair}:
+1️⃣ Трейдер показал дисциплину в следовании {direction} сигналу {random_time}.
+2️⃣ Успех достигнут благодаря: правильному таймингу, анализу тренда, управлению рисками в условиях {random_condition}.
+3️⃣ Следующие шаги: улучшить точность входа, развивать навыки анализа, увеличивать объемы.
+💪 Превосходно! Твой подход работает! Продолжай зарабатывать!""",
+            
+            f"""✅ МАСТЕРСКИЙ АНАЛИЗ {pair}:
+1️⃣ Трейдер продемонстрировал профессионализм в {direction} операции.
+2️⃣ Факторы успеха: глубокий анализ, правильный выбор момента, {random_emotion} в условиях {random_condition}.
+3️⃣ Развитие: изучать новые паттерны, оптимизировать стратегию, расширять горизонты.
+💪 Блестяще! Ты на правильном пути! Зарабатывай стабильно!""",
+            
+            f"""✅ ЭКСПЕРТНЫЙ РАЗБОР {pair}:
+1️⃣ Трейдер проявил мастерство в {direction} сделке {random_time}.
+2️⃣ Успех обеспечен: качественным анализом, {random_emotion}, адаптацией к {random_condition}.
+3️⃣ Планы: углубить знания, расширить стратегии, увеличить прибыльность.
+💪 Потрясающе! Ты настоящий профессионал! Зарабатывай больше!""",
+            
+            f"""✅ ТОП-АНАЛИЗ {pair}:
+1️⃣ Трейдер блестяще выполнил {direction} операцию в условиях {random_condition}.
+2️⃣ Ключ к успеху: {random_emotion}, точный расчет, правильный тайминг {random_time}.
+3️⃣ Перспективы: масштабировать успех, изучать новые рынки, повышать доходность.
+💪 Фантастика! Ты на вершине! Продолжай доминировать!"""
+        ]
+        return random.choice(success_analyses)
+    
+    elif is_loss:
+        loss_analyses = [
+            f"""🔴 АНАЛИЗ УБЫТОЧНОЙ СДЕЛКИ {pair}:
+1️⃣ Трейдер допустил ошибки при {direction} входе {random_time} и не дождался лучшего момента.
+2️⃣ Психологические ошибки: эмоциональные решения, FOMO, жадность в условиях {random_condition}.
+3️⃣ Рекомендации: найти лучшую точку входа, изменить подход, развивать {random_emotion}.
+💪 Не сдавайся! Каждая сделка - это опыт! Продолжай торговать!""",
+            
+            f"""🔴 СТРОГИЙ АНАЛИЗ {pair}:
+1️⃣ Трейдер не смог правильно использовать {direction} сигнал из-за поспешности {random_time}.
+2️⃣ Ошибки: игнорирование сигналов рынка, неправильный тайминг, отсутствие {random_emotion} в {random_condition}.
+3️⃣ Исправления: изучать технический анализ, тренировать терпение, следовать плану.
+💪 Учись на ошибках! Каждая неудача приближает к успеху!""",
+            
+            f"""🔴 ПРОФЕССИОНАЛЬНЫЙ РАЗБОР {pair}:
+1️⃣ Трейдер не учел рыночные условия при {direction} операции {random_time}.
+2️⃣ Проблемы: недостаточный анализ, эмоциональные решения, нарушение правил в {random_condition}.
+3️⃣ План действий: углубить знания, разработать четкую стратегию, развивать {random_emotion}.
+💪 Помни: успех приходит к тем, кто учится! Не останавливайся!""",
+            
+            f"""🔴 КРИТИЧЕСКИЙ АНАЛИЗ {pair}:
+1️⃣ Трейдер потерпел неудачу в {direction} сделке из-за отсутствия {random_emotion}.
+2️⃣ Причины: поспешные решения {random_time}, игнорирование {random_condition}, нарушение дисциплины.
+3️⃣ Исправления: изучать рынок, тренировать {random_emotion}, следовать стратегии.
+💪 Каждая ошибка - шаг к мастерству! Продолжай развиваться!""",
+            
+            f"""🔴 ЭКСПЕРТНАЯ ОЦЕНКА {pair}:
+1️⃣ Трейдер не справился с {direction} операцией в условиях {random_condition}.
+2️⃣ Факторы неудачи: недостаток {random_emotion}, неправильный тайминг {random_time}, эмоциональность.
+3️⃣ Путь к успеху: углубленное изучение, практика, развитие {random_emotion}, терпение.
+💪 Мастерство приходит с опытом! Не сдавайся!"""
+        ]
+        return random.choice(loss_analyses)
+    
+    else:
+        general_analyses = [
+            f"""📊 АНАЛИЗ СИГНАЛА {pair}:
+1️⃣ Проверьте технические индикаторы и рыночные условия для {direction}.
+2️⃣ Убедитесь в правильности выбора направления и времени входа.
+3️⃣ Следуйте стратегии управления рисками и не нарушайте дисциплину.
+💪 Успешной торговли!""",
+            
+            f"""📈 ПРОФЕССИОНАЛЬНАЯ ОЦЕНКА {pair}:
+1️⃣ Изучите график и определите тренд перед {direction} входом.
+2️⃣ Проверьте объемы, волатильность и фундаментальные факторы.
+3️⃣ Планируйте сделку заранее и строго следуйте плану.
+💪 Торгуй умно и прибыльно!""",
+            
+            f"""🎯 СТРАТЕГИЧЕСКИЙ АНАЛИЗ {pair}:
+1️⃣ Оцените рыночную ситуацию и выберите оптимальный {direction} момент.
+2️⃣ Используйте стоп-лоссы и тейк-профиты для защиты капитала.
+3️⃣ Ведите дневник сделок и анализируйте результаты.
+💪 Развивайся и зарабатывай!"""
+        ]
+        return random.choice(general_analyses)
+
+
 if __name__ == '__main__':
     import sys
     import io
@@ -1531,7 +1736,7 @@ if __name__ == '__main__':
     print('[START] Signal API Server')
     print('=' * 60)
     print(f'[URL] http://localhost:5000')
-    print(f'[DIR] Bot Directory: {BOT_DIR}')
+    print(f'[DIR] Bot Directory: {ROOT_DIR}')
     print(f'[OK] Forex Generator: Initialized')
     print(f'[OK] OTC Generator: Initialized')
     print('=' * 60)

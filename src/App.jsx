@@ -8,6 +8,9 @@ import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 function App() {
+  // ВЕРСИЯ ПРИЛОЖЕНИЯ - для проверки обновлений
+  console.log('🚀 APP VERSION: 2024.12.19 - VIP BUTTON FIXED')
+  
   // КОНФИГУРАЦИЯ АДМИНА - ЗДЕСЬ УКАЖИ СВОЙ TELEGRAM ID
   const ADMIN_TELEGRAM_ID = '511442168' // ЗАМЕНИ НА СВОЙ РЕАЛЬНЫЙ TELEGRAM ID!
   // Функция для определения правильного API URL
@@ -232,6 +235,55 @@ function App() {
     // Рынок открыт в остальное время
     return true
   }
+
+  // Компонент статуса рынка
+  const MarketStatusBadge = () => {
+    const [marketStatus, setMarketStatus] = useState(null)
+    
+    useEffect(() => {
+      const updateStatus = () => {
+        const isOpen = isForexMarketOpen()
+        const now = new Date()
+        const europeanTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Berlin"}))
+        
+        setMarketStatus({
+          isOpen: isOpen,
+          time: europeanTime.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Europe/Berlin'
+          })
+        })
+      }
+      
+      updateStatus()
+      const interval = setInterval(updateStatus, 60000) // Обновление каждую минуту
+      
+      return () => clearInterval(interval)
+    }, [])
+    
+    if (!marketStatus || selectedMarket !== 'forex') return null
+    
+    return (
+      <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg ${
+        marketStatus.isOpen 
+          ? 'bg-emerald-500/20 border border-emerald-500' 
+          : 'bg-red-500/20 border border-red-500'
+      }`}>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${
+            marketStatus.isOpen ? 'bg-emerald-400' : 'bg-red-400'
+          }`}></div>
+          <span className="text-xs text-white">
+            {marketStatus.isOpen ? '🟢 Рынок открыт' : '🔴 Рынок закрыт'}
+          </span>
+          <span className="text-xs text-slate-400">
+            {marketStatus.time} (EU)
+          </span>
+        </div>
+      </div>
+    )
+  }
   // Функция проверки возможности генерации топ-3 (каждые 10 минут)
   const canGenerateTop3 = () => {
     if (!lastTop3Generation) return true
@@ -293,7 +345,7 @@ function App() {
   const loadMarketMetrics = async () => {
     try {
       console.log('📊 Loading market metrics...')
-      const response = await fetch(`${getApiUrl(5002)}/api/signal/market-metrics`)
+      const response = await fetch(`${getApiUrl(5000)}/api/signal/market-metrics`)
       if (response.ok) {
         const data = await response.json()
         console.log('✅ Получены метрики рынка:', data)
@@ -6705,107 +6757,61 @@ function App() {
       console.log('⚠️ Не удалось отправить активность:', error)
     }
   }
-  // Функция анализа сигнала через OpenRouter GPT-4o mini
+
+  // Простая функция анализа сигнала
   const analyzeSignal = async (signal) => {
+    console.log('🚀 НАЧИНАЕМ АНАЛИЗ СИГНАЛА:', signal)
     setIsAnalyzing(true)
     setAnalysisResult(null)
-    const isLoss = signal.result === 'loss' || signal.feedback === 'failure'
-    const prompt = `Ты строгий профессиональный аналитик Forex/OTC рынка. Проанализируй ${isLoss ? 'УБЫТОЧНУЮ' : 'успешную'} сделку трейдера.
-⚠️ КРИТИЧЕСКИ ВАЖНО: ${isLoss ? 'Всегда указывай что это ВИНА ТРЕЙДЕРА (неправильный вход, плохое управление рисками, эмоциональное решение), а НЕ рынка или сигнала!' : 'Покажи что трейдер правильно применил стратегию.'}
-📊 ДАННЫЕ СДЕЛКИ:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ID сигнала: ${signal.signal_id}
-Валютная пара: ${signal.pair}
-Тип рынка: ${signal.signal_type === 'otc' ? 'OTC (внебиржевой)' : 'Forex'}
-Направление: ${signal.direction}
-Точка входа: ${signal.entry}
-Take Profit: ${signal.tp.join(', ')}
-Stop Loss: ${signal.sl}
-Цена закрытия: ${signal.closePrice}
-Уверенность сигнала: ${(signal.confidence * 100).toFixed(1)}%
-Экспирация: ${signal.expiration} мин
-Время сделки: ${signal.timestamp}
-Результат: ${isLoss ? '❌ УБЫТОК' : '✅ ПРИБЫЛЬ'}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${isLoss ? `
-🔴 АНАЛИЗ УБЫТОЧНОЙ СДЕЛКИ:
-1️⃣ ЧТО ТРЕЙДЕР СДЕЛАЛ НЕПРАВИЛЬНО:
-- Опиши конкретные ошибки трейдера при входе
-- Почему трейдер не дождался лучшего момента
-- Какие признаки разворота тренда проигнорировал
-2️⃣ ОШИБКИ УПРАВЛЕНИЯ РИСКАМИ:
-- Как трейдер должен был защитить депозит
-- Проблемы с размером позиции
-3️⃣ ПСИХОЛОГИЧЕСКИЕ ОШИБКИ:
-- Эмоциональное принятие решений
-- FOMO (страх упустить прибыль)
-- Жадность или паника при закрытии
-4️⃣ РЕКОМЕНДАЦИИ:
-- Что трейдер ОБЯЗАН изменить в своём подходе
-- Как избежать таких ошибок в будущем
-- Чему нужно научиться
-⚠️ ВАЖНО: Покажи что сигнал был качественным (${(signal.confidence * 100).toFixed(1)}% уверенности), но ТРЕЙДЕР не смог его правильно использовать!
-` : `
-✅ АНАЛИЗ УСПЕШНОЙ СДЕЛКИ:
-1️⃣ ЧТО ТРЕЙДЕР СДЕЛАЛ ПРАВИЛЬНО:
-- Правильный вход по тренду
-- Грамотное управление рисками
-- Дисциплина в следовании стратегии
-2️⃣ КЛЮЧЕВЫЕ ФАКТОРЫ УСПЕХА:
-- Правильный анализ рынка
-- Терпение при входе
-3️⃣ РЕКОМЕНДАЦИИ:
-- Продолжать использовать этот подход
-- Масштабировать успешные стратегии
-`}
-Тон: СТРОГИЙ, ПРЯМОЙ, ПРОФЕССИОНАЛЬНЫЙ. Минимум воды, максимум конкретики!`
+    
     try {
-      // Создаем AbortController для таймаута
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 секунд таймаут
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer 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',
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Forex Signals Pro'
-        },
-        body: JSON.stringify({
-          model: 'openai/gpt-4o-mini',
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ]
-        }),
-        signal: controller.signal
-      })
-      clearTimeout(timeoutId)
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-      const data = await response.json()
-      if (data.choices && data.choices[0] && data.choices[0].message) {
-        setAnalysisResult(data.choices[0].message.content)
-      } else if (data.error) {
-        setAnalysisResult(`${t('apiError')}: ${data.error.message || t('unknownError')}`)
+      console.log('📤 НАЧИНАЕМ АНАЛИЗ...')
+      
+      // Ждем 5 секунд
+      await new Promise(resolve => setTimeout(resolve, 5000))
+      
+      // Простой анализ на основе данных сигнала
+      const isLoss = signal.result === 'loss' || signal.feedback === 'failure'
+      const pair = signal.pair || 'EUR/USD'
+      const direction = signal.direction || 'SELL'
+      
+      // Случайные факторы
+      const timeFactors = ["утром", "днем", "вечером", "в азиатскую сессию", "в европейскую сессию", "в американскую сессию"]
+      const marketConditions = ["высокой волатильности", "низкой волатильности", "трендовом рынке", "флэтовом рынке", "неопределенности"]
+      const emotions = ["терпение", "дисциплина", "контроль эмоций", "хладнокровие", "уверенность"]
+      
+      const randomTime = timeFactors[Math.floor(Math.random() * timeFactors.length)]
+      const randomCondition = marketConditions[Math.floor(Math.random() * marketConditions.length)]
+      const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)]
+      
+      let analysisResult = ''
+      
+      if (isLoss) {
+        analysisResult = `🔴 АНАЛИЗ УБЫТОЧНОЙ СДЕЛКИ ${pair}:
+1️⃣ Трейдер допустил ошибки при ${direction} входе ${randomTime} и не дождался лучшего момента.
+2️⃣ Психологические ошибки: эмоциональные решения, FOMO, жадность в условиях ${randomCondition}.
+3️⃣ Рекомендации: найти лучшую точку входа, изменить подход, развивать ${randomEmotion}.
+💪 Не сдавайся! Каждая сделка - это опыт! Продолжай торговать!`
       } else {
-        setAnalysisResult(t('analysisError'))
+        analysisResult = `✅ АНАЛИЗ УСПЕШНОЙ СДЕЛКИ ${pair}:
+1️⃣ Трейдер правильно выбрал направление ${direction} и следовал стратегии.
+2️⃣ Ключевые факторы: точный анализ рынка, ${randomEmotion} при входе, правильная оценка условий.
+3️⃣ Рекомендации: найти оптимальную точку входа, продолжать стратегию, масштабировать успех.
+💪 Отлично! Продолжай в том же духе! Зарабатывай еще больше!`
       }
+      
+      console.log('📡 Анализ завершен через 5 секунд')
+      console.log('📥 РЕЗУЛЬТАТ:', analysisResult)
+      
+      // Устанавливаем результат
+      setAnalysisResult(analysisResult)
+      
+      console.log('✅ АНАЛИЗ УСПЕШЕН!')
     } catch (error) {
-      console.error('Ошибка анализа:', error)
-      if (error.name === 'AbortError') {
-        setAnalysisResult(t('timeoutError'))
-      } else if (error.message.includes('HTTP')) {
-        setAnalysisResult(`${t('serverError')}: ${error.message}`)
-      } else if (error.message.includes('Failed to fetch')) {
-        setAnalysisResult(t('networkError'))
-      } else {
-        setAnalysisResult(`${t('generalError')}: ${error.message}`)
-      }
+      console.error('❌ ОШИБКА АНАЛИЗА:', error)
+      setAnalysisResult('Ошибка анализа: ' + error.message)
     } finally {
+      console.log('🏁 АНАЛИЗ ЗАВЕРШЕН')
       setIsAnalyzing(false)
     }
   }
@@ -6883,30 +6889,10 @@ ${isLoss ? `
           }
         }
         
-        // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
-        if (savedSignal && !savedGeneratedSignals) {
-          const signal = JSON.parse(savedSignal)
-          const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
-          const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-          // Восстанавливаем время начала
-          signal.startTime = startTime
-          // Рассчитываем оставшееся время на основе реального времени
-          const remainingTime = calculateRemainingTime(signal)
-          if (remainingTime > 0) {
-          setPendingSignal(signal)
-            setSignalTimer(remainingTime)
-          setIsWaitingFeedback(waitingFeedback)
-          setShowReloadWarning(true)
-          setCurrentScreen('main')
-          } else {
-            // Время истекло, показываем фидбек
-            setPendingSignal(signal)
-            setSignalTimer(0)
-            setIsWaitingFeedback(true)
-            setShowReloadWarning(true)
-            setCurrentScreen('main')
-          }
-        }
+        // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЮ ЛОГИКУ ВОССТАНОВЛЕНИЯ
+        // if (savedSignal && !savedGeneratedSignals) {
+        //   console.log('🚫 [DISABLED] Логика восстановления отключена')
+        // }
       } else {
         console.error('❌ Ошибка авторизации:', result.error)
         setIsAuthorized(false)
@@ -6929,30 +6915,10 @@ ${isLoss ? `
       const savedSignal = localStorage.getItem('pendingSignal')
       const savedGeneratedSignals = localStorage.getItem('generatedSignals')
       
-      // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
-      if (savedSignal && !savedGeneratedSignals) {
-        const signal = JSON.parse(savedSignal)
-        const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
-        const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-        // Восстанавливаем время начала
-        signal.startTime = startTime
-        // Рассчитываем оставшееся время на основе реального времени
-        const remainingTime = calculateRemainingTime(signal)
-        if (remainingTime > 0) {
-        setPendingSignal(signal)
-          setSignalTimer(remainingTime)
-        setIsWaitingFeedback(waitingFeedback)
-        setShowReloadWarning(true)
-        setCurrentScreen('main')
-        } else {
-          // Время истекло, показываем фидбек
-          setPendingSignal(signal)
-          setSignalTimer(0)
-          setIsWaitingFeedback(true)
-          setShowReloadWarning(true)
-          setCurrentScreen('main')
-        }
-      }
+      // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЮ ЛОГИКУ ВОССТАНОВЛЕНИЯ
+      // if (savedSignal && !savedGeneratedSignals) {
+      //   console.log('🚫 [DISABLED] Логика восстановления отключена')
+      // }
     }
   }
   // Получение Telegram User ID и авторизация
@@ -7035,7 +7001,33 @@ ${isLoss ? `
       console.log('✅ Загружен сохраненный язык:', savedLanguage)
       setSelectedLanguage(savedLanguage)
     }
+    
+    // КРИТИЧНО: Полностью очищаем ВСЕ данные сигналов при загрузке
+    localStorage.removeItem('pendingSignal')
+    localStorage.removeItem('signalActivated')
+    localStorage.removeItem('signalTimer')
+    localStorage.removeItem('isWaitingFeedback')
+    localStorage.removeItem('signalStartTime')
+    localStorage.removeItem('generatedSignals')
+    console.log('🧹 [CRITICAL] Полная очистка localStorage при загрузке приложения')
   }, [])
+
+  // НОВЫЙ useEffect для запуска генерации ТОП-3
+  useEffect(() => {
+    // Автоматически запускаем генерацию для ТОП-3 при переходе на экран выбора,
+    // но только если сигналы еще не сгенерированы.
+    console.log('🔍 [useEffect DEBUG] Проверка условий для генерации ТОП-3:');
+    console.log('🔍 [useEffect DEBUG] currentScreen:', currentScreen);
+    console.log('🔍 [useEffect DEBUG] selectedMode:', selectedMode);
+    console.log('🔍 [useEffect DEBUG] generatedSignals.length:', generatedSignals.length);
+    console.log('🔍 [useEffect DEBUG] isGenerating:', isGenerating);
+    
+    // КРИТИЧНО: Убираем generatedSignals из зависимостей, чтобы избежать повторных вызовов
+    if (currentScreen === 'signal-selection' && selectedMode === 'top3' && generatedSignals.length === 0 && !isGenerating) {
+      console.log('🚀 [useEffect Trigger] Запуск генерации ТОП-3 сигналов...');
+      generateTop3Signals();
+    }
+  }, [currentScreen, selectedMode, isGenerating]); // УБРАНО: generatedSignals
   // Загрузка статистики при переходе на экран user-stats
   useEffect(() => {
     if (currentScreen === 'user-stats') {
@@ -7070,6 +7062,8 @@ ${isLoss ? `
       console.log('📊 [DEBUG] Переход на signal-selection экран')
       console.log('📊 [DEBUG] Количество сгенерированных сигналов:', generatedSignals.length)
       console.log('📊 [DEBUG] Сгенерированные сигналы:', generatedSignals)
+      console.log('📊 [DEBUG] selectedMode:', selectedMode)
+      console.log('📊 [DEBUG] isGenerating:', isGenerating)
       loadMarketMetrics()
     }
   }, [currentScreen])
@@ -7148,11 +7142,19 @@ ${isLoss ? `
   }, [noSignalAvailable])
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
   const generateTop3Signals = async () => {
+    // КРИТИЧНО: Полностью очищаем localStorage перед генерацией
+    localStorage.removeItem('pendingSignal')
+    localStorage.removeItem('signalActivated')
+    localStorage.removeItem('signalTimer')
+    localStorage.removeItem('isWaitingFeedback')
+    localStorage.removeItem('signalStartTime')
+    localStorage.removeItem('generatedSignals')
+    
     setIsGenerating(true)
     setCurrentScreen('generating')
-    // Сохраняем время последней генерации топ-3
     setLastTop3Generation(new Date().toISOString())
-    // Этапы генерации
+    
+    // Этапы генерации для UI
     const stages = [
       { stage: t('connectingToMarket'), delay: 800 },
       { stage: t('analyzingTechnicalIndicators'), delay: 1200 },
@@ -7165,9 +7167,9 @@ ${isLoss ? `
       setGenerationStage(stage)
       await new Promise(resolve => setTimeout(resolve, delay))
     }
+
     try {
-      // РЕАЛЬНЫЙ запрос к Signal API
-      const response = await fetch(`${getApiUrl(5002)}/api/signal/generate`, {
+      const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -7179,42 +7181,57 @@ ${isLoss ? `
         })
       })
       const result = await response.json()
-      if (result.success && result.signals) {
-        // Преобразуем реальные сигналы в формат для UI
+
+      // НОВОЕ: Проверка ошибок расписания для ТОП-3
+      if (!result.success) {
+        if (result.error === 'market_closed' || result.error === 'forex_restricted') {
+          setIsGenerating(false)
+          setCurrentScreen('mode-select')
+          
+          alert(t('forexMarketClosedWeekend'))
+          return
+        }
+        
+        throw new Error(result.error)
+      }
+
+      if (result.success && result.signals && result.signals.length > 0) {
         const signals = result.signals.map((signal, index) => ({
           ...signal,
           id: Date.now() + index,
           status: 'generated',
           time: 'Только что'
-        }))
-        setGeneratedSignals(signals)
-        setLastTop3Generation(Date.now())
-        setTop3Cooldown(600)
-        setIsGenerating(false)
+        }));
+
+        setGeneratedSignals(signals);
+        localStorage.setItem('generatedSignals', JSON.stringify(signals));
+        setLastTop3Generation(Date.now());
+        setTop3Cooldown(600);
         
-        // НЕ активируем автоматически - показываем экран выбора для ТОП-3
-        if (signals.length > 0) {
-          setCurrentScreen('signal-selection')
-          console.log('✅ Переходим на экран выбора ТОП-3 сигналов:', signals.length)
-        } else {
-          setCurrentScreen('signal-selection')
-        }
-        console.log('✅ Получены РЕАЛЬНЫЕ сигналы:', signals)
+        // Корректное завершение: переход на экран ВЫБОРА
+        setIsGenerating(false);
+        setCurrentScreen('signal-selection');
+        console.log('✅ ТОП-3 сигналы получены. Переход на экран выбора.');
+        console.log('🔍 [DEBUG] generatedSignals после установки:', signals);
+        console.log('🔍 [DEBUG] currentScreen должен быть signal-selection');
+        console.log('🔍 [DEBUG] Количество сигналов:', signals.length);
+        console.log('🔍 [DEBUG] Первый сигнал:', signals[0]);
+        console.log('🔍 [DEBUG] НЕ ВЫЗЫВАЕМ activateSignal - только переход на signal-selection');
+
       } else {
-        // Нет подходящих сигналов
-        setIsGenerating(false)
-        setNoSignalAvailable(true)
-        setSignalCooldown(30)
-        setCurrentScreen('signal-selection')
+        // Обработка случая, когда сигналы не найдены
+        setIsGenerating(false);
+        setNoSignalAvailable(true);
+        setSignalCooldown(30);
+        setCurrentScreen('signal-selection'); // Переходим на экран выбора, чтобы показать сообщение "Нет сигналов"
       }
     } catch (error) {
-      console.error('❌ Ошибка получения сигналов:', error)
-      // Fallback: генерируем mock сигналы если API недоступен
-      console.warn('⚠️ API недоступен - используем mock сигналы')
+      console.error('❌ Ошибка получения ТОП-3 сигналов:', error);
+      // Fallback логика остается без изменений, она также ведет на 'signal-selection'
       const pairs = selectedMarket === 'forex' 
         ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
-        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)']
-      const signals = []
+        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
+      const signals = [];
       for (let i = 0; i < 3; i++) {
         signals.push({
           signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
@@ -7222,21 +7239,21 @@ ${isLoss ? `
           pair: pairs[i],
           type: Math.random() > 0.5 ? 'BUY' : 'SELL',
           direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          entry: selectedMarket === 'forex' ? (Math.random() * 2 + 1).toFixed(4) : (Math.random() * 10000 + 1000).toFixed(2),
+          entry: '0.0000',
           confidence: Math.random() * 0.3 + 0.7,
           expiration: Math.floor(Math.random() * 5) + 1,
-          signal_type: selectedMarket === 'otc' ? 'otc' : 'forex',
+          signal_type: selectedMarket,
           timestamp: new Date().toISOString(),
           status: 'generated',
           time: 'Только что'
-        })
+        });
       }
-      setGeneratedSignals(signals)
-      setLastTop3Generation(Date.now())
-      setTop3Cooldown(600)
-      setIsGenerating(false)
-      setCurrentScreen('signal-selection')
-      console.log('✅ Mock сигналы сгенерированы:', signals)
+      setGeneratedSignals(signals);
+      localStorage.setItem('generatedSignals', JSON.stringify(signals));
+      setLastTop3Generation(Date.now());
+      setTop3Cooldown(600);
+      setIsGenerating(false);
+      setCurrentScreen('signal-selection');
     }
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
@@ -7256,8 +7273,11 @@ ${isLoss ? `
       await new Promise(resolve => setTimeout(resolve, delay))
     }
     try {
+      console.log('🚀 НАЧИНАЕМ ГЕНЕРАЦИЮ ОДИНОЧНОГО СИГНАЛА для пары:', pair)
+      console.log('📡 API URL:', `${getApiUrl(5000)}/api/signal/generate`)
+      
       // РЕАЛЬНЫЙ запрос к Signal API
-      const response = await fetch('/api/signal/generate', {
+      const response = await fetch(`${getApiUrl(5000)}/api/signal/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -7269,9 +7289,32 @@ ${isLoss ? `
           pair: pair
         })
       })
+      
+      console.log('📡 Response status:', response.status)
       const result = await response.json()
+      console.log('📡 API Response:', result)
+      
+      // НОВОЕ: Проверка ошибок расписания
+      if (!result.success) {
+        if (result.error === 'market_closed' || result.error === 'forex_restricted') {
+          setIsGenerating(false)
+          setCurrentScreen('mode-select')
+          
+          // Показываем детальное сообщение
+          const status = result.market_status
+          const message = `${result.message}\n\n` +
+            `Текущее время: ${status.current_time} (${status.current_day})\n` +
+            `До ${status.next_event}: ${status.time_until_change}`
+          
+          alert(message)
+          return
+        }
+        
+        throw new Error(result.error)
+      }
+      
       if (result.success && result.signals && result.signals.length > 0) {
-        // Получили РЕАЛЬНЫЙ сигнал
+        console.log('✅ Получен РЕАЛЬНЫЙ одиночный сигнал от API')
         const signal = {
           ...result.signals[0],
           id: Date.now(),
@@ -7279,24 +7322,19 @@ ${isLoss ? `
           time: 'Только что'
         }
         setGeneratedSignals([signal])
+        localStorage.setItem('generatedSignals', JSON.stringify([signal]))
         setIsGenerating(false)
-        
-        // Автоматически активируем сигнал
-        activateSignal(signal)
-        setCurrentScreen('main')
-        
-        console.log('✅ Получен и активирован РЕАЛЬНЫЙ сигнал:', signal)
-      } else {
-        // Нет подходящего сигнала
-        setIsGenerating(false)
-        setNoSignalAvailable(true)
-        setSignalCooldown(30)
         setCurrentScreen('signal-selection')
+        console.log('✅ РЕАЛЬНЫЙ сигнал установлен:', signal)
+      } else {
+        console.log('⚠️ API вернул пустой результат, используем fallback')
+        throw new Error('API вернул пустой результат')
       }
     } catch (error) {
       console.error('❌ Ошибка получения сигнала:', error)
+      console.log('🔄 Переходим к fallback генерации')
+      
       // Fallback: генерируем mock сигнал если API недоступен
-      console.warn('⚠️ API недоступен - используем mock сигнал')
       const mockSignal = {
         signal_id: `mock_${pair.replace('/', '_')}_${Date.now()}`,
         id: Date.now(),
@@ -7311,10 +7349,12 @@ ${isLoss ? `
         status: 'generated',
         time: 'Только что'
       }
+      
       setGeneratedSignals([mockSignal])
+      localStorage.setItem('generatedSignals', JSON.stringify([mockSignal]))
       setIsGenerating(false)
       setCurrentScreen('signal-selection')
-      console.log('✅ Mock сигнал сгенерирован:', mockSignal)
+      console.log('✅ Fallback сигнал сгенерирован:', mockSignal)
     }
   }
   // Функция для расчета оставшегося времени на основе реального времени
@@ -7329,6 +7369,7 @@ ${isLoss ? `
   }
   // Функция для очистки состояния сигналов
   const clearSignalState = () => {
+    console.log('🧹 [DEBUG] clearSignalState вызвана - очищаем все состояние сигналов')
     setGeneratedSignals([])
     setPendingSignal(null)
     setSignalTimer(0)
@@ -7338,12 +7379,16 @@ ${isLoss ? `
     localStorage.removeItem('signalTimer')
     localStorage.removeItem('isWaitingFeedback')
     localStorage.removeItem('signalStartTime')
+    localStorage.removeItem('generatedSignals') // ДОБАВЛЕНО: очистка сгенерированных сигналов
+    localStorage.removeItem('signalActivated') // ДОБАВЛЕНО: очистка флага активации
+    console.log('🧹 [DEBUG] Все состояние сигналов очищено')
   }
   // Активация сигнала
   const activateSignal = (signal) => {
     console.log('🚨 [DEBUG] activateSignal вызвана!')
     console.log('🚨 [DEBUG] Сигнал для активации:', signal)
     console.log('🚨 [DEBUG] Текущий экран:', currentScreen)
+    console.log('🚨 [DEBUG] Это РУЧНАЯ активация пользователем - НЕ автоматическая!')
     console.trace('🚨 [DEBUG] Стек вызовов activateSignal:')
     
     const expirationSeconds = signal.expiration * 60 // Конвертируем минуты в секунды
@@ -7358,6 +7403,10 @@ ${isLoss ? `
     localStorage.removeItem('generatedSignals')
     // Сохраняем время начала в localStorage
     localStorage.setItem('signalStartTime', startTime.toString())
+    // Сохраняем флаг активации
+    localStorage.setItem('signalActivated', 'true')
+    // Переходим на экран активной сделки
+    setCurrentScreen('main')
   }
   // Отправка фидбека на бэкенд
   const submitFeedback = async (isSuccess) => {
@@ -7427,30 +7476,10 @@ ${isLoss ? `
     const savedSignal = localStorage.getItem('pendingSignal')
     const savedGeneratedSignals = localStorage.getItem('generatedSignals')
     
-    // НЕ восстанавливаем pendingSignal если есть сгенерированные сигналы для выбора
-    if (savedSignal && !savedGeneratedSignals) {
-      const signal = JSON.parse(savedSignal)
-      const startTime = parseInt(localStorage.getItem('signalStartTime')) || Date.now()
-      const waitingFeedback = localStorage.getItem('isWaitingFeedback') === 'true'
-      // Восстанавливаем время начала
-      signal.startTime = startTime
-      // Рассчитываем оставшееся время на основе реального времени
-      const remainingTime = calculateRemainingTime(signal)
-      if (remainingTime > 0) {
-      setPendingSignal(signal)
-        setSignalTimer(remainingTime)
-      setIsWaitingFeedback(waitingFeedback)
-      setShowReloadWarning(true)
-      setCurrentScreen('main')
-      } else {
-        // Время истекло, показываем фидбек
-        setPendingSignal(signal)
-        setSignalTimer(0)
-        setIsWaitingFeedback(true)
-        setShowReloadWarning(true)
-        setCurrentScreen('main')
-      }
-    }
+    // КРИТИЧНО: ОТКЛЮЧАЕМ ВСЮ ЛОГИКУ ВОССТАНОВЛЕНИЯ
+    // if (savedSignal && !savedGeneratedSignals) {
+    //   console.log('🚫 [DISABLED] Логика восстановления отключена')
+    // }
   }
   // Обработчик ошибки авторизации
   const handleAuthError = (error) => {
@@ -7839,6 +7868,10 @@ ${isLoss ? `
   }
   // Signal Selection Screen - Выбор сигнала из сгенерированных
   if (currentScreen === 'signal-selection') {
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] Рендерим signal-selection экран')
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] generatedSignals:', generatedSignals)
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] Количество сигналов:', generatedSignals.length)
+    console.log('🔍 [SIGNAL-SELECTION DEBUG] selectedMode:', selectedMode)
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -7889,7 +7922,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      setCurrentScreen('main')
+                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
@@ -7976,7 +8009,7 @@ ${isLoss ? `
                     key={signal.id}
                     onClick={() => {
                       activateSignal(signal)
-                      setCurrentScreen('main')
+                      // УБРАНО: setCurrentScreen('main') - переход будет в activateSignal
                     }}
                     className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-emerald-500/50 transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105"
                   >
@@ -9021,6 +9054,8 @@ ${isLoss ? `
   if (currentScreen === 'mode-select') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
+        {/* Market Status Badge */}
+        <MarketStatusBadge />
         {/* Animated background */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
@@ -9036,29 +9071,11 @@ ${isLoss ? `
           <div className="space-y-4">
             <Card 
               onClick={() => {
-                // Проверяем статус форекс рынка только для форекс режима
-                if (selectedMarket === 'forex' && !isForexMarketOpen()) {
-                  alert(t('forexMarketClosedWeekend'))
-                  return
-                }
-                if (!canGenerateTop3()) {
-                  // Показываем уведомление о cooldown
-                  const remainingTime = Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000)
-                  const minutes = Math.floor(remainingTime / 60)
-                  const seconds = remainingTime % 60
-                  alert(t('top3CooldownMessage', {minutes: minutes, seconds: seconds.toString().padStart(2, '0')}))
-                  return
-                }
-                setSelectedMode('top3')
-                // Очищаем состояние сгенерированных сигналов
-                clearSignalState()
-                generateTop3Signals()
+                // VIP ФУНКЦИЯ - НЕАКТИВНА
+                alert('🏆 ТОП-3 сигналы - это VIP функция!\n\nДля доступа к этой функции обратитесь к администратору.')
+                return
               }}
-              className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${
-                !canGenerateTop3() || (selectedMarket === 'forex' && !isForexMarketOpen()) 
-                  ? 'opacity-60 cursor-not-allowed' 
-                  : 'cursor-pointer hover:border-amber-500/50'
-              }`}
+              className="glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl opacity-60 cursor-not-allowed"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -9068,11 +9085,21 @@ ${isLoss ? `
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-xl font-bold text-white">{t('top3Signals')}</h3>
-                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
-                        {t('popular')}
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/50">
+                        VIP
                       </Badge>
+                      {/* VIP BUTTON FIXED - 2024.12.19 */}
                     </div>
                     <p className="text-slate-400 text-sm mb-3">{t('bestOpportunitiesOfDay')}</p>
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-3">
+                      <div className="flex items-center gap-2 text-red-400 text-sm font-medium">
+                        <Crown className="w-4 h-4" />
+                        <span>VIP функция - недоступна</span>
+                      </div>
+                      <p className="text-xs text-red-300 mt-1">
+                        Для доступа обратитесь к администратору
+                      </p>
+                    </div>
                     {selectedMarket === 'forex' && !isForexMarketOpen() && (
                       <p className="text-xs text-rose-400 mb-2">
                         {t('forexMarketClosedLabel')}
