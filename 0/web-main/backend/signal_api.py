@@ -1503,6 +1503,42 @@ def health_check():
     })
 
 
+@app.route('/api/analyze-signal', methods=['POST'])
+def analyze_signal():
+    """Прокси для анализа сигналов через OpenRouter"""
+    try:
+        data = request.get_json()
+        
+        # Получаем API ключ из конфига
+        api_key = BotConfig.OPENROUTER_API_KEY
+        
+        # Проксируем запрос к OpenRouter
+        response = requests.post('https://openrouter.ai/api/v1/chat/completions', 
+                               headers={
+                                   'Authorization': f'Bearer {api_key}',
+                                   'Content-Type': 'application/json',
+                                   'HTTP-Referer': request.headers.get('Origin', 'https://app.nomoneynohoney.online'),
+                                   'X-Title': 'Forex Signals Pro'
+                               },
+                               json=data,
+                               timeout=30)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({
+                'error': {
+                    'message': f'OpenRouter API error: {response.status_code}',
+                    'code': response.status_code
+                }
+            }), response.status_code
+            
+    except requests.exceptions.Timeout:
+        return jsonify({'error': {'message': 'Request timeout', 'code': 408}}), 408
+    except Exception as e:
+        return jsonify({'error': {'message': str(e), 'code': 500}}), 500
+
+
 if __name__ == '__main__':
     import sys
     import io

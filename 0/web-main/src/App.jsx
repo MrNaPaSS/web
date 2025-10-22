@@ -6764,23 +6764,16 @@ ${isLoss ? `
 Тон: СТРОГИЙ, ПРЯМОЙ, ПРОФЕССИОНАЛЬНЫЙ. Минимум воды, максимум конкретики!
 ВАЖНО: Ответ должен быть максимум 5 строк!`
     try {
-      console.log('📤 ОТПРАВЛЯЕМ ЗАПРОС К OPENROUTER...')
-      console.log('🔑 API KEY:', process.env.REACT_APP_OPENROUTER_API_KEY ? 'ЕСТЬ' : 'НЕТ')
+      console.log('📤 ОТПРАВЛЯЕМ ЗАПРОС К СЕРВЕРУ...')
       
       // Создаем AbortController для таймаута
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 секунд таймаут
       
-      const apiKey = process.env.REACT_APP_OPENROUTER_API_KEY || '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'
-      console.log('🔑 ИСПОЛЬЗУЕМ КЛЮЧ:', apiKey.substring(0, 20) + '...')
-      
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch(`${getApiUrl()}/api/analyze-signal`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Forex Signals Pro'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model: 'openai/gpt-4o-mini',
