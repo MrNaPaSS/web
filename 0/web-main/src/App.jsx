@@ -235,6 +235,55 @@ function App() {
     // Рынок открыт в остальное время
     return true
   }
+
+  // Компонент статуса рынка
+  const MarketStatusBadge = () => {
+    const [marketStatus, setMarketStatus] = useState(null)
+    
+    useEffect(() => {
+      const updateStatus = () => {
+        const isOpen = isForexMarketOpen()
+        const now = new Date()
+        const europeanTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Berlin"}))
+        
+        setMarketStatus({
+          isOpen: isOpen,
+          time: europeanTime.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Europe/Berlin'
+          })
+        })
+      }
+      
+      updateStatus()
+      const interval = setInterval(updateStatus, 60000) // Обновление каждую минуту
+      
+      return () => clearInterval(interval)
+    }, [])
+    
+    if (!marketStatus || selectedMarket !== 'forex') return null
+    
+    return (
+      <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg ${
+        marketStatus.isOpen 
+          ? 'bg-emerald-500/20 border border-emerald-500' 
+          : 'bg-red-500/20 border border-red-500'
+      }`}>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${
+            marketStatus.isOpen ? 'bg-emerald-400' : 'bg-red-400'
+          }`}></div>
+          <span className="text-xs text-white">
+            {marketStatus.isOpen ? '🟢 Рынок открыт' : '🔴 Рынок закрыт'}
+          </span>
+          <span className="text-xs text-slate-400">
+            {marketStatus.time} (EU)
+          </span>
+        </div>
+      </div>
+    )
+  }
   // Функция проверки возможности генерации топ-3 (каждые 10 минут)
   const canGenerateTop3 = () => {
     if (!lastTop3Generation) return true
@@ -7133,6 +7182,19 @@ function App() {
       })
       const result = await response.json()
 
+      // НОВОЕ: Проверка ошибок расписания для ТОП-3
+      if (!result.success) {
+        if (result.error === 'market_closed' || result.error === 'forex_restricted') {
+          setIsGenerating(false)
+          setCurrentScreen('mode-select')
+          
+          alert(t('forexMarketClosedWeekend'))
+          return
+        }
+        
+        throw new Error(result.error)
+      }
+
       if (result.success && result.signals && result.signals.length > 0) {
         const signals = result.signals.map((signal, index) => ({
           ...signal,
@@ -7231,6 +7293,25 @@ function App() {
       console.log('📡 Response status:', response.status)
       const result = await response.json()
       console.log('📡 API Response:', result)
+      
+      // НОВОЕ: Проверка ошибок расписания
+      if (!result.success) {
+        if (result.error === 'market_closed' || result.error === 'forex_restricted') {
+          setIsGenerating(false)
+          setCurrentScreen('mode-select')
+          
+          // Показываем детальное сообщение
+          const status = result.market_status
+          const message = `${result.message}\n\n` +
+            `Текущее время: ${status.current_time} (${status.current_day})\n` +
+            `До ${status.next_event}: ${status.time_until_change}`
+          
+          alert(message)
+          return
+        }
+        
+        throw new Error(result.error)
+      }
       
       if (result.success && result.signals && result.signals.length > 0) {
         console.log('✅ Получен РЕАЛЬНЫЙ одиночный сигнал от API')
@@ -8973,6 +9054,8 @@ function App() {
   if (currentScreen === 'mode-select') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
+        {/* Market Status Badge */}
+        <MarketStatusBadge />
         {/* Animated background */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl animate-glow-pulse"></div>

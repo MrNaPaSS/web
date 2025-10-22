@@ -300,6 +300,15 @@ class SignalGenerator:
         if BotConfig.SIGNAL_SETTINGS.get("lite_mode", False):
             return await self.generate_signal_lite(pair)
         
+        # НОВОЕ: Проверка расписания в FULL режиме
+        if not self.market_schedule.is_market_open():
+            logger.warning(f"⚠️ Рынок закрыт для {pair}, используем тестовые данные")
+            # Опция 2: Генерируем тестовые данные (текущее поведение)
+            market_data = self._generate_test_market_data(pair)
+        elif not self.market_schedule.is_forex_available():
+            logger.warning(f"⚠️ Форекс недоступен с 22:00 до 6:00 для {pair}")
+            return None
+        
         try:
             logger.info(f"📊 Генерация ПОЛНОГО сигнала для {pair}...")
             

@@ -163,6 +163,37 @@ def save_feedback_to_stats(user_id, signal_id, feedback, pair=None, direction=No
     save_signal_stats(stats)
     print(f'[FEEDBACK] Сохранен фидбек: {feedback_record}')
 
+def log_market_closed_attempt(user_id, market, mode, pair=None):
+    """Логирование попыток генерации при закрытом рынке"""
+    try:
+        log_file = os.path.join(ROOT_DIR, 'market_closed_attempts.json')
+        
+        if os.path.exists(log_file):
+            with open(log_file, 'r', encoding='utf-8') as f:
+                logs = json.load(f)
+        else:
+            logs = {'attempts': [], 'total_count': 0}
+        
+        logs['attempts'].append({
+            'user_id': str(user_id),
+            'market': market,
+            'mode': mode,
+            'pair': pair,
+            'timestamp': datetime.now().isoformat()
+        })
+        logs['total_count'] += 1
+        
+        # Храним только последние 1000 записей
+        if len(logs['attempts']) > 1000:
+            logs['attempts'] = logs['attempts'][-1000:]
+        
+        with open(log_file, 'w', encoding='utf-8') as f:
+            json.dump(logs, f, ensure_ascii=False, indent=2)
+            
+        print(f'[MARKET_CLOSED] User {user_id} tried to generate {mode} {market} signal')
+    except Exception as e:
+        print(f'[ERROR] Failed to log market closed attempt: {e}')
+
 def update_user_stats(user_id, signal_type, feedback=None):
     """Обновление статистики пользователя"""
     stats = load_signal_stats()
@@ -235,6 +266,34 @@ async def generate_signal():
                 'success': False,
                 'error': 'user_id required'
             }), 400
+        
+        # НОВОЕ: Проверка расписания для форекс
+        if market == 'forex':
+            from market_schedule import MarketSchedule
+            market_schedule = MarketSchedule()
+            
+            is_open = market_schedule.is_market_open()
+            forex_available = market_schedule.is_forex_available()
+            
+            print(f'[MARKET] Проверка расписания для {market}: open={is_open}, forex_available={forex_available}')
+            
+            if not is_open:
+                log_market_closed_attempt(user_id, market, mode, pair)
+                return jsonify({
+                    'success': False,
+                    'error': 'market_closed',
+                    'message': 'Форекс рынок закрыт. Работает Пн-Пт 06:00-22:00 (Europe/Berlin)',
+                    'market_status': market_schedule.get_market_status()
+                }), 200
+            
+            if not forex_available:
+                log_market_closed_attempt(user_id, market, mode, pair)
+                return jsonify({
+                    'success': False,
+                    'error': 'forex_restricted',
+                    'message': 'Форекс недоступен с 22:00 до 06:00 по будням',
+                    'market_status': market_schedule.get_market_status()
+                }), 200
         
         signals = []
         print(f'[DEBUG] Начинаем генерацию для market={market}, mode={mode}')
