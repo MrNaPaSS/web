@@ -6894,7 +6894,9 @@ function App() {
         // }
       } else {
         console.error('❌ Ошибка авторизации:', result.error)
-        setIsAuthorized(false)
+        // НЕ сбрасываем авторизацию при ошибках API
+        // Пользователь должен остаться на текущем экране
+        console.warn('⚠️ Ошибка API, но сохраняем авторизацию')
       }
     } catch (error) {
       console.error('❌ Ошибка подключения к API:', error)
@@ -7001,14 +7003,48 @@ function App() {
       setSelectedLanguage(savedLanguage)
     }
     
-    // КРИТИЧНО: Полностью очищаем ВСЕ данные сигналов при загрузке
-    localStorage.removeItem('pendingSignal')
-    localStorage.removeItem('signalActivated')
-    localStorage.removeItem('signalTimer')
-    localStorage.removeItem('isWaitingFeedback')
-    localStorage.removeItem('signalStartTime')
-    localStorage.removeItem('generatedSignals')
-    console.log('🧹 [CRITICAL] Полная очистка localStorage при загрузке приложения')
+    // КРИТИЧНО: НЕ очищаем localStorage при загрузке!
+    // Это было причиной проблемы с перезагрузкой
+    // localStorage.removeItem('pendingSignal')
+    // localStorage.removeItem('signalActivated')
+    // localStorage.removeItem('signalTimer')
+    // localStorage.removeItem('isWaitingFeedback')
+    // localStorage.removeItem('signalStartTime')
+    // localStorage.removeItem('generatedSignals')
+    console.log('✅ [FIXED] localStorage НЕ очищается при загрузке - пользователь остается на активном сигнале')
+    
+    // КРИТИЧНО: Восстанавливаем активный сигнал при загрузке
+    const savedPendingSignal = localStorage.getItem('pendingSignal')
+    if (savedPendingSignal) {
+      try {
+        const signal = JSON.parse(savedPendingSignal)
+        console.log('✅ [RESTORE] Восстановлен активный сигнал при загрузке:', signal)
+        
+        // Восстанавливаем состояние сигнала
+        setPendingSignal(signal)
+        
+        // Проверяем, не истекло ли время
+        const startTime = signal.startTime || Date.now()
+        const expiration = signal.expiration * 60 // минуты в секунды
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        const remaining = Math.max(0, expiration - elapsed)
+        
+        if (remaining > 0) {
+          console.log('✅ [RESTORE] Сигнал еще активен, восстанавливаем таймер')
+          setSignalTimer(remaining)
+          setIsWaitingFeedback(false)
+          setCurrentScreen('main')
+        } else {
+          console.log('⏰ [RESTORE] Время сигнала истекло, переходим к фидбеку')
+          setSignalTimer(0)
+          setIsWaitingFeedback(true)
+          setCurrentScreen('main')
+        }
+      } catch (error) {
+        console.error('❌ [RESTORE] Ошибка восстановления активного сигнала:', error)
+        localStorage.removeItem('pendingSignal')
+      }
+    }
   }, [])
 
   // НОВЫЙ useEffect для запуска генерации ТОП-3
