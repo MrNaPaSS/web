@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
 })
 
 function App() {
-  const { isAuthorized, setAuth, userId } = useAuthStore()
+  const { isAuthorized, setAuth, userId, isHydrated } = useAuthStore()
   const { currentScreen, navigateTo } = useUIStore()
   const { activeSignals } = useSignalStore()
   
@@ -73,20 +73,67 @@ function App() {
       }
     }
     
-    // Проверяем, есть ли активный сигнал в localStorage
+    // КРИТИЧНО: Проверяем активный сигнал НЕЗАВИСИМО от Zustand store
     const pendingSignal = localStorage.getItem('pendingSignal')
-    if (pendingSignal && isAuthorized) {
+    if (pendingSignal) {
       try {
         const signal = JSON.parse(pendingSignal)
         console.log('✅ Восстановлен активный сигнал из localStorage:', signal)
-        // Если есть активный сигнал, переходим на экран активного сигнала
-        navigateTo('main')
+        
+        // Проверяем, не истекло ли время сигнала
+        const startTime = signal.startTime || Date.now()
+        const expiration = signal.expiration * 60 // минуты в секунды
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        const remaining = Math.max(0, expiration - elapsed)
+        
+        if (remaining > 0) {
+          console.log('✅ Сигнал еще активен, переходим на main экран')
+          navigateTo('main')
+        } else {
+          console.log('⏰ Время сигнала истекло, переходим на main для фидбека')
+          navigateTo('main')
+        }
       } catch (error) {
         console.warn('Ошибка восстановления активного сигнала:', error)
         localStorage.removeItem('pendingSignal')
       }
     }
-  }, [currentScreen, navigateTo, isAuthorized])
+  }, [currentScreen, navigateTo])
+  
+  // Дополнительная проверка активного сигнала после загрузки Zustand store
+  useEffect(() => {
+    if (isHydrated && isAuthorized) {
+      const pendingSignal = localStorage.getItem('pendingSignal')
+      if (pendingSignal) {
+        try {
+          const signal = JSON.parse(pendingSignal)
+          console.log('✅ [HYDRATED] Восстановлен активный сигнал:', signal)
+          
+          // Проверяем, не истекло ли время сигнала
+          const startTime = signal.startTime || Date.now()
+          const expiration = signal.expiration * 60 // минуты в секунды
+          const elapsed = Math.floor((Date.now() - startTime) / 1000)
+          const remaining = Math.max(0, expiration - elapsed)
+          
+          if (remaining > 0) {
+            console.log('✅ [HYDRATED] Сигнал еще активен, переходим на main экран')
+            navigateTo('main')
+          } else {
+            console.log('⏰ [HYDRATED] Время сигнала истекло, переходим на main для фидбека')
+            navigateTo('main')
+          }
+        } catch (error) {
+          console.warn('Ошибка восстановления активного сигнала после гидратации:', error)
+          localStorage.removeItem('pendingSignal')
+        }
+      }
+    }
+  }, [isHydrated, isAuthorized, navigateTo])
+  
+  // Ждем загрузки Zustand store
+  if (!isHydrated) {
+    return <LoadingSpinner />
+  }
   
   // Если пользователь авторизован, но все еще на auth экране, переходим на welcome
   if (isAuthorized && currentScreen === 'auth') {
