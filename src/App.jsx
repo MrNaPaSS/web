@@ -237,6 +237,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
 
   // Функция отправки запроса на подписку
   const handleSubscriptionRequest = async (subscriptionType) => {
+    console.log('🔄 handleSubscriptionRequest called:', {
+      subscriptionType,
+      selectedModelForPurchase: selectedModelForPurchase?.name,
+      userId: userData?.id,
+      isSubmitting
+    })
+    
     if (!selectedModelForPurchase || !userData?.id) {
       console.error('❌ Missing data for subscription request')
       return
@@ -10037,6 +10044,11 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Purchase Modal
   if (showPurchaseModal && selectedModelForPurchase) {
+    console.log('🛒 Rendering purchase modal:', {
+      showPurchaseModal,
+      selectedModelForPurchase: selectedModelForPurchase?.name,
+      isSubmitting
+    })
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"></div>
@@ -10054,7 +10066,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
             </div>
             {/* Ежемесячная подписка */}
             <Card 
-              onClick={() => !isSubmitting && handleSubscriptionRequest('monthly')}
+              onClick={() => {
+                console.log('🖱️ Monthly subscription clicked:', { isSubmitting })
+                if (!isSubmitting) {
+                  handleSubscriptionRequest('monthly')
+                }
+              }}
               className={`glass-effect border-blue-500/30 p-4 cursor-pointer hover:border-blue-500/50 transition-all duration-300 ${
                 isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
@@ -10077,7 +10094,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
             </Card>
             {/* Пожизненная покупка */}
             <Card 
-              onClick={() => !isSubmitting && handleSubscriptionRequest('lifetime')}
+              onClick={() => {
+                console.log('🖱️ Lifetime subscription clicked:', { isSubmitting })
+                if (!isSubmitting) {
+                  handleSubscriptionRequest('lifetime')
+                }
+              }}
               className={`glass-effect border-green-500/30 p-4 cursor-pointer hover:border-green-500/50 transition-all duration-300 ${
                 isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}

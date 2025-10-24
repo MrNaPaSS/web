@@ -42,9 +42,19 @@
       "pair": "EUR/USD",
       "direction": "BUY",
       "confidence": 78.11999999999999
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "mock_USD_CHF (OTC)_1761342607969",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-25T00:02:58.600642",
+      "pair": "USD/CHF (OTC)",
+      "direction": "BUY",
+      "confidence": 0.8604604854700513
     }
   ],
-  "last_updated": "2025-10-24T22:04:08.655848",
+  "last_updated": "2025-10-25T00:02:58.600642",
   "7613535490": {
     "total_signals": 3,
     "forex_signals": 0,
@@ -55,12 +65,12 @@
     "win_rate": 100.0
   },
   "511442168": {
-    "total_signals": 12,
+    "total_signals": 13,
     "forex_signals": 5,
-    "otc_signals": 7,
-    "successful_trades": 1,
+    "otc_signals": 8,
+    "successful_trades": 2,
     "failed_trades": 0,
-    "pending_trades": 10,
+    "pending_trades": 9,
     "win_rate": 100.0
   },
   "123": {
@@ -81,6 +91,6 @@
     "pending_trades": 0,
     "win_rate": 100.0
   },
-  "successful_signals": 3,
-  "total_signals": 3
+  "successful_signals": 4,
+  "total_signals": 4
 }
