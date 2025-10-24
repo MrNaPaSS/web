@@ -244,8 +244,52 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       isSubmitting
     })
     
+    // Если userData не загружен, попробуем загрузить его
+    if (!userData?.id) {
+      console.log('🔄 UserData not loaded, attempting to load user data...')
+      try {
+        const response = await fetch(`${getApiUrl()}/api/user-data`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success && result.user) {
+            const user = result.user
+            setUserData({
+              id: user.telegram_id,
+              firstName: user.first_name,
+              lastName: user.last_name,
+              username: user.username,
+              languageCode: user.language_code,
+              first_name: user.first_name,
+              last_name: user.last_name
+            })
+            console.log('✅ User data loaded successfully:', user.telegram_id)
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to load user data:', error)
+      }
+    }
+    
     if (!selectedModelForPurchase || !userData?.id) {
-      console.error('❌ Missing data for subscription request')
+      console.error('❌ Missing data for subscription request:', {
+        selectedModelForPurchase: selectedModelForPurchase?.name,
+        userData,
+        userId: userData?.id
+      })
+      
+      // Показываем ошибку пользователю
+      setNotification({
+        type: 'error',
+        title: 'Ошибка авторизации',
+        message: 'Не удалось получить данные пользователя. Пожалуйста, перезагрузите страницу и попробуйте снова.',
+        duration: 5000
+      })
       return
     }
 
