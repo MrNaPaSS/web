@@ -9765,8 +9765,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       </Badge>
                       ) : (
                         <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
-                          <Lock className="w-3 h-3 mr-1" />
-                          ТРЕБУЕТСЯ ПОДПИСКА
+                          <Lock className="w-3 h-3" />
                         </Badge>
                       )}
                     </div>
@@ -9965,8 +9964,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                           )}
                           {!isOwned && !isRestricted && (
                           <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-xs px-2 py-1">
-                            <Lock className="w-3 h-3 mr-1" />
-                              ТРЕБУЕТСЯ ПОДПИСКА
+                            <Lock className="w-3 h-3" />
                             </Badge>
                           )}
                         </div>
