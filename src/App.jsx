@@ -9904,12 +9904,20 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     e.preventDefault()
                     e.stopPropagation()
                     
+                    console.log('🖱️ Card clicked:', {
+                      modelId: model.id,
+                      isOwned,
+                      isRestricted,
+                      modelName: model.name
+                    })
+                    
                     if (isOwned && !isRestricted) {
                       setSelectedMLModel(model.id)
                     } else if (isRestricted) {
                       alert(t('modelRestrictedAlert'))
                     } else {
                       // Открываем модальное окно покупки при клике на любую часть карточки
+                      console.log('🛒 Opening purchase modal for:', model.name)
                       setSelectedModelForPurchase(model)
                       setShowPurchaseModal(true)
                     }
