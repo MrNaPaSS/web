@@ -325,26 +325,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           duration: 8000
         })
 
-        // Отправляем уведомление администратору
-        try {
-          await fetch(`${getApiUrl()}/api/admin-notification`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              type: 'subscription_request',
-              user_id: currentUserId,
-              user_name: userData?.firstName || 'Пользователь',
-              model_name: selectedModelForPurchase.name,
-              subscription_type: subscriptionType,
-              message: `Новый запрос на подписку: ${userData?.firstName || 'Пользователь'} запросил ${subscriptionType === 'monthly' ? 'ежемесячную' : 'пожизненную'} подписку на модель "${selectedModelForPurchase.name}"`
-            })
-          })
-          console.log('📧 Admin notification sent')
-        } catch (error) {
-          console.error('❌ Failed to send admin notification:', error)
-        }
+        // Уведомление администратору отключено - API endpoint не реализован
+        console.log('📧 Admin notification skipped - API endpoint not implemented')
         
         // Закрываем модальное окно
         setShowPurchaseModal(false)

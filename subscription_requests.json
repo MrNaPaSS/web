@@ -1,0 +1,32 @@
+{
+  "req_8428349451_1761348095": {
+    "request_id": "req_8428349451_1761348095",
+    "user_id": "8428349451",
+    "model_id": "forest-necromancer",
+    "subscription_type": "monthly",
+    "price": "$29/мес",
+    "status": "pending",
+    "created_at": "2025-10-25T01:21:35.394181",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  },
+  "req_8428349451_1761348110": {
+    "request_id": "req_8428349451_1761348110",
+    "user_id": "8428349451",
+    "model_id": "forest-necromancer",
+    "subscription_type": "lifetime",
+    "price": "$199 навсегда",
+    "status": "pending",
+    "created_at": "2025-10-25T01:21:50.987824",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  }
+}
