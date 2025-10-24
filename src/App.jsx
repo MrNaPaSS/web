@@ -295,9 +295,19 @@ function App() {
 
   // Функция проверки VIP-доступа к TOP-3
   const hasVipAccess = () => {
-    return userSubscriptions && userSubscriptions.length > 0 && userSubscriptions.some(sub => 
-      sub !== 'logistic-spy' // Исключаем базовую модель
+    if (!userSubscriptions || userSubscriptions.length === 0) {
+      return false
+    }
+    // Проверяем, есть ли хотя бы одна НЕ-базовая подписка
+    const hasVipSubscription = userSubscriptions.some(sub => 
+      sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
     )
+    console.log('🔍 VIP Access Check:', {
+      userSubscriptions,
+      hasVipSubscription,
+      result: hasVipSubscription
+    })
+    return hasVipSubscription
   }
 
   // Функция загрузки кешированных ТОП-3 сигналов
