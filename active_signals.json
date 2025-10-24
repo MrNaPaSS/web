@@ -10,7 +10,29 @@
       "start_time": 1761319531533,
       "created_at": "2025-10-24T17:25:31.604870",
       "status": "active"
+    },
+    "511442168": {
+      "signal_id": "forex_EUR_USD_1761332712",
+      "pair": "EUR/USD",
+      "direction": "BUY",
+      "confidence": 78.11999999999999,
+      "entry_price": null,
+      "expiration": 3,
+      "start_time": 1761332719494,
+      "created_at": "2025-10-24T21:05:19.575484",
+      "status": "active"
+    },
+    "8428349451": {
+      "signal_id": "otc_EUR_USD_(OTC)_1761332876",
+      "pair": "EUR/USD (OTC)",
+      "direction": "SELL",
+      "confidence": 0.7419599999999998,
+      "entry_price": null,
+      "expiration": 1,
+      "start_time": 1761332879123,
+      "created_at": "2025-10-24T21:07:59.188381",
+      "status": "active"
     }
   },
-  "last_updated": "2025-10-24T17:25:31.604870"
+  "last_updated": "2025-10-24T21:07:59.188381"
 }

@@ -25,18 +25,27 @@
     "win_rate": 0.0
   },
   "511442168": {
-    "total_signals": 10,
-    "forex_signals": 3,
+    "total_signals": 11,
+    "forex_signals": 4,
     "otc_signals": 7,
     "successful_trades": 0,
     "failed_trades": 0,
-    "pending_trades": 10,
+    "pending_trades": 11,
     "win_rate": 0.0
   },
   "123": {
     "total_signals": 1,
     "forex_signals": 1,
     "otc_signals": 0,
+    "successful_trades": 0,
+    "failed_trades": 0,
+    "pending_trades": 1,
+    "win_rate": 0.0
+  },
+  "8428349451": {
+    "total_signals": 1,
+    "forex_signals": 0,
+    "otc_signals": 1,
     "successful_trades": 0,
     "failed_trades": 0,
     "pending_trades": 1,

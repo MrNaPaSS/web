@@ -293,6 +293,13 @@ function App() {
     return timeDiff >= tenMinutes
   }
 
+  // Функция проверки VIP-доступа к TOP-3
+  const hasVipAccess = () => {
+    return userSubscriptions && userSubscriptions.length > 0 && userSubscriptions.some(sub => 
+      sub !== 'logistic-spy' // Исключаем базовую модель
+    )
+  }
+
   // Функция загрузки кешированных ТОП-3 сигналов
   const loadCachedTop3Signals = async () => {
     try {
@@ -9302,6 +9309,12 @@ function App() {
           <div className="space-y-4">
             <Card 
               onClick={() => {
+                // Проверка VIP-доступа
+                if (!hasVipAccess()) {
+                  alert('TOP-3 сигналы доступны только для VIP-пользователей с подпиской. Приобретите подписку для доступа к этой функции.')
+                  setCurrentScreen('ml-selector')
+                  return
+                }
                 if (!canGenerateTop3()) {
                   const remainingTime = Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)
                   alert(t('availableIn', {minutes: remainingTime}))
@@ -9314,7 +9327,11 @@ function App() {
                 setSelectedMode('top3')
                 generateTop3Signals()
               }}
-              className="glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl hover:border-amber-500/50 cursor-pointer hover:scale-105"
+              className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d border-slate-700/50 shadow-xl ${
+                hasVipAccess() 
+                  ? 'hover:border-amber-500/50 cursor-pointer hover:scale-105' 
+                  : 'opacity-60 cursor-not-allowed'
+              }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -9324,17 +9341,28 @@ function App() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-xl font-bold text-white">{t('top3Signals')}</h3>
-                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
-                        АКТИВНО
-                      </Badge>
+                      {hasVipAccess() ? (
+                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
+                          VIP
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-red-500/20 text-red-400 border-red-500/50">
+                          ЗАБЛОКИРОВАНО
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-slate-400 text-sm mb-3">{t('bestOpportunitiesOfDay')}</p>
+                    {!hasVipAccess() && (
+                      <p className="text-xs text-red-400 mb-2">
+                        Требуется VIP-подписка
+                      </p>
+                    )}
                     {selectedMarket === 'forex' && !isForexMarketOpen() && (
                       <p className="text-xs text-rose-400 mb-2">
                         {t('forexMarketClosedLabel')}
                       </p>
                     )}
-                    {!canGenerateTop3() && (
+                    {hasVipAccess() && !canGenerateTop3() && (
                       <p className="text-xs text-amber-400 mb-2">
                         {t('availableIn', {minutes: Math.ceil((10 * 60 * 1000 - (new Date() - new Date(lastTop3Generation))) / 1000 / 60)})}
                       </p>
