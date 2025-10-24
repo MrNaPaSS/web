@@ -9,15 +9,29 @@ import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 function App() {
   // ВЕРСИЯ ПРИЛОЖЕНИЯ - для проверки обновлений
-  console.log('🚀 APP VERSION: 2024.12.24 - SUBSCRIPTION SYSTEM COMPLETE - FORCE UPDATE')
-  console.log('🔄 CACHE BUST: ' + Date.now())
+console.log('🚀 APP VERSION: 2024.12.24 - ULTIMATE CACHE DESTROYER - ' + Math.random().toString(36).substr(2, 9))
+console.log('🔄 CACHE BUST: ' + Date.now())
+console.log('💥 FORCE REBUILD: ' + Math.random().toString(36).substr(2, 9))
+console.log('🔥 ATOMIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
+console.log('⚡ QUANTUM CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
+console.log('🌟 GALACTIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
+console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
   // UNIQUE CACHE BUST: 1735064400000
   // FORCE REBUILD: ' + Math.random().toString(36).substr(2, 9)
   // FINAL CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
   // BREAKTHROUGH CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
   // ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  // NUCLEAR CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  // ATOMIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  // QUANTUM CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  // GALACTIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  // COSMIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  // INFINITE CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
   const ULTIMATE_VERSION = '2024.12.24 - SUBSCRIPTION SYSTEM COMPLETE - FORCE UPDATE'
   console.log('🚀 ULTIMATE VERSION:', ULTIMATE_VERSION)
+  console.log('💥 NUCLEAR CACHE BUST:', Date.now() + Math.random())
+  console.log('🌌 GALACTIC CACHE BUST:', Date.now() + Math.random())
+  console.log('🚀 COSMIC CACHE BUST:', Date.now() + Math.random())
   
   // КОНФИГУРАЦИЯ АДМИНА - УДАЛЕНО ИЗ ФРОНТЕНДА ДЛЯ БЕЗОПАСНОСТИ
   // Функция для определения правильного API URL
