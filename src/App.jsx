@@ -7341,33 +7341,10 @@ function App() {
       }
     } catch (error) {
       console.error('❌ Ошибка получения ТОП-3 сигналов:', error);
-      // Fallback логика остается без изменений, она также ведет на 'signal-selection'
-      const pairs = selectedMarket === 'forex' 
-        ? ['EUR/USD', 'GBP/USD', 'USD/JPY']
-        : ['EUR/USD (OTC)', 'NZD/USD (OTC)', 'USD/CHF (OTC)'];
-      const signals = [];
-      for (let i = 0; i < 3; i++) {
-        signals.push({
-          signal_id: `mock_${pairs[i].replace('/', '_')}_${Date.now()}_${i}`,
-          id: Date.now() + i,
-          pair: pairs[i],
-          type: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          direction: Math.random() > 0.5 ? 'BUY' : 'SELL',
-          entry: '0.0000',
-          confidence: Math.random() * 0.3 + 0.7,
-          expiration: Math.floor(Math.random() * 5) + 1,
-          signal_type: selectedMarket,
-          timestamp: new Date().toISOString(),
-          status: 'generated',
-          time: 'Только что'
-        });
-      }
-      setGeneratedSignals(signals);
-      localStorage.setItem('generatedSignals', JSON.stringify(signals));
-      setLastTop3Generation(Date.now());
-      setTop3Cooldown(600);
+      // ВРЕМЕННО ОТКЛЮЧАЕМ FALLBACK - показываем ошибку
       setIsGenerating(false);
-      setCurrentScreen('signal-selection');
+      setCurrentScreen('mode-select');
+      alert(`Ошибка API: ${error.message}\n\nПроверьте, что API сервер запущен на localhost:5000`);
     }
   }
   // РЕАЛЬНАЯ генерация одиночного сигнала для пары через API
