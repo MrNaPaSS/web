@@ -2135,6 +2135,279 @@ def generate_signal_analysis(prompt):
         return random.choice(general_analyses)
 
 
+# =============================================================================
+# SUBSCRIPTION REQUEST MANAGEMENT
+# =============================================================================
+
+SUBSCRIPTION_REQUESTS_FILE = os.path.join(ROOT_DIR, 'subscription_requests.json')
+
+def load_subscription_requests():
+    """Загрузка запросов подписок"""
+    try:
+        if os.path.exists(SUBSCRIPTION_REQUESTS_FILE):
+            with open(SUBSCRIPTION_REQUESTS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return {}
+    except Exception as e:
+        print(f'[ERROR] Ошибка загрузки запросов подписок: {e}')
+        return {}
+
+def save_subscription_requests(data):
+    """Сохранение запросов подписок"""
+    try:
+        with open(SUBSCRIPTION_REQUESTS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'[ERROR] Ошибка сохранения запросов подписок: {e}')
+
+def send_telegram_notification_to_admin(request_data):
+    """Отправка уведомления админу через Telegram Bot API"""
+    try:
+        from config import BotConfig
+        
+        # Получаем данные модели
+        models = {
+            'shadow-stack': {'name': 'ТЕНЕВОЙ СТЕК', 'emoji': '🌑'},
+            'forest-necromancer': {'name': 'ЛЕСНОЙ НЕКРОМАНТ', 'emoji': '🌲'},
+            'gray-cardinal': {'name': 'СЕРЫЙ КАРДИНАЛ', 'emoji': '🎭'},
+            'logistic-spy': {'name': 'ЛОГИСТИЧЕСКИЙ ШПИОН', 'emoji': '🕵️'},
+            'sniper-80x': {'name': 'СНАЙПЕР 80X', 'emoji': '🎯'}
+        }
+        
+        model = models.get(request_data['model_id'], {'name': request_data['model_id'], 'emoji': '🤖'})
+        subscription_type = 'Ежемесячная подписка' if request_data['subscription_type'] == 'monthly' else 'Пожизненная покупка'
+        
+        text = f"""🔔 НОВЫЙ ЗАПРОС ПОДПИСКИ
+
+🧠 Модель: {model['name']} {model['emoji']}
+💰 Тип: {subscription_type}
+💵 Цена: {request_data['price']}
+👤 Пользователь: {request_data['user_data'].get('first_name', '')} {request_data['user_data'].get('last_name', '')}
+🆔 ID: {request_data['user_id']}
+📱 Username: @{request_data['user_data'].get('username', 'не указан')}
+⏰ Время: {request_data['created_at']}
+
+📋 Запрос ID: {request_data['request_id']}
+
+Пожалуйста, обработайте запрос в админ-панели."""
+        
+        url = f"https://api.telegram.org/bot{BotConfig.TELEGRAM_BOT_TOKEN}/sendMessage"
+        response = requests.post(url, json={
+            "chat_id": BotConfig.ADMIN_TELEGRAM_ID,
+            "text": text,
+            "parse_mode": "HTML"
+        }, timeout=10)
+        
+        if response.status_code == 200:
+            print(f'[SUCCESS] Уведомление админу отправлено для запроса {request_data["request_id"]}')
+        else:
+            print(f'[ERROR] Ошибка отправки уведомления: {response.status_code}')
+            
+    except Exception as e:
+        print(f'[ERROR] Ошибка отправки уведомления админу: {e}')
+
+@app.route('/api/subscription-request', methods=['POST'])
+def create_subscription_request():
+    """Создание запроса на подписку"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        model_id = data.get('model_id')
+        subscription_type = data.get('subscription_type')  # 'monthly' или 'lifetime'
+        user_data = data.get('user_data', {})
+        
+        if not all([user_id, model_id, subscription_type]):
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+        
+        # Получаем цены модели
+        model_prices = {
+            'shadow-stack': {'monthly': '$49/мес', 'lifetime': '$299 навсегда'},
+            'forest-necromancer': {'monthly': '$29/мес', 'lifetime': '$199 навсегда'},
+            'gray-cardinal': {'monthly': '$39/мес', 'lifetime': '$249 навсегда'},
+            'logistic-spy': {'monthly': '$19/мес', 'lifetime': '$99 навсегда'},
+            'sniper-80x': {'monthly': '$59/мес', 'lifetime': '$399 навсегда'}
+        }
+        
+        price = model_prices.get(model_id, {}).get(subscription_type, 'N/A')
+        
+        # Создаем уникальный ID запроса
+        request_id = f"req_{user_id}_{int(time.time())}"
+        
+        # Данные запроса
+        request_data = {
+            'request_id': request_id,
+            'user_id': str(user_id),
+            'model_id': model_id,
+            'subscription_type': subscription_type,
+            'price': price,
+            'status': 'pending',
+            'created_at': datetime.now().isoformat(),
+            'user_data': user_data
+        }
+        
+        # Сохраняем запрос
+        requests_data = load_subscription_requests()
+        requests_data[request_id] = request_data
+        save_subscription_requests(requests_data)
+        
+        # Отправляем уведомление админу
+        send_telegram_notification_to_admin(request_data)
+        
+        print(f'[SUBSCRIPTION-REQUEST] Создан запрос {request_id} для пользователя {user_id}')
+        
+        return jsonify({
+            'success': True,
+            'request_id': request_id,
+            'message': 'Запрос на подписку создан. Администратор свяжется с вами в ближайшее время.'
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка создания запроса подписки: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/subscription-requests', methods=['GET'])
+def get_subscription_requests():
+    """Получение списка запросов подписок для админа"""
+    try:
+        requests_data = load_subscription_requests()
+        pending_requests = []
+        
+        for request_id, request_data in requests_data.items():
+            if request_data.get('status') == 'pending':
+                pending_requests.append(request_data)
+        
+        # Сортируем по времени создания (новые сверху)
+        pending_requests.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        return jsonify({
+            'success': True,
+            'requests': pending_requests,
+            'total_requests': len(pending_requests)
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка получения запросов подписок: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/approve-subscription', methods=['POST'])
+def approve_subscription_request():
+    """Одобрение запроса на подписку"""
+    try:
+        data = request.get_json()
+        request_id = data.get('request_id')
+        admin_user_id = data.get('admin_user_id')
+        
+        if not all([request_id, admin_user_id]):
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+        
+        # Загружаем запрос
+        requests_data = load_subscription_requests()
+        if request_id not in requests_data:
+            return jsonify({'success': False, 'error': 'Request not found'}), 404
+        
+        request_data = requests_data[request_id]
+        user_id = request_data['user_id']
+        model_id = request_data['model_id']
+        
+        # Загружаем существующие подписки пользователя
+        subscriptions_file = os.path.join(ROOT_DIR, 'user_subscriptions.json')
+        if os.path.exists(subscriptions_file):
+            with open(subscriptions_file, 'r', encoding='utf-8') as f:
+                user_subscriptions = json.load(f)
+        else:
+            user_subscriptions = {}
+        
+        # Добавляем новую подписку
+        if str(user_id) not in user_subscriptions:
+            user_subscriptions[str(user_id)] = []
+        
+        if model_id not in user_subscriptions[str(user_id)]:
+            user_subscriptions[str(user_id)].append(model_id)
+        
+        # Сохраняем обновленные подписки
+        with open(subscriptions_file, 'w', encoding='utf-8') as f:
+            json.dump(user_subscriptions, f, ensure_ascii=False, indent=2)
+        
+        # Обновляем статус запроса
+        request_data['status'] = 'approved'
+        request_data['approved_at'] = datetime.now().isoformat()
+        request_data['approved_by'] = admin_user_id
+        requests_data[request_id] = request_data
+        save_subscription_requests(requests_data)
+        
+        # Отправляем WebSocket уведомление пользователю
+        try:
+            import requests
+            requests.post('http://localhost:8001/notify-subscription-update', json={
+                'user_id': str(user_id),
+                'subscriptions': user_subscriptions[str(user_id)],
+                'type': 'subscription_approved',
+                'model_id': model_id
+            }, timeout=1)
+        except:
+            pass
+        
+        print(f'[SUBSCRIPTION-APPROVE] Подписка {model_id} одобрена для пользователя {user_id}')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Подписка {model_id} успешно активирована для пользователя {user_id}'
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка одобрения подписки: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/reject-subscription', methods=['POST'])
+def reject_subscription_request():
+    """Отклонение запроса на подписку"""
+    try:
+        data = request.get_json()
+        request_id = data.get('request_id')
+        admin_user_id = data.get('admin_user_id')
+        reason = data.get('reason', 'Не указана')
+        
+        if not all([request_id, admin_user_id]):
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+        
+        # Загружаем запрос
+        requests_data = load_subscription_requests()
+        if request_id not in requests_data:
+            return jsonify({'success': False, 'error': 'Request not found'}), 404
+        
+        request_data = requests_data[request_id]
+        user_id = request_data['user_id']
+        
+        # Обновляем статус запроса
+        request_data['status'] = 'rejected'
+        request_data['rejected_at'] = datetime.now().isoformat()
+        request_data['rejected_by'] = admin_user_id
+        request_data['rejection_reason'] = reason
+        requests_data[request_id] = request_data
+        save_subscription_requests(requests_data)
+        
+        # Отправляем WebSocket уведомление пользователю
+        try:
+            import requests
+            requests.post('http://localhost:8001/notify-subscription-update', json={
+                'user_id': str(user_id),
+                'type': 'subscription_rejected',
+                'reason': reason
+            }, timeout=1)
+        except:
+            pass
+        
+        print(f'[SUBSCRIPTION-REJECT] Запрос {request_id} отклонен для пользователя {user_id}')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Запрос на подписку отклонен для пользователя {user_id}'
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка отклонения подписки: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     import sys
     import io

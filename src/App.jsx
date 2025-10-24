@@ -33,6 +33,8 @@ function App() {
   const [selectedUsersForBulk, setSelectedUsersForBulk] = useState([]) // Выбранные пользователи для массовых операций
   const [selectedModelForPurchase, setSelectedModelForPurchase] = useState(null) // Модель для покупки
   const [showPurchaseModal, setShowPurchaseModal] = useState(false) // Показать модальное окно покупки
+  const [isSubmitting, setIsSubmitting] = useState(false) // Состояние отправки запроса
+  const [notification, setNotification] = useState(null) // Уведомления пользователю
   // Функция для загрузки подписок пользователя
   const loadUserSubscriptions = async (userId) => {
     try {
@@ -143,6 +145,7 @@ function App() {
     if (currentScreen === 'admin' && isAdmin) {
       console.log('🔄 Going to admin panel - loading templates')
       loadSubscriptionTemplates()
+      loadSubscriptionRequests()
     }
   }, [currentScreen, isAdmin])
   // Глобальное обновление подписок при всех переходах между экранами
@@ -159,6 +162,8 @@ function App() {
   useWebSocket(userData?.id, (newSubscriptions) => {
     setUserSubscriptions(newSubscriptions);
     console.log('🔄 Subscriptions updated via WebSocket:', newSubscriptions);
+  }, (type, title, message) => {
+    showNotification(type, title, message);
   });
   // Функция для загрузки шаблонов подписок
   const loadSubscriptionTemplates = async () => {
@@ -206,6 +211,135 @@ function App() {
       alert(t('bulkUpdateErrorGeneric', {message: error.message}))
       return false
     }
+  }
+
+  // Функция отправки запроса на подписку
+  const handleSubscriptionRequest = async (subscriptionType) => {
+    if (!selectedModelForPurchase || !userData?.id) {
+      console.error('❌ Missing data for subscription request')
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    try {
+      console.log('🔄 Sending subscription request:', {
+        user_id: userData.id,
+        model_id: selectedModelForPurchase.id,
+        subscription_type: subscriptionType
+      })
+
+      const response = await fetch(`${getApiUrl()}/api/subscription-request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userData.id,
+          model_id: selectedModelForPurchase.id,
+          subscription_type: subscriptionType,
+          user_data: userData
+        })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('✅ Subscription request sent successfully')
+        
+        // Показываем уведомление пользователю
+        setNotification({
+          type: 'success',
+          title: 'Запрос отправлен!',
+          message: data.message,
+          duration: 5000
+        })
+        
+        // Закрываем модальное окно
+        setShowPurchaseModal(false)
+        setSelectedModelForPurchase(null)
+      } else {
+        console.error('❌ Ошибка отправки запроса:', data.error)
+        setNotification({
+          type: 'error',
+          title: 'Ошибка',
+          message: data.error || 'Не удалось отправить запрос',
+          duration: 5000
+        })
+      }
+    } catch (error) {
+      console.error('❌ Ошибка отправки запроса:', error)
+      setNotification({
+        type: 'error',
+        title: 'Ошибка',
+        message: 'Не удалось отправить запрос. Попробуйте позже.',
+        duration: 5000
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Функция показа уведомления
+  const showNotification = (type, title, message, duration = 5000) => {
+    setNotification({ type, title, message, duration })
+  }
+
+  // Автоматическое скрытие уведомления
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null)
+      }, notification.duration)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
+
+  // Компонент Toast уведомлений
+  const ToastNotification = () => {
+    if (!notification) return null
+    
+    return (
+      <div className="fixed top-4 right-4 z-[100] max-w-sm">
+        <div className={`glass-effect p-4 rounded-lg border shadow-xl ${
+          notification.type === 'success' ? 'border-emerald-500/50 bg-emerald-500/10' :
+          notification.type === 'error' ? 'border-red-500/50 bg-red-500/10' :
+          notification.type === 'warning' ? 'border-yellow-500/50 bg-yellow-500/10' :
+          'border-blue-500/50 bg-blue-500/10'
+        }`}>
+          <div className="flex items-start gap-3">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              notification.type === 'success' ? 'bg-emerald-500/20' :
+              notification.type === 'error' ? 'bg-red-500/20' :
+              notification.type === 'warning' ? 'bg-yellow-500/20' :
+              'bg-blue-500/20'
+            }`}>
+              {notification.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+              {notification.type === 'error' && <span className="text-red-400 text-sm">✕</span>}
+              {notification.type === 'warning' && <span className="text-yellow-400 text-sm">⚠</span>}
+              {notification.type === 'info' && <span className="text-blue-400 text-sm">ℹ</span>}
+            </div>
+            <div className="flex-1">
+              <h4 className={`font-semibold text-sm ${
+                notification.type === 'success' ? 'text-emerald-400' :
+                notification.type === 'error' ? 'text-red-400' :
+                notification.type === 'warning' ? 'text-yellow-400' :
+                'text-blue-400'
+              }`}>
+                {notification.title}
+              </h4>
+              <p className="text-slate-300 text-sm mt-1">{notification.message}</p>
+            </div>
+            <button
+              onClick={() => setNotification(null)}
+              className="text-slate-400 hover:text-white transition-colors"
+            >
+              <span className="text-lg">×</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
   // Блокировка навигации и ожидание фидбека
   const [pendingSignal, setPendingSignal] = useState(null) // Активный сигнал ожидающий фидбека
@@ -310,6 +444,23 @@ function App() {
     return hasVipSubscription
   }
 
+  // Функция проверки активной подписки для ML настроек
+  const hasActiveSubscription = () => {
+    if (!userSubscriptions || userSubscriptions.length === 0) {
+      return false
+    }
+    // Проверяем, есть ли хотя бы одна НЕ-базовая подписка
+    const hasActiveSub = userSubscriptions.some(sub => 
+      sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
+    )
+    console.log('🔍 Active Subscription Check:', {
+      userSubscriptions,
+      hasActiveSub,
+      result: hasActiveSub
+    })
+    return hasActiveSub
+  }
+
   // Функция загрузки кешированных ТОП-3 сигналов
   const loadCachedTop3Signals = async () => {
     try {
@@ -411,6 +562,7 @@ function App() {
     topUsers: []
   })
   const [accessRequests, setAccessRequests] = useState([])
+  const [subscriptionRequests, setSubscriptionRequests] = useState([])
   // Загрузка метрик рынка
   const loadMarketMetrics = async () => {
     try {
@@ -589,6 +741,82 @@ function App() {
       }
     } catch (error) {
       console.error('❌ Ошибка загрузки заявок на доступ:', error)
+    }
+  }
+
+  // Загрузка запросов подписок
+  const loadSubscriptionRequests = async () => {
+    try {
+      console.log('📋 Загружаем запросы подписок...')
+      const response = await fetch(`${getApiUrl()}/api/admin/subscription-requests`)
+      const data = await response.json()
+      if (data.success) {
+        setSubscriptionRequests(data.requests)
+        console.log('✅ Запросы подписок загружены:', data.requests.length)
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки запросов подписок:', error)
+    }
+  }
+
+  // Одобрение запроса подписки
+  const approveSubscriptionRequest = async (requestId) => {
+    try {
+      console.log('✅ Одобряем запрос подписки:', requestId)
+      const response = await fetch(`${getApiUrl()}/api/admin/approve-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          request_id: requestId,
+          admin_user_id: userData?.id
+        })
+      })
+      const data = await response.json()
+      if (data.success) {
+        console.log('✅ Запрос подписки одобрен')
+        alert(t('subscriptionApproved'))
+        // Перезагружаем список запросов
+        loadSubscriptionRequests()
+      } else {
+        console.error('❌ Ошибка одобрения подписки:', data.error)
+        alert(t('errorOccurredWith', {error: data.error}))
+      }
+    } catch (error) {
+      console.error('❌ Ошибка одобрения подписки:', error)
+      alert(t('errorOccurredWith', {error: error.message}))
+    }
+  }
+
+  // Отклонение запроса подписки
+  const rejectSubscriptionRequest = async (requestId, reason = 'Не указана') => {
+    try {
+      console.log('❌ Отклоняем запрос подписки:', requestId)
+      const response = await fetch(`${getApiUrl()}/api/admin/reject-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          request_id: requestId,
+          admin_user_id: userData?.id,
+          reason: reason
+        })
+      })
+      const data = await response.json()
+      if (data.success) {
+        console.log('✅ Запрос подписки отклонен')
+        alert(t('subscriptionRejected'))
+        // Перезагружаем список запросов
+        loadSubscriptionRequests()
+      } else {
+        console.error('❌ Ошибка отклонения подписки:', data.error)
+        alert(t('errorOccurredWith', {error: data.error}))
+      }
+    } catch (error) {
+      console.error('❌ Ошибка отклонения подписки:', error)
+      alert(t('errorOccurredWith', {error: error.message}))
     }
   }
   // Одобрение заявки на доступ
@@ -7719,16 +7947,20 @@ function App() {
   // Authorization Screen
   if (currentScreen === 'auth') {
     return (
-      <TelegramAuth 
-        onAuthSuccess={handleAuthSuccess}
-        onAuthError={handleAuthError}
-      />
+      <div>
+        <TelegramAuth 
+          onAuthSuccess={handleAuthSuccess}
+          onAuthError={handleAuthError}
+        />
+        <ToastNotification />
+      </div>
     )
   }
   // Language Selection Screen
   if (currentScreen === 'language-select') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
+        <ToastNotification />
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-20 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl animate-glow-pulse"></div>
@@ -7919,6 +8151,7 @@ function App() {
   if (currentScreen === 'menu') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
+        <ToastNotification />
         {/* Animated background */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
@@ -9459,6 +9692,7 @@ function App() {
   if (currentScreen === 'settings') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
+        <ToastNotification />
         {/* Animated background */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
@@ -9473,26 +9707,53 @@ function App() {
           {/* Settings Options */}
           <div className="space-y-4">
             <Card 
-              className="glass-effect p-6 backdrop-blur-sm cursor-not-allowed opacity-60 border-slate-700/50 shadow-xl"
+              onClick={() => {
+                if (hasActiveSubscription()) {
+                  setCurrentScreen('ml-selector')
+                } else {
+                  showNotification('warning', 'Требуется подписка', 'Для настройки ML моделей необходима активная подписка. Перейдите в раздел выбора моделей для покупки подписки.')
+                }
+              }}
+              className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d shadow-xl ${
+                hasActiveSubscription() 
+                  ? 'cursor-pointer hover:border-purple-500/50 border-slate-700/50' 
+                  : 'cursor-not-allowed opacity-60 border-slate-700/50'
+              }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 icon-3d shadow-xl shadow-purple-500/20">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 icon-3d shadow-xl shadow-purple-500/20 ${
+                    hasActiveSubscription() ? 'group-hover:shadow-purple-500/30' : ''
+                  }`}>
                     <Brain className="w-6 h-6 text-purple-400" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-bold text-white">{t('mlModel')}</h3>
-                      <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/50">
-                        {t('comingSoon')}
-                      </Badge>
+                      {hasActiveSubscription() ? (
+                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
+                          ✓ ДОСТУПНО
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
+                          <Lock className="w-3 h-3 mr-1" />
+                          ТРЕБУЕТСЯ ПОДПИСКА
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-slate-400 text-sm">
-                      {t('comingSoonDescription')}
+                      {hasActiveSubscription() 
+                        ? 'Настройка и выбор ML моделей' 
+                        : 'Для настройки ML моделей необходима активная подписка'
+                      }
                     </p>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-300" />
+                <ChevronRight className={`w-5 h-5 transition-all duration-300 ${
+                  hasActiveSubscription() 
+                    ? 'text-slate-600 group-hover:text-purple-400 group-hover:translate-x-1' 
+                    : 'text-slate-600'
+                }`} />
               </div>
             </Card>
             <Card 
@@ -9580,6 +9841,7 @@ function App() {
   if (currentScreen === 'ml-selector') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <ToastNotification />
         {/* Header */}
         <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/50 shadow-xl">
           <div className="container mx-auto px-3 py-3">
@@ -9606,9 +9868,9 @@ function App() {
             </div>
           </div>
         </header>
-        {/* ML Models List */}
+        {/* ML Models List - Mobile Optimized */}
         <div className="container mx-auto px-3 py-4">
-          <div className="space-y-3">
+          <div className="space-y-4">
             {mlModels.map((model) => {
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
@@ -9622,104 +9884,99 @@ function App() {
                     } else if (isRestricted) {
                       alert(t('modelRestrictedAlert'))
                     } else {
-                      // Переход на страницу премиум для покупки
-                      setCurrentScreen('premium')
+                      // Открываем модальное окно покупки при клике на любую часть карточки
+                      setSelectedModelForPurchase(model)
+                      setShowPurchaseModal(true)
                     }
                   }}
-                  className={`glass-effect p-4 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer ${
+                  className={`glass-effect p-5 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer min-h-[140px] ${
                     isActive 
                       ? 'border-emerald-500/70 bg-emerald-500/10' 
                       : isOwned
-                      ? 'hover:border-purple-500/50 hover:scale-102'
+                      ? 'hover:border-purple-500/50 hover:scale-[1.02]'
                       : isRestricted
                       ? 'border-red-500/30 bg-red-500/5 opacity-60 cursor-not-allowed'
-                      : 'hover:border-yellow-500/50 hover:scale-102'
+                      : 'hover:border-yellow-500/50 hover:scale-[1.02]'
                   }`}
                 >
-                  <div className="flex flex-col gap-3">
-                    {/* Top row: Icon and title */}
-                  <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-xl`}>
-                          <span className="text-2xl">{model.emoji}</span>
-                      </div>
-                      <div className="flex-1">
-                          <h3 className="text-lg font-bold text-white">{model.name}</h3>
-                          <p className="text-slate-300 text-sm">{model.algorithm}</p>
+                  <div className="flex flex-col gap-4 h-full">
+                    {/* Top row: Icon, title and status */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-xl`}>
+                          <span className="text-3xl">{model.emoji}</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-white mb-1">{model.name}</h3>
+                          <p className="text-slate-300 text-base">{model.algorithm}</p>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                          {isActive && (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs">
-                              ✓ АКТИВНА
-                            </Badge>
-                          )}
-                          {isRestricted && (
-                          <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-xs">
-                              <Lock className="w-3 h-3 mr-1" />
-                              ЗАБЛОКИРОВАНА
-                            </Badge>
-                          )}
-                          {!isOwned && !isRestricted && (
-                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-xs">
-                              <Lock className="w-3 h-3 mr-1" />
-                              ТРЕБУЕТСЯ ПОДПИСКА
-                            </Badge>
-                          )}
-                        </div>
-                    </div>
-                    {/* Stats row */}
-                    <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Target className="w-4 h-4 text-emerald-400" />
-                            <span className="text-emerald-400 font-semibold">{model.winrate}</span>
-                          </div>
-                          <span className="text-slate-600">•</span>
-                          <span className="text-slate-400">{model.style}</span>
-                        </div>
-                    {/* Description */}
-                    <p className="text-slate-400 text-sm italic">💬 {model.description}</p>
-                        {model.warning && (
-                      <p className="text-red-400 text-sm font-semibold">⚠️ {model.warning}</p>
+                      <div className="flex flex-col items-end gap-2">
+                        {isActive && (
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-sm px-3 py-1">
+                            ✓ АКТИВНА
+                          </Badge>
                         )}
-                    {/* Bottom row: Pricing and button */}
-                    <div className="flex items-center justify-between">
+                        {isRestricted && (
+                          <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-sm px-3 py-1">
+                            <Lock className="w-4 h-4 mr-1" />
+                            ЗАБЛОКИРОВАНА
+                          </Badge>
+                        )}
                         {!isOwned && !isRestricted && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-yellow-400 font-bold">{model.monthlyPrice}{t('perMonth')}</span>
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-sm px-3 py-1">
+                            <Lock className="w-4 h-4 mr-1" />
+                            ТРЕБУЕТСЯ ПОДПИСКА
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Stats row */}
+                    <div className="flex items-center gap-4 text-base">
+                      <div className="flex items-center gap-2">
+                        <Target className="w-5 h-5 text-emerald-400" />
+                        <span className="text-emerald-400 font-semibold text-lg">{model.winrate}</span>
+                      </div>
+                      <span className="text-slate-600">•</span>
+                      <span className="text-slate-400">{model.style}</span>
+                    </div>
+                    
+                    {/* Description */}
+                    <p className="text-slate-400 text-base italic">💬 {model.description}</p>
+                    {model.warning && (
+                      <p className="text-red-400 text-base font-semibold">⚠️ {model.warning}</p>
+                    )}
+                    
+                    {/* Bottom row: Pricing and status */}
+                    <div className="flex items-center justify-between mt-auto">
+                      {!isOwned && !isRestricted && (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-base">
+                            <span className="text-yellow-400 font-bold">{model.monthlyPrice}{t('perMonth')}</span>
                             <span className="text-slate-600">{t('or')}</span>
-                          <span className="text-green-400 font-bold">{model.lifetimePrice} {t('forever')}</span>
+                            <span className="text-green-400 font-bold">{model.lifetimePrice} {t('forever')}</span>
+                          </div>
+                          <p className="text-slate-500 text-sm">Нажмите на карточку для покупки</p>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center">
+                        {isActive ? (
+                          <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                          </div>
+                        ) : isOwned && !isRestricted ? (
+                          <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <CheckCircle2 className="w-6 h-6 text-purple-400" />
+                          </div>
+                        ) : isRestricted ? (
+                          <Lock className="w-6 h-6 text-red-400" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                            <Crown className="w-6 h-6 text-yellow-400" />
                           </div>
                         )}
-                      <div className="flex items-center">
-                      {isActive ? (
-                          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        </div>
-                      ) : isOwned && !isRestricted ? (
-                        <Button
-                          variant="outline"
-                            size="sm"
-                            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 h-8 px-3"
-                        >
-                          Выбрать
-                        </Button>
-                      ) : isRestricted ? (
-                          <Lock className="w-5 h-5 text-red-400" />
-                      ) : (
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedModelForPurchase(model)
-                            setShowPurchaseModal(true)
-                          }}
-                          variant="outline"
-                            size="sm"
-                            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-8 px-3"
-                        >
-                          Купить
-                        </Button>
-                      )}
                       </div>
                     </div>
                   </div>
@@ -9764,57 +10021,47 @@ function App() {
             </div>
             {/* Ежемесячная подписка */}
             <Card 
-              onClick={() => {
-                const message = `🔔 Запрос на покупку ML модели
-📋 Модель: ${selectedModelForPurchase.name} (${selectedModelForPurchase.emoji})
-💰 Тип: Ежемесячная подписка
-💵 Цена: ${selectedModelForPurchase.monthlyPrice}
-👤 Пользователь: ${userData?.first_name} ${userData?.last_name}
-🆔 ID: ${userData?.id}
-📱 Username: @${userData?.username || 'не указан'}
-Пожалуйста, свяжитесь с пользователем для оформления подписки.`
-                // Отправляем сообщение админу
-                window.open(`https://t.me/${ADMIN_TELEGRAM_ID}?text=${encodeURIComponent(message)}`, '_blank')
-                setShowPurchaseModal(false)
-                setSelectedModelForPurchase(null)
-              }}
-              className="glass-effect border-blue-500/30 p-4 cursor-pointer hover:border-blue-500/50 transition-all duration-300"
+              onClick={() => !isSubmitting && handleSubscriptionRequest('monthly')}
+              className={`glass-effect border-blue-500/30 p-4 cursor-pointer hover:border-blue-500/50 transition-all duration-300 ${
+                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
               <div className="flex items-center justify-between">
-                     <div>
-                       <h4 className="text-white font-semibold">{t('monthlySubscription')}</h4>
-                       <p className="text-slate-400 text-sm">{t('autoRenewal')}</p>
-                     </div>
+                <div>
+                  <h4 className="text-white font-semibold">{t('monthlySubscription')}</h4>
+                  <p className="text-slate-400 text-sm">{t('autoRenewal')}</p>
+                </div>
                 <div className="text-right">
                   <p className="text-blue-400 font-bold text-lg">{selectedModelForPurchase.monthlyPrice}</p>
+                  {isSubmitting && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-blue-400 text-xs">Отправка...</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
             {/* Пожизненная покупка */}
             <Card 
-              onClick={() => {
-                const message = `🔔 Запрос на покупку ML модели
-📋 Модель: ${selectedModelForPurchase.name} (${selectedModelForPurchase.emoji})
-💰 Тип: Пожизненная покупка
-💵 Цена: ${selectedModelForPurchase.lifetimePrice}
-👤 Пользователь: ${userData?.first_name} ${userData?.last_name}
-🆔 ID: ${userData?.id}
-📱 Username: @${userData?.username || 'не указан'}
-Пожалуйста, свяжитесь с пользователем для оформления покупки.`
-                // Отправляем сообщение админу
-                window.open(`https://t.me/${ADMIN_TELEGRAM_ID}?text=${encodeURIComponent(message)}`, '_blank')
-                setShowPurchaseModal(false)
-                setSelectedModelForPurchase(null)
-              }}
-              className="glass-effect border-green-500/30 p-4 cursor-pointer hover:border-green-500/50 transition-all duration-300"
+              onClick={() => !isSubmitting && handleSubscriptionRequest('lifetime')}
+              className={`glass-effect border-green-500/30 p-4 cursor-pointer hover:border-green-500/50 transition-all duration-300 ${
+                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
               <div className="flex items-center justify-between">
-                     <div>
-                       <h4 className="text-white font-semibold">{t('lifetimePurchase')}</h4>
-                       <p className="text-slate-400 text-sm">{t('noTimeLimit')}</p>
-                     </div>
+                <div>
+                  <h4 className="text-white font-semibold">{t('lifetimePurchase')}</h4>
+                  <p className="text-slate-400 text-sm">{t('noTimeLimit')}</p>
+                </div>
                 <div className="text-right">
                   <p className="text-green-400 font-bold text-lg">{selectedModelForPurchase.lifetimePrice}</p>
+                  {isSubmitting && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-green-400 text-xs">Отправка...</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
@@ -10162,6 +10409,81 @@ function App() {
                   </div>
                   <h3 className="text-lg font-semibold text-white mb-2">{t('noAccessRequests')}</h3>
                   <p className="text-slate-400">{t('newRequestsWillAppearHere')}</p>
+                </div>
+              )}
+            </div>
+          </Card>
+          
+          {/* Subscription Requests Management */}
+          <Card className="glass-effect border-yellow-500/30 p-6 card-3d shadow-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center icon-3d shadow-lg shadow-yellow-500/20">
+                <Crown className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold text-white">Запросы подписок</h3>
+                {subscriptionRequests.length > 0 && (
+                  <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
+                    {subscriptionRequests.length}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="space-y-3">
+              {subscriptionRequests.length > 0 ? (
+                subscriptionRequests.map((request) => (
+                  <div 
+                    key={request.request_id} 
+                    className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/30 hover:border-yellow-500/50 transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 flex items-center justify-center">
+                        <Crown className="w-4 h-4 text-yellow-400" />
+                      </div>
+                      <div>
+                        <div className="text-white font-semibold">
+                          {request.user_data?.first_name} {request.user_data?.last_name}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          ID: {request.user_id}
+                          {request.user_data?.username && ` • @${request.user_data.username}`}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          Модель: {request.model_id} • {request.subscription_type === 'monthly' ? 'Ежемесячно' : 'Пожизненно'} • {request.price}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {new Date(request.created_at).toLocaleString('ru-RU')}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => approveSubscriptionRequest(request.request_id)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm"
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        Одобрить
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const reason = prompt('Причина отклонения (необязательно):')
+                          rejectSubscriptionRequest(request.request_id, reason || 'Не указана')
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 text-sm"
+                      >
+                        <span className="mr-2">✕</span>
+                        Отклонить
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
+                    <Crown className="w-8 h-8 text-slate-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">Нет запросов подписок</h3>
+                  <p className="text-slate-400">Новые запросы будут отображаться здесь</p>
                 </div>
               )}
             </div>
