@@ -9,7 +9,7 @@ import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 function App() {
   // ВЕРСИЯ ПРИЛОЖЕНИЯ - для проверки обновлений
-  console.log('🚀 APP VERSION: 2024.12.24 - SUBSCRIPTION SYSTEM COMPLETE')
+  console.log('🚀 APP VERSION: 2024.12.24 - SUBSCRIPTION SYSTEM COMPLETE - FORCE UPDATE')
   
   // КОНФИГУРАЦИЯ АДМИНА - УДАЛЕНО ИЗ ФРОНТЕНДА ДЛЯ БЕЗОПАСНОСТИ
   // Функция для определения правильного API URL
