@@ -7970,10 +7970,10 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   if (currentScreen === 'auth') {
     return (
       <div>
-        <TelegramAuth 
-          onAuthSuccess={handleAuthSuccess}
-          onAuthError={handleAuthError}
-        />
+      <TelegramAuth 
+        onAuthSuccess={handleAuthSuccess}
+        onAuthError={handleAuthError}
+      />
         <ToastNotification />
       </div>
     )
@@ -9607,9 +9607,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-xl font-bold text-white">{t('top3Signals')}</h3>
                       {hasVipAccess() ? (
-                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
+                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
                           VIP
-                        </Badge>
+                      </Badge>
                       ) : (
                         <Badge className="bg-red-500/20 text-red-400 border-red-500/50">
                           ЗАБЛОКИРОВАНО
@@ -9755,7 +9755,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       {hasActiveSubscription() ? (
                         <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
                           ✓ ДОСТУПНО
-                        </Badge>
+                      </Badge>
                       ) : (
                         <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
                           <Lock className="w-3 h-3 mr-1" />
@@ -9927,31 +9927,31 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       <div className="flex items-center gap-4">
                         <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-xl`}>
                           <span className="text-3xl">{model.emoji}</span>
-                        </div>
-                        <div className="flex-1">
+                      </div>
+                      <div className="flex-1">
                           <h3 className="text-xl font-bold text-white mb-1">{model.name}</h3>
                           <p className="text-slate-300 text-base">{model.algorithm}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        {isActive && (
+                          {isActive && (
                           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-sm px-3 py-1">
-                            ✓ АКТИВНА
-                          </Badge>
-                        )}
-                        {isRestricted && (
+                              ✓ АКТИВНА
+                            </Badge>
+                          )}
+                          {isRestricted && (
                           <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-sm px-3 py-1">
                             <Lock className="w-4 h-4 mr-1" />
-                            ЗАБЛОКИРОВАНА
-                          </Badge>
-                        )}
-                        {!isOwned && !isRestricted && (
+                              ЗАБЛОКИРОВАНА
+                            </Badge>
+                          )}
+                          {!isOwned && !isRestricted && (
                           <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-sm px-3 py-1">
                             <Lock className="w-4 h-4 mr-1" />
-                            ТРЕБУЕТСЯ ПОДПИСКА
-                          </Badge>
-                        )}
-                      </div>
+                              ТРЕБУЕТСЯ ПОДПИСКА
+                            </Badge>
+                          )}
+                        </div>
                     </div>
                     
                     {/* Stats row */}
@@ -9959,46 +9959,46 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       <div className="flex items-center gap-2">
                         <Target className="w-5 h-5 text-emerald-400" />
                         <span className="text-emerald-400 font-semibold text-lg">{model.winrate}</span>
-                      </div>
-                      <span className="text-slate-600">•</span>
-                      <span className="text-slate-400">{model.style}</span>
-                    </div>
+                          </div>
+                          <span className="text-slate-600">•</span>
+                          <span className="text-slate-400">{model.style}</span>
+                        </div>
                     
                     {/* Description */}
                     <p className="text-slate-400 text-base italic">💬 {model.description}</p>
-                    {model.warning && (
+                        {model.warning && (
                       <p className="text-red-400 text-base font-semibold">⚠️ {model.warning}</p>
-                    )}
+                        )}
                     
                     {/* Bottom row: Pricing and status */}
                     <div className="flex items-center justify-between mt-auto">
-                      {!isOwned && !isRestricted && (
+                        {!isOwned && !isRestricted && (
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2 text-base">
-                            <span className="text-yellow-400 font-bold">{model.monthlyPrice}{t('perMonth')}</span>
+                          <span className="text-yellow-400 font-bold">{model.monthlyPrice}{t('perMonth')}</span>
                             <span className="text-slate-600">{t('or')}</span>
-                            <span className="text-green-400 font-bold">{model.lifetimePrice} {t('forever')}</span>
+                          <span className="text-green-400 font-bold">{model.lifetimePrice} {t('forever')}</span>
                           </div>
                           <p className="text-slate-500 text-sm">Нажмите на карточку для покупки</p>
-                        </div>
-                      )}
+                          </div>
+                        )}
                       
                       <div className="flex items-center">
-                        {isActive ? (
+                      {isActive ? (
                           <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
                             <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                          </div>
-                        ) : isOwned && !isRestricted ? (
+                        </div>
+                      ) : isOwned && !isRestricted ? (
                           <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
                             <CheckCircle2 className="w-6 h-6 text-purple-400" />
                           </div>
-                        ) : isRestricted ? (
+                      ) : isRestricted ? (
                           <Lock className="w-6 h-6 text-red-400" />
                         ) : (
                           <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
                             <Crown className="w-6 h-6 text-yellow-400" />
                           </div>
-                        )}
+                      )}
                       </div>
                     </div>
                   </div>
@@ -10049,10 +10049,10 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               }`}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-white font-semibold">{t('monthlySubscription')}</h4>
-                  <p className="text-slate-400 text-sm">{t('autoRenewal')}</p>
-                </div>
+                     <div>
+                       <h4 className="text-white font-semibold">{t('monthlySubscription')}</h4>
+                       <p className="text-slate-400 text-sm">{t('autoRenewal')}</p>
+                     </div>
                 <div className="text-right">
                   <p className="text-blue-400 font-bold text-lg">{selectedModelForPurchase.monthlyPrice}</p>
                   {isSubmitting && (
@@ -10072,10 +10072,10 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               }`}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-white font-semibold">{t('lifetimePurchase')}</h4>
-                  <p className="text-slate-400 text-sm">{t('noTimeLimit')}</p>
-                </div>
+                     <div>
+                       <h4 className="text-white font-semibold">{t('lifetimePurchase')}</h4>
+                       <p className="text-slate-400 text-sm">{t('noTimeLimit')}</p>
+                     </div>
                 <div className="text-right">
                   <p className="text-green-400 font-bold text-lg">{selectedModelForPurchase.lifetimePrice}</p>
                   {isSubmitting && (
