@@ -9981,19 +9981,22 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                 <Card 
                   key={model.id}
                   onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    
-                    console.log('🖱️ Card clicked:', {
+                    console.log('🖱️ Card onClick triggered!', {
                       modelId: model.id,
                       isOwned,
                       isRestricted,
-                      modelName: model.name
+                      modelName: model.name,
+                      event: e
                     })
                     
+                    e.preventDefault()
+                    e.stopPropagation()
+                    
                     if (isOwned && !isRestricted) {
+                      console.log('✅ Model is owned, selecting it')
                       setSelectedMLModel(model.id)
                     } else if (isRestricted) {
+                      console.log('⚠️ Model is restricted')
                       alert(t('modelRestrictedAlert'))
                     } else {
                       // Открываем модальное окно покупки при клике на любую часть карточки
@@ -10116,6 +10119,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     )
   }
   // Purchase Modal
+  console.log('🔍 Modal state check:', {
+    showPurchaseModal,
+    selectedModelForPurchase: selectedModelForPurchase?.name,
+    hasSelectedModel: !!selectedModelForPurchase,
+    currentScreen
+  })
+  
   if (showPurchaseModal && selectedModelForPurchase) {
     console.log('🛒 Rendering purchase modal:', {
       showPurchaseModal,
