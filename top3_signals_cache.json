@@ -1,0 +1,43 @@
+{
+  "last_updated": "2025-10-24T01:54:15.976889",
+  "forex_signals": [],
+  "otc_signals": [
+    {
+      "signal_id": "auto_otc_EUR_USD_(OTC)_1761263657",
+      "pair": "EUR/USD (OTC)",
+      "type": "SELL",
+      "direction": "SELL",
+      "entry": "1.185",
+      "confidence": 0.7478999999999999,
+      "expiration": 4,
+      "signal_type": "otc",
+      "timestamp": "2025-10-24T01:54:17.796720",
+      "reasoning": "Автоматический анализ"
+    },
+    {
+      "signal_id": "auto_otc_NZD_USD_(OTC)_1761263659",
+      "pair": "NZD/USD (OTC)",
+      "type": "BUY",
+      "direction": "BUY",
+      "entry": "1.185",
+      "confidence": 0.7785,
+      "expiration": 4,
+      "signal_type": "otc",
+      "timestamp": "2025-10-24T01:54:19.231811",
+      "reasoning": "Автоматический анализ"
+    },
+    {
+      "signal_id": "auto_otc_USD_CHF_(OTC)_1761263660",
+      "pair": "USD/CHF (OTC)",
+      "type": "SELL",
+      "direction": "SELL",
+      "entry": "1.185",
+      "confidence": 0.7439399999999999,
+      "expiration": 5,
+      "signal_type": "otc",
+      "timestamp": "2025-10-24T01:54:20.656180",
+      "reasoning": "Автоматический анализ"
+    }
+  ],
+  "next_generation": "2025-10-24T02:04:15.976889"
+}

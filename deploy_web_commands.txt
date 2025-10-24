@@ -1,0 +1,8 @@
+git add src/
+git add web/
+git add index.html
+git add package.json
+git add vite.config.js
+git commit -m "Web: Серверная привязка активных сигналов - защита от обхода"
+git push origin main
+

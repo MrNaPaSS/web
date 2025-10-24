@@ -1,0 +1,6 @@
+git rm -r backend/
+git rm package-lock.json
+git rm -r web/
+git pull origin main --allow-unrelated-histories
+git push -u origin main
+

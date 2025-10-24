@@ -1,0 +1,11 @@
+git init
+git remote add origin https://github.com/MrNaPaSS/web.git
+git add src/
+git add web/
+git add index.html
+git add package.json
+git add vite.config.js
+git add public/
+git commit -m "Web: Серверная привязка активных сигналов - защита от обхода"
+git push -u origin main
+

@@ -292,6 +292,55 @@ function App() {
     const tenMinutes = 10 * 60 * 1000 // 10 минут в миллисекундах
     return timeDiff >= tenMinutes
   }
+
+  // Функция загрузки кешированных ТОП-3 сигналов
+  const loadCachedTop3Signals = async () => {
+    try {
+      const response = await fetch(`${getApiUrl(5000)}/api/signal/top3/latest`)
+      const result = await response.json()
+      
+      if (result.success && result.signals) {
+        const allSignals = [
+          ...result.signals.forex,
+          ...result.signals.otc
+        ]
+        
+        setCachedTop3Signals(allSignals)
+        setTop3LastUpdate(result.last_updated)
+        setTop3NextUpdate(result.next_generation)
+        
+        console.log(`[CACHED-TOP3] Загружено ${allSignals.length} кешированных сигналов`)
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('[CACHED-TOP3] Ошибка загрузки:', error)
+      return false
+    }
+  }
+
+  // Функция проверки статуса ТОП-3
+  const checkTop3Status = async () => {
+    try {
+      const response = await fetch(`${getApiUrl(5000)}/api/signal/top3/status`)
+      const result = await response.json()
+      
+      if (result.success) {
+        setTop3TimeUntilNext(result.time_until_next)
+        
+        // Если есть новые сигналы, загружаем их
+        if (result.has_signals && result.last_updated !== top3LastUpdate) {
+          await loadCachedTop3Signals()
+        }
+        
+        return result
+      }
+      return null
+    } catch (error) {
+      console.error('[TOP3-STATUS] Ошибка проверки статуса:', error)
+      return null
+    }
+  }
   const [top3Cooldown, setTop3Cooldown] = useState(0) // Оставшееся время до следующей генерации ТОП-3 в секундах
   const [lastSignalGeneration, setLastSignalGeneration] = useState({}) // Время последней генерации по парам
   const [signalCooldown, setSignalCooldown] = useState(0) // Cooldown для одиночного сигнала
@@ -300,6 +349,11 @@ function App() {
   const [generationStage, setGenerationStage] = useState('') // Текущая стадия генерации
   const [generatedSignals, setGeneratedSignals] = useState([]) // Сгенерированные сигналы
   const [showReloadWarning, setShowReloadWarning] = useState(false) // Предупреждение при перезагрузке
+  // Новые state для кешированных ТОП-3
+  const [cachedTop3Signals, setCachedTop3Signals] = useState([])
+  const [top3LastUpdate, setTop3LastUpdate] = useState(null)
+  const [top3NextUpdate, setTop3NextUpdate] = useState(null)
+  const [top3TimeUntilNext, setTop3TimeUntilNext] = useState(null)
   // Notification settings
   const [notificationSettings, setNotificationSettings] = useState({
     newSignals: true,
@@ -597,6 +651,7 @@ function App() {
       manageParameters: 'Управление параметрами',
       manageAppSettings: 'Управление параметрами приложения',
       mlModel: 'ML Модель',
+      chooseMLModel: 'Выбор ML модели',
       statistics: 'Статистика',
       viewDetails: 'Просмотр детальной статистики',
       notifications: 'Уведомления',
@@ -1375,6 +1430,7 @@ function App() {
       returnToMenu: 'Return to menu',
       forever: 'forever',
       mlModel: 'ML model',
+      chooseMLModel: 'Choose ML model',
       selectSignalForActivation: 'Select signal for activation',
       selectSignal: 'Select signal',
       expiration: 'Expiration',
@@ -1563,7 +1619,8 @@ function App() {
       chatWithTraders: 'แชทกับเทรดเดอร์คนอื่น',
       manageParameters: 'จัดการพารามิเตอร์',
       manageAppSettings: 'จัดการการตั้งค่าแอป',
-      mlModel: 'โมเดล ML',
+      mlModel: 'โมเดл ML',
+      chooseMLModel: 'เลือกโมเดล ML',
       statistics: 'สถิติ',
       viewDetails: 'ดูสถิติแบบละเอียด',
       notifications: 'การแจ้งเตือน',
@@ -1815,7 +1872,8 @@ function App() {
       getSubscription: 'รับการสมัครสมาชิก',
       returnToMenu: 'กลับไปที่เมนู',
       forever: 'ตลอดไป',
-      mlModel: 'โมเดล ML',
+      mlModel: 'โมเดл ML',
+      chooseMLModel: 'เลือกโมเดล ML',
       selectSignalForActivation: 'เลือกสัญญาณเพื่อเปิดใช้งาน',
       selectSignal: 'เลือกสัญญาณ',
       expiration: 'หมดอายุ',
@@ -1938,7 +1996,8 @@ function App() {
       signalGeneration: 'การสร้างสัญญาณ',
       usingMLModel: 'ใช้โมเดล ML...',
       analysis: 'การวิเคราะห์',
-      mlModel: 'โมเดล ML',
+      mlModel: 'โมเดл ML',
+      chooseMLModel: 'เลือกโมเดล ML',
       accuracy: 'ความแม่นยำ',
       pleaseWait: 'กรุณารอสักครู่ ระบบกำลังวิเคราะห์ตลาด...',
       howToReceiveSignals: 'คุณต้องการรับสัญญาณอย่างไร?',
@@ -2005,6 +2064,7 @@ function App() {
       manageParameters: 'Gestionar parámetros',
       manageAppSettings: 'Gestionar configuración de la app',
       mlModel: 'Modelo ML',
+      chooseMLModel: 'Seleccionar modelo ML',
       statistics: 'Estadísticas',
       viewDetails: 'Ver estadísticas detalladas',
       notifications: 'Notificaciones',
@@ -2317,6 +2377,7 @@ function App() {
       returnToMenu: 'Volver al menú',
       forever: 'para siempre',
       mlModel: 'Modelo ML',
+      chooseMLModel: 'Seleccionar modelo ML',
       selectSignalForActivation: 'Selecciona señal para activación',
       selectSignal: 'Selecciona señal',
       expiration: 'Expiración',
@@ -2393,6 +2454,7 @@ function App() {
       usingMLModel: 'Usando modelo ML...',
       analysis: 'Análisis',
       mlModel: 'Modelo ML',
+      chooseMLModel: 'Seleccionar modelo ML',
       accuracy: 'Precisión',
       pleaseWait: 'Por favor espera. El sistema está analizando el mercado...',
       howToReceiveSignals: '¿Cómo quieres recibir señales?',
@@ -2459,6 +2521,7 @@ function App() {
       manageParameters: 'Gérer les paramètres',
       manageAppSettings: 'Gérer les paramètres de l\'app',
       mlModel: 'Modèle ML',
+      chooseMLModel: 'Sélectionner le modèle ML',
       statistics: 'Statistiques',
       viewDetails: 'Voir les statistiques détaillées',
       notifications: 'Notifications',
@@ -2771,6 +2834,7 @@ function App() {
       returnToMenu: 'Retour au menu',
       forever: 'pour toujours',
       mlModel: 'Modèle ML',
+      chooseMLModel: 'Sélectionner le modèle ML',
       selectSignalForActivation: 'Sélectionnez le signal à activer',
       selectSignal: 'Sélectionnez le signal',
       expiration: 'Expiration',
@@ -2847,6 +2911,7 @@ function App() {
       usingMLModel: 'Utilisation du modèle ML...',
       analysis: 'Analyse',
       mlModel: 'Modèle ML',
+      chooseMLModel: 'Sélectionner le modèle ML',
       accuracy: 'Précision',
       pleaseWait: 'Veuillez patienter. Le système analyse le marché...',
       howToReceiveSignals: 'Comment voulez-vous recevoir les signaux?',
@@ -2913,6 +2978,7 @@ function App() {
       manageParameters: 'Parameter verwalten',
       manageAppSettings: 'App-Einstellungen verwalten',
       mlModel: 'ML-Modell',
+      chooseMLModel: 'ML-Modell auswählen',
       statistics: 'Statistiken',
       viewDetails: 'Detaillierte Statistiken anzeigen',
       notifications: 'Benachrichtigungen',
@@ -3225,6 +3291,7 @@ function App() {
       returnToMenu: 'Zurück zum Menü',
       forever: 'für immer',
       mlModel: 'ML-Modell',
+      chooseMLModel: 'ML-Modell auswählen',
       selectSignalForActivation: 'Signal zur Aktivierung auswählen',
       selectSignal: 'Signal auswählen',
       expiration: 'Ablauf',
@@ -3301,6 +3368,7 @@ function App() {
       usingMLModel: 'ML-Modell verwenden...',
       analysis: 'Analyse',
       mlModel: 'ML-Modell',
+      chooseMLModel: 'ML-Modell auswählen',
       accuracy: 'Genauigkeit',
       pleaseWait: 'Bitte warten. Das System analysiert den Markt...',
       howToReceiveSignals: 'Wie möchten Sie Signale erhalten?',
@@ -3368,6 +3436,7 @@ function App() {
       manageParameters: 'Gestisci parametri',
       manageAppSettings: 'Gestisci impostazioni app',
       mlModel: 'Modello ML',
+      chooseMLModel: 'Seleziona modello ML',
       statistics: 'Statistiche',
       viewDetails: 'Visualizza statistiche dettagliate',
       notifications: 'Notifiche',
@@ -3617,6 +3686,7 @@ function App() {
       returnToMenu: 'Torna al menu',
       forever: 'per sempre',
       mlModel: 'Modello ML',
+      chooseMLModel: 'Seleziona modello ML',
       selectSignalForActivation: 'Seleziona segnale per attivazione',
       selectSignal: 'Seleziona segnale',
       expiration: 'Scadenza',
@@ -3693,6 +3763,7 @@ function App() {
       usingMLModel: 'Usando modello ML...',
       analysis: 'Analisi',
       mlModel: 'Modello ML',
+      chooseMLModel: 'Seleziona modello ML',
       accuracy: 'Precisione',
       pleaseWait: 'Attendere prego. Il sistema sta analizzando il mercato...',
       howToReceiveSignals: 'Come vuoi ricevere i segnali?',
@@ -3760,6 +3831,7 @@ function App() {
       manageParameters: 'Gerenciar parâmetros',
       manageAppSettings: 'Gerenciar configurações do app',
       mlModel: 'Modelo ML',
+      chooseMLModel: 'Seleccionar modelo ML',
       statistics: 'Estatísticas',
       viewDetails: 'Ver estatísticas detalhadas',
       notifications: 'Notificações',
@@ -4009,6 +4081,7 @@ function App() {
       returnToMenu: 'Voltar ao menu',
       forever: 'para sempre',
       mlModel: 'Modelo ML',
+      chooseMLModel: 'Seleccionar modelo ML',
       selectSignalForActivation: 'Selecione sinal para ativação',
       selectSignal: 'Selecione sinal',
       expiration: 'Expiração',
@@ -4085,6 +4158,7 @@ function App() {
       usingMLModel: 'Usando modelo ML...',
       analysis: 'Análise',
       mlModel: 'Modelo ML',
+      chooseMLModel: 'Seleccionar modelo ML',
       accuracy: 'Precisão',
       pleaseWait: 'Por favor aguarde. O sistema está analisando o mercado...',
       howToReceiveSignals: 'Como você quer receber sinais?',
@@ -4152,6 +4226,7 @@ function App() {
       manageParameters: '管理参数',
       manageAppSettings: '管理应用设置',
       mlModel: 'ML模型',
+      chooseMLModel: '选择ML模型',
       statistics: '统计',
       viewDetails: '查看详细统计',
       notifications: '通知',
@@ -4467,6 +4542,7 @@ function App() {
       returnToMenu: '返回菜单',
       forever: '永远',
       mlModel: 'ML模型',
+      chooseMLModel: '选择ML模型',
       selectSignalForActivation: '选择要激活的信号',
       selectSignal: '选择信号',
       expiration: '到期',
@@ -4852,6 +4928,7 @@ function App() {
       manageParameters: '매개변수 관리',
       manageAppSettings: '앱 설정 관리',
       mlModel: 'ML 모델',
+      chooseMLModel: 'ML 모델 선택',
       statistics: '통계',
       viewDetails: '상세 통계 보기',
       notifications: '알림',
@@ -5020,6 +5097,7 @@ function App() {
       returnToMenu: '메뉴로 돌아가기',
       forever: '영원히',
       mlModel: 'ML 모델',
+      chooseMLModel: 'ML 모델 선택',
       selectSignalForActivation: '활성화할 신호 선택',
       selectSignal: '신호 선택',
       expiration: '만료',
@@ -5096,6 +5174,7 @@ function App() {
       usingMLModel: 'ML 모델 사용 중...',
       analysis: '분석',
       mlModel: 'ML 모델',
+      chooseMLModel: 'ML 모델 선택',
       accuracy: '정확도',
       pleaseWait: '잠시만 기다려주세요. 시스템이 시장을 분석하고 있습니다...',
       howToReceiveSignals: '신호를 어떻게 받고 싶으신가요?',
@@ -5154,6 +5233,7 @@ function App() {
       manageParameters: 'إدارة المعاملات',
       manageAppSettings: 'إدارة إعدادات التطبيق',
       mlModel: 'نموذج ML',
+      chooseMLModel: 'اختيار نموذج ML',
       statistics: 'الإحصائيات',
       viewDetails: 'عرض الإحصائيات التفصيلية',
       notifications: 'الإشعارات',
@@ -5322,6 +5402,7 @@ function App() {
       returnToMenu: 'العودة إلى القائمة',
       forever: 'للأبد',
       mlModel: 'نموذج ML',
+      chooseMLModel: 'اختيار نموذج ML',
       selectSignalForActivation: 'اختر الإشارة للتفعيل',
       selectSignal: 'اختر الإشارة',
       expiration: 'انتهاء الصلاحية',
@@ -5398,6 +5479,7 @@ function App() {
       usingMLModel: 'استخدام نموذج ML...',
       analysis: 'التحليل',
       mlModel: 'نموذج ML',
+      chooseMLModel: 'اختيار نموذج ML',
       accuracy: 'الدقة',
       pleaseWait: 'يرجى الانتظار. النظام يحلل السوق...',
       howToReceiveSignals: 'كيف تريد تلقي الإشارات؟',
@@ -5456,6 +5538,7 @@ function App() {
       manageParameters: 'पैरामीटर प्रबंधित करें',
       manageAppSettings: 'ऐप सेटिंग्स प्रबंधित करें',
       mlModel: 'ML मॉडल',
+      chooseMLModel: 'ML मॉडल चुनें',
       statistics: 'सांख्यिकी',
       viewDetails: 'विस्तृत सांख्यिकी देखें',
       notifications: 'सूचनाएं',
@@ -5624,6 +5707,7 @@ function App() {
       returnToMenu: 'मेनू पर वापस जाएं',
       forever: 'हमेशा के लिए',
       mlModel: 'ML मॉडल',
+      chooseMLModel: 'ML मॉडल चुनें',
       selectSignalForActivation: 'सक्रियता के लिए सिग्नल चुनें',
       selectSignal: 'सिग्नल चुनें',
       expiration: 'समाप्ति',
@@ -5700,6 +5784,7 @@ function App() {
       usingMLModel: 'ML मॉडल का उपयोग...',
       analysis: 'विश्लेषण',
       mlModel: 'ML मॉडल',
+      chooseMLModel: 'ML मॉडल चुनें',
       accuracy: 'सटीकता',
       pleaseWait: 'कृपया प्रतीक्षा करें। सिस्टम बाजार का विश्लेषण कर रहा है...',
       howToReceiveSignals: 'आप सिग्नल कैसे प्राप्त करना चाहते हैं?',
@@ -5967,6 +6052,7 @@ function App() {
       manageParameters: 'Quản lý tham số',
       manageAppSettings: 'Quản lý cài đặt ứng dụng',
       mlModel: 'Mô hình ML',
+      chooseMLModel: 'Chọn mô hình ML',
       statistics: 'Thống kê',
       viewDetails: 'Xem thống kê chi tiết',
       notifications: 'Thông báo',
@@ -6135,6 +6221,7 @@ function App() {
       returnToMenu: 'Quay lại menu',
       forever: 'mãi mãi',
       mlModel: 'Mô hình ML',
+      chooseMLModel: 'Chọn mô hình ML',
       selectSignalForActivation: 'Chọn tín hiệu để kích hoạt',
       selectSignal: 'Chọn tín hiệu',
       expiration: 'Hết hạn',
@@ -6225,6 +6312,7 @@ function App() {
       manageParameters: 'Kelola parameter',
       manageAppSettings: 'Kelola pengaturan aplikasi',
       mlModel: 'Model ML',
+      chooseMLModel: 'Pilih model ML',
       statistics: 'Statistik',
       viewDetails: 'Lihat statistik detail',
       notifications: 'Notifikasi',
@@ -6393,6 +6481,7 @@ function App() {
       returnToMenu: 'Kembali ke menu',
       forever: 'selamanya',
       mlModel: 'Model ML',
+      chooseMLModel: 'Pilih model ML',
       selectSignalForActivation: 'Pilih sinyal untuk aktivasi',
       selectSignal: 'Pilih sinyal',
       expiration: 'Kedaluwarsa',
@@ -6894,7 +6983,9 @@ function App() {
         // }
       } else {
         console.error('❌ Ошибка авторизации:', result.error)
-        setIsAuthorized(false)
+        // НЕ сбрасываем авторизацию при ошибках API
+        // Пользователь должен остаться на текущем экране
+        console.warn('⚠️ Ошибка API, но сохраняем авторизацию')
       }
     } catch (error) {
       console.error('❌ Ошибка подключения к API:', error)
@@ -7005,16 +7096,11 @@ function App() {
     if (userId) {
       console.log('🔄 [SERVER] Проверяем активный сигнал на сервере при загрузке...')
       restoreActiveSignalFromServer()
+    } else {
+      // НЕ очищаем localStorage при потере userId
+      // Это может быть временная ошибка API, пользователь должен остаться на текущем экране
+      console.log('⚠️ userId отсутствует, но НЕ очищаем localStorage')
     }
-    
-    // КРИТИЧНО: Полностью очищаем ВСЕ данные сигналов при загрузке
-    localStorage.removeItem('pendingSignal')
-    localStorage.removeItem('signalActivated')
-    localStorage.removeItem('signalTimer')
-    localStorage.removeItem('isWaitingFeedback')
-    localStorage.removeItem('signalStartTime')
-    localStorage.removeItem('generatedSignals')
-    console.log('🧹 [CRITICAL] Полная очистка localStorage при загрузке приложения')
   }, [userId]) // Добавляем userId в зависимости
 
   // НОВЫЙ useEffect для запуска генерации ТОП-3
@@ -7145,8 +7231,31 @@ function App() {
       return () => clearTimeout(timeout)
     }
   }, [noSignalAvailable])
+
+  // Периодическая проверка кешированных ТОП-3 сигналов
+  useEffect(() => {
+    if (userId && isAuthorized) {
+      // Загружаем кешированные сигналы при входе
+      loadCachedTop3Signals()
+      
+      // Проверяем статус каждые 30 секунд
+      const interval = setInterval(() => {
+        checkTop3Status()
+      }, 30 * 1000) // 30 секунд
+      
+      return () => clearInterval(interval)
+    }
+  }, [userId, isAuthorized])
   // РЕАЛЬНАЯ генерация ТОП-3 сигналов через API бота
   const generateTop3Signals = async () => {
+    // Сначала проверяем кешированные сигналы
+    if (cachedTop3Signals.length > 0) {
+      console.log('[TOP3] Используем кешированные сигналы')
+      setGeneratedSignals(cachedTop3Signals)
+      setCurrentScreen('signal-selection')
+      return
+    }
+    
     // КРИТИЧНО: Полностью очищаем localStorage перед генерацией
     localStorage.removeItem('pendingSignal')
     localStorage.removeItem('signalActivated')
@@ -7858,7 +7967,13 @@ function App() {
               </div>
             </Card>
             <Card 
-              className="glass-effect p-6 backdrop-blur-sm cursor-not-allowed opacity-60 border-yellow-500/30 shadow-xl"
+              onClick={() => {
+                if (userData?.id) {
+                  loadUserSubscriptions(userData.id)
+                }
+                setCurrentScreen('ml-selector')
+              }}
+              className="glass-effect p-6 backdrop-blur-sm cursor-pointer hover:border-yellow-500/50 transition-all duration-300 group card-3d border-slate-700/50 shadow-xl hover:scale-105"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -7866,15 +7981,8 @@ function App() {
                     <Crown className="w-8 h-8 text-yellow-400" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-xl font-bold text-white">{t('premium')}</h3>
-                      <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/50">
-                        {t('comingSoon')}
-                      </Badge>
-                    </div>
-                    <p className="text-slate-400 text-sm">
-                      {t('comingSoonDescription')}
-                    </p>
+                    <h3 className="text-xl font-bold text-white">{t('premium')}</h3>
+                    <p className="text-slate-400 text-sm">{t('chooseMLModel')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all duration-300" />
@@ -8071,14 +8179,14 @@ function App() {
 {t('confidence')}
                           </span>
                           <span className="text-white font-semibold">
-                            {(signal.confidence * 100).toFixed(1)}%
+                            {signal.confidence.toFixed(1)}%
                           </span>
                         </div>
                         <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden shadow-inner">
                           <div 
                             className="h-full transition-all duration-500 shadow-lg"
                             style={{ 
-                              width: `${signal.confidence * 100}%`,
+                              width: `${signal.confidence}%`,
                               background: `linear-gradient(to right, 
                                 #ef4444 0%, 
                                 #f97316 20%, 
@@ -8158,14 +8266,14 @@ function App() {
 {t('confidence')}
                           </span>
                           <span className="text-white font-semibold">
-                            {(signal.confidence * 100).toFixed(1)}%
+                            {signal.confidence.toFixed(1)}%
                           </span>
                         </div>
                         <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden shadow-inner">
                           <div 
                             className="h-full transition-all duration-500 shadow-lg"
                             style={{ 
-                              width: `${signal.confidence * 100}%`,
+                              width: `${signal.confidence}%`,
                               background: `linear-gradient(to right, 
                                 #ef4444 0%, 
                                 #f97316 20%, 
@@ -8477,7 +8585,7 @@ function App() {
                             {signal.confidence && (
                               <div className="mt-1">
                                 <span className="text-xs text-slate-400">
-      {t('confidence')}: {Math.round(signal.confidence * 100)}%
+      {t('confidence')}: {Math.round(signal.confidence)}%
                                 </span>
                               </div>
                             )}
@@ -9179,8 +9287,6 @@ function App() {
   if (currentScreen === 'mode-select') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
-        {/* Market Status Badge */}
-        <MarketStatusBadge />
         {/* Animated background */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl animate-glow-pulse"></div>
@@ -10578,14 +10684,14 @@ function App() {
   {t('confidence')}
                             </span>
                             <span className="text-white font-semibold">
-                              {(signal.confidence * 100).toFixed(1)}%
+                              {signal.confidence.toFixed(1)}%
                             </span>
                           </div>
                           <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden shadow-inner">
                             <div 
                               className="h-full transition-all duration-500 shadow-lg"
                               style={{ 
-                                width: `${signal.confidence * 100}%`,
+                                width: `${signal.confidence}%`,
                                 background: `linear-gradient(to right, 
                                   #ef4444 0%, 
                                   #f97316 20%, 

@@ -1,0 +1,36 @@
+{
+  "feedback": [
+    {
+      "signal_id": "bulk_otc_USD_CHF_1761255085",
+      "user_id": 511442168,
+      "pair": "USD/CHF (OTC)",
+      "direction": "SELL",
+      "confidence": 0.7607999999999998,
+      "entry_price": 1.185,
+      "expiration": 1,
+      "signal_type": "bulk_otc",
+      "timestamp": "2025-10-23T23:31:34.739677",
+      "feedback": "success",
+      "feedback_time": "2025-10-23T23:36:59.824249"
+    }
+  ],
+  "last_updated": "2025-10-23T23:36:59.824249",
+  "7613535490": {
+    "total_signals": 2,
+    "forex_signals": 0,
+    "otc_signals": 2,
+    "successful_trades": 0,
+    "failed_trades": 0,
+    "pending_trades": 2,
+    "win_rate": 0.0
+  },
+  "511442168": {
+    "total_signals": 9,
+    "forex_signals": 2,
+    "otc_signals": 7,
+    "successful_trades": 0,
+    "failed_trades": 0,
+    "pending_trades": 9,
+    "win_rate": 0.0
+  }
+}

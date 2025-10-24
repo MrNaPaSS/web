@@ -1,0 +1,20 @@
+{
+  "authorized_users": [
+    8428349451
+  ],
+  "last_updated": "2025-10-23T22:47:19.412795",
+  "8428349451": {
+    "telegram_id": "8428349451",
+    "first_name": "Oleg",
+    "last_name": "",
+    "username": "",
+    "language_code": "ru",
+    "is_premium": false,
+    "is_admin": false,
+    "last_login": "2025-10-23T22:47:19.412795",
+    "subscriptions": [
+      "logistic-spy"
+    ],
+    "created_at": "2025-10-23T22:47:19.412795"
+  }
+}
