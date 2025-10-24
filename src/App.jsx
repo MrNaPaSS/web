@@ -12,6 +12,12 @@ function App() {
   console.log('🚀 APP VERSION: 2024.12.24 - SUBSCRIPTION SYSTEM COMPLETE - FORCE UPDATE')
   console.log('🔄 CACHE BUST: ' + Date.now())
   // UNIQUE CACHE BUST: 1735064400000
+  // FORCE REBUILD: ' + Math.random().toString(36).substr(2, 9)
+  // FINAL CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  // BREAKTHROUGH CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  // ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
+  const ULTIMATE_VERSION = '2024.12.24 - SUBSCRIPTION SYSTEM COMPLETE - FORCE UPDATE'
+  console.log('🚀 ULTIMATE VERSION:', ULTIMATE_VERSION)
   
   // КОНФИГУРАЦИЯ АДМИНА - УДАЛЕНО ИЗ ФРОНТЕНДА ДЛЯ БЕЗОПАСНОСТИ
   // Функция для определения правильного API URL
