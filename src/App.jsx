@@ -253,60 +253,43 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       isSubmitting
     })
     
-    // Если userData не загружен, попробуем загрузить его
-    if (!userData?.id) {
-      console.log('🔄 UserData not loaded, attempting to load user data...')
-      try {
-        const response = await fetch(`${getApiUrl()}/api/user-data`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          if (result.success && result.user) {
-            const user = result.user
-            setUserData({
-              id: user.telegram_id,
-              firstName: user.first_name,
-              lastName: user.last_name,
-              username: user.username,
-              languageCode: user.language_code,
-              first_name: user.first_name,
-              last_name: user.last_name
-            })
-            console.log('✅ User data loaded successfully:', user.telegram_id)
-          }
+        // Проверяем наличие необходимых данных
+        if (!selectedModelForPurchase || (!userData?.id && !userId)) {
+          console.error('❌ Missing data for subscription request:', {
+            selectedModelForPurchase: selectedModelForPurchase?.name,
+            userData,
+            userId,
+            userDataId: userData?.id
+          })
+          
+          // Показываем ошибку пользователю
+          setNotification({
+            type: 'error',
+            title: 'Ошибка авторизации',
+            message: 'Не удалось получить данные пользователя. Пожалуйста, перезагрузите страницу и попробуйте снова.',
+            duration: 5000
+          })
+          return
         }
-      } catch (error) {
-        console.error('❌ Failed to load user data:', error)
-      }
-    }
-    
-    if (!selectedModelForPurchase || !userData?.id) {
-      console.error('❌ Missing data for subscription request:', {
-        selectedModelForPurchase: selectedModelForPurchase?.name,
-        userData,
-        userId: userData?.id
-      })
-      
-      // Показываем ошибку пользователю
-      setNotification({
-        type: 'error',
-        title: 'Ошибка авторизации',
-        message: 'Не удалось получить данные пользователя. Пожалуйста, перезагрузите страницу и попробуйте снова.',
-        duration: 5000
-      })
-      return
-    }
+        
+        // Используем userId если userData.id недоступен
+        const currentUserId = userData?.id || userId
+        if (!currentUserId) {
+          console.error('❌ No user ID available')
+          setNotification({
+            type: 'error',
+            title: 'Ошибка авторизации',
+            message: 'Не удалось получить ID пользователя. Пожалуйста, перезагрузите страницу и попробуйте снова.',
+            duration: 5000
+          })
+          return
+        }
 
     setIsSubmitting(true)
     
     try {
       console.log('🔄 Sending subscription request:', {
-        user_id: userData.id,
+        user_id: currentUserId,
         model_id: selectedModelForPurchase.id,
         subscription_type: subscriptionType
       })
@@ -317,10 +300,15 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          user_id: userData.id,
+          user_id: currentUserId,
           model_id: selectedModelForPurchase.id,
           subscription_type: subscriptionType,
-          user_data: userData
+          user_data: {
+            first_name: userData?.firstName || 'Пользователь',
+            last_name: userData?.lastName || '',
+            username: userData?.username || '',
+            language_code: userData?.languageCode || 'ru'
+          }
         })
       })
 
@@ -346,11 +334,11 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
             },
             body: JSON.stringify({
               type: 'subscription_request',
-              user_id: userData.id,
-              user_name: userData.first_name || 'Пользователь',
+              user_id: currentUserId,
+              user_name: userData?.firstName || 'Пользователь',
               model_name: selectedModelForPurchase.name,
               subscription_type: subscriptionType,
-              message: `Новый запрос на подписку: ${userData.first_name || 'Пользователь'} запросил ${subscriptionType === 'monthly' ? 'ежемесячную' : 'пожизненную'} подписку на модель "${selectedModelForPurchase.name}"`
+              message: `Новый запрос на подписку: ${userData?.firstName || 'Пользователь'} запросил ${subscriptionType === 'monthly' ? 'ежемесячную' : 'пожизненную'} подписку на модель "${selectedModelForPurchase.name}"`
             })
           })
           console.log('📧 Admin notification sent')
