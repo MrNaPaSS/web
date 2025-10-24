@@ -9891,8 +9891,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           </div>
         </header>
         {/* ML Models List - Mobile Optimized */}
-        <div className="container mx-auto px-3 py-4">
-          <div className="space-y-4">
+        <div className="container mx-auto px-4 py-4 max-w-md">
+          <div className="space-y-3">
             {mlModels.map((model) => {
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
@@ -9900,7 +9900,10 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               return (
                 <Card 
                   key={model.id}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    
                     if (isOwned && !isRestricted) {
                       setSelectedMLModel(model.id)
                     } else if (isRestricted) {
@@ -9911,43 +9914,43 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       setShowPurchaseModal(true)
                     }
                   }}
-                  className={`glass-effect p-5 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer min-h-[140px] ${
+                  className={`glass-effect p-4 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer min-h-[120px] touch-manipulation ${
                     isActive 
                       ? 'border-emerald-500/70 bg-emerald-500/10' 
                       : isOwned
-                      ? 'hover:border-purple-500/50 hover:scale-[1.02]'
+                      ? 'hover:border-purple-500/50 hover:scale-[1.02] active:scale-[0.98]'
                       : isRestricted
                       ? 'border-red-500/30 bg-red-500/5 opacity-60 cursor-not-allowed'
-                      : 'hover:border-yellow-500/50 hover:scale-[1.02]'
+                      : 'hover:border-yellow-500/50 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
                   <div className="flex flex-col gap-4 h-full">
                     {/* Top row: Icon, title and status */}
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-xl`}>
-                          <span className="text-3xl">{model.emoji}</span>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-xl`}>
+                          <span className="text-2xl">{model.emoji}</span>
                       </div>
-                      <div className="flex-1">
-                          <h3 className="text-xl font-bold text-white mb-1">{model.name}</h3>
-                          <p className="text-slate-300 text-base">{model.algorithm}</p>
+                      <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-white mb-1 truncate">{model.name}</h3>
+                          <p className="text-slate-300 text-sm">{model.algorithm}</p>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-1">
                           {isActive && (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-sm px-3 py-1">
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs px-2 py-1">
                               ✓ АКТИВНА
                             </Badge>
                           )}
                           {isRestricted && (
-                          <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-sm px-3 py-1">
-                            <Lock className="w-4 h-4 mr-1" />
+                          <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-xs px-2 py-1">
+                            <Lock className="w-3 h-3 mr-1" />
                               ЗАБЛОКИРОВАНА
                             </Badge>
                           )}
                           {!isOwned && !isRestricted && (
-                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-sm px-3 py-1">
-                            <Lock className="w-4 h-4 mr-1" />
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-xs px-2 py-1">
+                            <Lock className="w-3 h-3 mr-1" />
                               ТРЕБУЕТСЯ ПОДПИСКА
                             </Badge>
                           )}
@@ -9955,48 +9958,48 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     </div>
                     
                     {/* Stats row */}
-                    <div className="flex items-center gap-4 text-base">
+                    <div className="flex items-center gap-3 text-sm">
                       <div className="flex items-center gap-2">
-                        <Target className="w-5 h-5 text-emerald-400" />
-                        <span className="text-emerald-400 font-semibold text-lg">{model.winrate}</span>
+                        <Target className="w-4 h-4 text-emerald-400" />
+                        <span className="text-emerald-400 font-semibold text-base">{model.winrate}</span>
                           </div>
                           <span className="text-slate-600">•</span>
-                          <span className="text-slate-400">{model.style}</span>
+                          <span className="text-slate-400 text-sm">{model.style}</span>
                         </div>
                     
                     {/* Description */}
-                    <p className="text-slate-400 text-base italic">💬 {model.description}</p>
+                    <p className="text-slate-400 text-sm italic">💬 {model.description}</p>
                         {model.warning && (
-                      <p className="text-red-400 text-base font-semibold">⚠️ {model.warning}</p>
+                      <p className="text-red-400 text-sm font-semibold">⚠️ {model.warning}</p>
                         )}
                     
                     {/* Bottom row: Pricing and status */}
                     <div className="flex items-center justify-between mt-auto">
                         {!isOwned && !isRestricted && (
                         <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2 text-base">
+                          <div className="flex items-center gap-2 text-sm">
                           <span className="text-yellow-400 font-bold">{model.monthlyPrice}{t('perMonth')}</span>
                             <span className="text-slate-600">{t('or')}</span>
                           <span className="text-green-400 font-bold">{model.lifetimePrice} {t('forever')}</span>
                           </div>
-                          <p className="text-slate-500 text-sm">Нажмите на карточку для покупки</p>
+                          <p className="text-slate-500 text-xs">Нажмите на карточку для покупки</p>
                           </div>
                         )}
                       
                       <div className="flex items-center">
                       {isActive ? (
-                          <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                            <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                         </div>
                       ) : isOwned && !isRestricted ? (
-                          <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-                            <CheckCircle2 className="w-6 h-6 text-purple-400" />
+                          <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <CheckCircle2 className="w-5 h-5 text-purple-400" />
                           </div>
                       ) : isRestricted ? (
-                          <Lock className="w-6 h-6 text-red-400" />
+                          <Lock className="w-5 h-5 text-red-400" />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                            <Crown className="w-6 h-6 text-yellow-400" />
+                          <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                            <Crown className="w-5 h-5 text-yellow-400" />
                           </div>
                       )}
                       </div>
