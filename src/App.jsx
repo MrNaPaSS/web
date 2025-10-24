@@ -170,6 +170,15 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       loadSubscriptionRequests()
     }
   }, [currentScreen, isAdmin])
+  
+  // Сброс модального окна покупки при смене экрана
+  useEffect(() => {
+    if (currentScreen !== 'ml-selector') {
+      console.log('🔄 Screen changed, closing purchase modal')
+      setShowPurchaseModal(false)
+      setSelectedModelForPurchase(null)
+    }
+  }, [currentScreen])
   // Глобальное обновление подписок при всех переходах между экранами
   useEffect(() => {
     if (userData?.id && currentScreen !== 'auth' && currentScreen !== 'language-select') {
