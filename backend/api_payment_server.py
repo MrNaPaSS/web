@@ -313,6 +313,75 @@ def cryptobot_webhook():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/api/admin-notification', methods=['POST'])
+def admin_notification():
+    """
+    API endpoint для отправки уведомлений администратору
+    """
+    try:
+        data = request.get_json()
+        
+        user_id = data.get('user_id')
+        user_name = data.get('user_name', 'Пользователь')
+        model_name = data.get('model_name', 'Неизвестная модель')
+        subscription_type = data.get('subscription_type', 'monthly')
+        message = data.get('message', '')
+        
+        if not user_id:
+            return jsonify({
+                "success": False,
+                "error": "user_id is required"
+            }), 400
+        
+        # Отправляем уведомление в Telegram
+        try:
+            import requests
+            
+            text = f"""
+🔔 НОВЫЙ ЗАПРОС НА ПОДПИСКУ
+
+👤 Пользователь: {user_name}
+🆔 ID: {user_id}
+🧠 Модель: {model_name}
+💳 Тип: {'Ежемесячная подписка' if subscription_type == 'monthly' else 'Пожизненная покупка'}
+⏰ Время: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+📝 Сообщение:
+{message}
+            """
+            
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            response = requests.post(url, json={
+                "chat_id": ADMIN_TELEGRAM_ID,
+                "text": text
+            })
+            
+            if response.status_code == 200:
+                return jsonify({
+                    "success": True,
+                    "message": "Notification sent successfully"
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": f"Telegram API error: {response.status_code}"
+                }), 500
+                
+        except Exception as e:
+            logger.error(f"Ошибка отправки уведомления в Telegram: {e}")
+            return jsonify({
+                "success": False,
+                "error": f"Failed to send notification: {str(e)}"
+            }), 500
+        
+    except Exception as e:
+        logger.error(f"Ошибка в admin_notification endpoint: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 def send_admin_notification_telegram(user_id, model_id, subscription_type, currency, amount, invoice_id):
     """
     Отправка уведомления админу в Telegram
