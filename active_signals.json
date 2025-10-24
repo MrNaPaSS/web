@@ -1,0 +1,16 @@
+{
+  "active_signals": {
+    "7613535490": {
+      "signal_id": "auto_otc_EUR_USD_(OTC)_1761263657",
+      "pair": "EUR/USD (OTC)",
+      "direction": "SELL",
+      "confidence": 0.7478999999999999,
+      "entry_price": null,
+      "expiration": 4,
+      "start_time": 1761319531533,
+      "created_at": "2025-10-24T17:25:31.604870",
+      "status": "active"
+    }
+  },
+  "last_updated": "2025-10-24T17:25:31.604870"
+}
