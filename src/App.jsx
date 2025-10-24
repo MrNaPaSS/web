@@ -279,10 +279,31 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         // Показываем уведомление пользователю
         setNotification({
           type: 'success',
-          title: 'Запрос отправлен!',
-          message: data.message,
-          duration: 5000
+          title: 'Запрос на подписку отправлен!',
+          message: `Ваш запрос на ${subscriptionType === 'monthly' ? 'ежемесячную' : 'пожизненную'} подписку для модели "${selectedModelForPurchase.name}" отправлен администратору. Вы получите уведомление после одобрения.`,
+          duration: 8000
         })
+
+        // Отправляем уведомление администратору
+        try {
+          await fetch(`${getApiUrl()}/api/admin-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              type: 'subscription_request',
+              user_id: userData.id,
+              user_name: userData.first_name || 'Пользователь',
+              model_name: selectedModelForPurchase.name,
+              subscription_type: subscriptionType,
+              message: `Новый запрос на подписку: ${userData.first_name || 'Пользователь'} запросил ${subscriptionType === 'monthly' ? 'ежемесячную' : 'пожизненную'} подписку на модель "${selectedModelForPurchase.name}"`
+            })
+          })
+          console.log('📧 Admin notification sent')
+        } catch (error) {
+          console.error('❌ Failed to send admin notification:', error)
+        }
         
         // Закрываем модальное окно
         setShowPurchaseModal(false)
@@ -9926,6 +9947,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       console.log('🛒 Opening purchase modal for:', model.name)
                       setSelectedModelForPurchase(model)
                       setShowPurchaseModal(true)
+                      console.log('🛒 Modal state set:', { showPurchaseModal: true, selectedModel: model.name })
                     }
                   }}
                   className={`glass-effect p-4 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer min-h-[120px] touch-manipulation ${
