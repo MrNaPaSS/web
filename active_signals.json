@@ -1,16 +1,4 @@
 {
-  "active_signals": {
-    "511442168": {
-      "signal_id": "forex_EUR_USD_1761332712",
-      "pair": "EUR/USD",
-      "direction": "BUY",
-      "confidence": 78.11999999999999,
-      "entry_price": null,
-      "expiration": 3,
-      "start_time": 1761332719494,
-      "created_at": "2025-10-24T21:05:19.575484",
-      "status": "active"
-    }
-  },
-  "last_updated": "2025-10-24T21:15:00.071003"
+  "active_signals": {},
+  "last_updated": "2025-10-24T22:04:08.669408"
 }

@@ -9,6 +9,15 @@ export default defineConfig({
   // Явно задаем базовый путь для GitHub Pages с кастомным доменом
   // При использовании custom domain base должен быть '/'
   base: '/',
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name]-${Date.now()}.js`,
+        chunkFileNames: `assets/[name]-${Date.now()}.js`,
+        assetFileNames: `assets/[name]-${Date.now()}.[ext]`
+      }
+    }
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
