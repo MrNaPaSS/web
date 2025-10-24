@@ -9,7 +9,7 @@ import { useWebSocket } from './hooks/useWebSocket'
 import './App.css'
 function App() {
   // ВЕРСИЯ ПРИЛОЖЕНИЯ - для проверки обновлений
-console.log('🚀 APP VERSION: 2024.12.24 - ULTIMATE CACHE DESTROYER - ' + Math.random().toString(36).substr(2, 9))
+console.log('🚀 APP VERSION: 2024.12.24 - FINAL CACHE DESTROYER - ' + Math.random().toString(36).substr(2, 9))
 console.log('🔄 CACHE BUST: ' + Date.now())
 console.log('💥 FORCE REBUILD: ' + Math.random().toString(36).substr(2, 9))
 console.log('🔥 ATOMIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
