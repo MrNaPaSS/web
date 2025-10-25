@@ -1,0 +1,438 @@
+[
+  {
+    "timestamp": "2025-10-25T05:27:22.482203",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T17:45:05.404218",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T17:45:16.125685",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Granted forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T17:46:25.241771",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Revoked logistic-spy",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T17:47:19.109004",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Revoked logistic-spy",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:02:23.608925",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:02:56.262526",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Granted forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:03:16.747503",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Revoked logistic-spy",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:03:27.300286",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Revoked logistic-spy",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:04:24.444332",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:05:04.723616",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:09:42.471317",
+    "user_id": "8344456953",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:12:38.239172",
+    "user_id": "8344456953",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:12:44.360317",
+    "user_id": "8344456953",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:21:42.266464",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack",
+      "gray-cardinal"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack",
+      "gray-cardinal"
+    ],
+    "reason": "Granted gray-cardinal",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:21:46.338345",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack",
+      "gray-cardinal"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "gray-cardinal"
+    ],
+    "reason": "Revoked shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:24:37.957827",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "gray-cardinal"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked gray-cardinal",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:24:45.290224",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T18:48:21.169141",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Revoked logistic-spy",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T19:01:08.453969",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T19:01:20.793402",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Revoked forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T19:03:45.860161",
+    "user_id": "8344456953",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T19:05:07.655237",
+    "user_id": "8344456953",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack",
+      "forest-necromancer"
+    ],
+    "reason": "Granted forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T19:05:13.639046",
+    "user_id": "8344456953",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Revoked shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T19:34:09.786907",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked logistic-spy",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T19:34:18.663459",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Granted forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T20:01:00.793595",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T20:02:14.100462",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T20:23:22.869215",
+    "user_id": "7613535490",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  }
+]

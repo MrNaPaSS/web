@@ -28,5 +28,80 @@
       "username": "",
       "language_code": "ru"
     }
+  },
+  "req_8428349451_1761410838": {
+    "request_id": "req_8428349451_1761410838",
+    "user_id": "8428349451",
+    "model_id": "shadow-stack",
+    "subscription_type": "monthly",
+    "price": "$49/мес",
+    "status": "pending",
+    "created_at": "2025-10-25T18:47:18.455028",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  },
+  "req_8428349451_1761411786": {
+    "request_id": "req_8428349451_1761411786",
+    "user_id": "8428349451",
+    "model_id": "shadow-stack",
+    "subscription_type": "monthly",
+    "price": "$49/мес",
+    "status": "pending",
+    "created_at": "2025-10-25T19:03:06.496056",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  },
+  "req_8344456953_1761411887": {
+    "request_id": "req_8344456953_1761411887",
+    "user_id": "8344456953",
+    "model_id": "forest-necromancer",
+    "subscription_type": "monthly",
+    "price": "$29/мес",
+    "status": "pending",
+    "created_at": "2025-10-25T19:04:47.401033",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  },
+  "req_8428349451_1761415317": {
+    "request_id": "req_8428349451_1761415317",
+    "user_id": "8428349451",
+    "model_id": "shadow-stack",
+    "subscription_type": "monthly",
+    "price": "$49/мес",
+    "status": "pending",
+    "created_at": "2025-10-25T20:01:57.280932",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  },
+  "req_7613535490_1761416590": {
+    "request_id": "req_7613535490_1761416590",
+    "user_id": "7613535490",
+    "model_id": "shadow-stack",
+    "subscription_type": "lifetime",
+    "price": "$299 навсегда",
+    "status": "pending",
+    "created_at": "2025-10-25T20:23:10.554346",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
   }
 }
