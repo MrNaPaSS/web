@@ -58,5 +58,50 @@
       ]
     },
     "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T03:48:27.238444",
+    "admin_id": "system",
+    "action": "subscription_change",
+    "target_user_id": "8428349451",
+    "details": {
+      "old_subscriptions": [
+        "forest-necromancer"
+      ],
+      "new_subscriptions": [
+        "forest-necromancer"
+      ]
+    },
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T03:48:28.468501",
+    "admin_id": "system",
+    "action": "subscription_change",
+    "target_user_id": "8428349451",
+    "details": {
+      "old_subscriptions": [
+        "forest-necromancer"
+      ],
+      "new_subscriptions": [
+        "forest-necromancer"
+      ]
+    },
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T03:48:30.432440",
+    "admin_id": "system",
+    "action": "subscription_change",
+    "target_user_id": "8428349451",
+    "details": {
+      "old_subscriptions": [
+        "forest-necromancer"
+      ],
+      "new_subscriptions": [
+        "forest-necromancer"
+      ]
+    },
+    "ip_address": "127.0.0.1"
   }
 ]

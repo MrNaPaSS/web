@@ -853,6 +853,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   const approveSubscriptionRequest = async (requestId) => {
     try {
       console.log('✅ Одобряем запрос подписки:', requestId)
+      console.log('🔍 Admin user ID:', userData?.id)
+      console.log('🔍 API URL:', getApiUrl())
+      
       const response = await fetch(`${getApiUrl()}/api/admin/approve-subscription`, {
         method: 'POST',
         headers: {
@@ -863,20 +866,31 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           admin_user_id: userData?.id
         })
       })
+      
+      console.log('📡 Response status:', response.status)
       const data = await response.json()
+      console.log('📥 Response data:', data)
+      
       if (data.success) {
         console.log('✅ Запрос подписки одобрен')
-        alert(t('subscriptionApproved'))
+        alert('✅ Подписка успешно активирована!')
         // Перезагружаем список запросов и статистику
         loadSubscriptionRequests()
         loadAdminStats()
+        
+        // Принудительно обновляем подписки пользователя
+        if (userData?.id) {
+          setTimeout(() => {
+            loadUserSubscriptions(userData.id)
+          }, 500)
+        }
       } else {
-        console.error('❌ Ошибка одобрения подписки:', data.error)
-        alert(t('errorOccurredWith', {error: data.error}))
+        console.error('❌ Ошибка одобрения:', data.error)
+        alert(`❌ Ошибка: ${data.error}`)
       }
     } catch (error) {
       console.error('❌ Ошибка одобрения подписки:', error)
-      alert(t('errorOccurredWith', {error: error.message}))
+      alert(`❌ Ошибка: ${error.message}`)
     }
   }
 
@@ -884,6 +898,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   const rejectSubscriptionRequest = async (requestId, reason = 'Не указана') => {
     try {
       console.log('❌ Отклоняем запрос подписки:', requestId)
+      console.log('🔍 Admin user ID:', userData?.id)
+      console.log('🔍 Reason:', reason)
+      
       const response = await fetch(`${getApiUrl()}/api/admin/reject-subscription`, {
         method: 'POST',
         headers: {
@@ -895,19 +912,23 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           reason: reason
         })
       })
+      
+      console.log('📡 Response status:', response.status)
       const data = await response.json()
+      console.log('📥 Response data:', data)
+      
       if (data.success) {
         console.log('✅ Запрос подписки отклонен')
-        alert(t('subscriptionRejected'))
+        alert('❌ Запрос подписки отклонен')
         // Перезагружаем список запросов
         loadSubscriptionRequests()
       } else {
-        console.error('❌ Ошибка отклонения подписки:', data.error)
-        alert(t('errorOccurredWith', {error: data.error}))
+        console.error('❌ Ошибка отклонения:', data.error)
+        alert(`❌ Ошибка: ${data.error}`)
       }
     } catch (error) {
       console.error('❌ Ошибка отклонения подписки:', error)
-      alert(t('errorOccurredWith', {error: error.message}))
+      alert(`❌ Ошибка: ${error.message}`)
     }
   }
   // Одобрение заявки на доступ
