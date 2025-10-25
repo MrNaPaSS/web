@@ -10133,11 +10133,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                          {isActive && (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs px-2 py-1">
-                              ✓ АКТИВНА
-                            </Badge>
-                          )}
                           {isRestricted && (
                           <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-xs px-2 py-1">
                             <Lock className="w-3 h-3 mr-1" />
@@ -10170,7 +10165,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     
                     {/* Bottom row: Pricing and status */}
                     <div className="flex items-center justify-between mt-auto">
-                        {!isOwned && !isRestricted && (
+                        {!isOwned && (
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2 text-sm">
                           <span className="text-yellow-400 font-bold">{model.monthlyPrice}{t('perMonth')}</span>
@@ -10181,8 +10176,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                           </div>
                         )}
                       
-                      <div className="flex items-center">
-                      {isActive ? (
+                      <div className="flex items-center gap-2">
+                        {isActive && (
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs px-2 py-1">
+                              ✓ АКТИВНА
+                            </Badge>
+                        )}
+                        {isActive ? (
                           <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
                             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                         </div>
