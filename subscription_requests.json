@@ -103,5 +103,35 @@
       "username": "",
       "language_code": "ru"
     }
+  },
+  "req_8428349451_1761417311": {
+    "request_id": "req_8428349451_1761417311",
+    "user_id": "8428349451",
+    "model_id": "shadow-stack",
+    "subscription_type": "lifetime",
+    "price": "$299 навсегда",
+    "status": "pending",
+    "created_at": "2025-10-25T20:35:11.438563",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  },
+  "req_8428349451_1761423116": {
+    "request_id": "req_8428349451_1761423116",
+    "user_id": "8428349451",
+    "model_id": "forest-necromancer",
+    "subscription_type": "monthly",
+    "price": "$29/мес",
+    "status": "pending",
+    "created_at": "2025-10-25T22:11:56.333534",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
   }
 }

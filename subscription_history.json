@@ -434,5 +434,93 @@
     ],
     "reason": "Granted shadow-stack",
     "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T20:31:55.012139",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T20:32:00.914176",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Granted forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T20:35:24.940767",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Revoked logistic-spy",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T20:35:28.136253",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy"
+    ],
+    "reason": "Revoked forest-necromancer",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T20:35:51.009117",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-25T22:12:18.493039",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "new_subscriptions": [
+      "logistic-spy",
+      "forest-necromancer"
+    ],
+    "reason": "Granted forest-necromancer",
+    "ip_address": "127.0.0.1"
   }
 ]

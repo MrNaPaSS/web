@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { subscriptionService } from '../services/subscriptionService';
+import { syncService } from '../services/syncService';
 
 export const useWebSocket = (userId, onSubscriptionUpdate, onNotification) => {
   const wsRef = useRef(null);
@@ -36,19 +38,17 @@ export const useWebSocket = (userId, onSubscriptionUpdate, onNotification) => {
             
             // Создаем новый массив для принудительного обновления
             const newSubscriptions = [...data.subscriptions];
+            
+            // Обновляем subscriptionService
+            subscriptionService.currentSubscriptions = newSubscriptions;
+            subscriptionService.cacheSubscriptions(newSubscriptions);
+            subscriptionService.notify();
+            
+            // Синхронизируем между вкладками
+            syncService.broadcastSubscriptionUpdate(newSubscriptions);
+            
+            // Вызываем callback для обратной совместимости
             onSubscriptionUpdate(newSubscriptions);
-            
-            // ДОБАВЛЕНО: Дополнительная проверка через 500мс
-            setTimeout(() => {
-              console.log('🔄 Double-check subscription update')
-              onSubscriptionUpdate([...data.subscriptions]);
-            }, 500);
-            
-            // ДОБАВЛЕНО: Третья проверка через 1 секунду
-            setTimeout(() => {
-              console.log('🔄 Triple-check subscription update')
-              onSubscriptionUpdate([...data.subscriptions]);
-            }, 1000);
             
           } else if (data.type === 'subscription_approved') {
             console.log('✅ Подписка одобрена:', data);

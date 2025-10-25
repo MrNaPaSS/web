@@ -273,6 +273,9 @@ class AuthService:
                     # ДОБАВЛЕНО: Синхронизация с user_subscriptions.json
                     self._sync_user_subscriptions(telegram_id, subscriptions)
                     
+                    # ДОБАВЛЕНО: WebSocket уведомление
+                    self._notify_subscription_change(telegram_id, subscriptions)
+                    
                     # Логируем в историю
                     self.log_subscription_change(telegram_id, admin_id, 
                                                user.get('subscriptions', []), 
@@ -311,6 +314,9 @@ class AuthService:
                     
                     # ДОБАВЛЕНО: Синхронизация с user_subscriptions.json
                     self._sync_user_subscriptions(telegram_id, subscriptions)
+                    
+                    # ДОБАВЛЕНО: WebSocket уведомление
+                    self._notify_subscription_change(telegram_id, subscriptions)
                     
                     # Логируем в историю
                     self.log_subscription_change(telegram_id, admin_id, 
@@ -384,6 +390,35 @@ class AuthService:
             print(f'[SYNC] Синхронизированы подписки для {telegram_id}: {subscriptions}')
         except Exception as e:
             print(f'[ERROR] Ошибка синхронизации подписок: {e}')
+
+    def _notify_subscription_change(self, user_id: str, subscriptions: list):
+        """Отправка WebSocket уведомления об изменении подписки"""
+        try:
+            import asyncio
+            import aiohttp
+            
+            async def send_notification():
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        ws_url = 'http://localhost:8001/notify-subscription-update'
+                        async with session.post(ws_url, json={
+                            'user_id': user_id,
+                            'subscriptions': subscriptions
+                        }) as resp:
+                            result = await resp.json()
+                            print(f'📤 WebSocket notification sent: {result}')
+                except Exception as e:
+                    print(f'❌ Failed to send WebSocket notification: {e}')
+            
+            # Запуск в event loop
+            try:
+                loop = asyncio.get_event_loop()
+                loop.create_task(send_notification())
+            except RuntimeError:
+                # Если нет event loop, создаем новый
+                asyncio.run(send_notification())
+        except Exception as e:
+            print(f'❌ Error in _notify_subscription_change: {e}')
 
 
 if __name__ == '__main__':

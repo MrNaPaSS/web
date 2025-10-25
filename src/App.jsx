@@ -6,6 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.j
 import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check, RefreshCw } from 'lucide-react'
 import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import { useWebSocket } from './hooks/useWebSocket'
+import { useSubscriptions } from './hooks/useSubscriptions'
+import { subscriptionService } from './services/subscriptionService'
+import { syncService } from './services/syncService'
 import UserSubscriptionManager from './components/admin/UserSubscriptionManager.jsx'
 import './App.css'
 function App() {
@@ -66,55 +69,38 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   const [isSubmitting, setIsSubmitting] = useState(false) // Состояние отправки запроса
   const [notification, setNotification] = useState(null) // Уведомления пользователю
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false) // Состояние загрузки подписок
+  
+  // Глобальная функция для обновления подписок из subscriptionService
+  useEffect(() => {
+    window.updateUserSubscriptions = (subscriptions) => {
+      console.log('🔄 Global subscription update:', subscriptions)
+      setUserSubscriptions(subscriptions)
+    }
+    
+    return () => {
+      delete window.updateUserSubscriptions
+    }
+  }, [])
+  
   // Функция для загрузки подписок пользователя
   const loadUserSubscriptions = async (userId) => {
     try {
       setIsLoadingSubscriptions(true)
       console.log('🔄 Loading subscriptions for user:', userId)
       
-      const response = await fetch(`${getApiUrl()}/api/user/subscriptions?user_id=${userId}`)
-      const data = await response.json()
+      const subscriptions = await subscriptionService.loadSubscriptions(userId, true)
+      setUserSubscriptions(subscriptions)
       
-      if (data.success) {
-        console.log('📥 Raw subscription data:', data)
-        let newSubscriptions = data.subscriptions || ['logistic-spy']
-        
-        // Удаляем дубликаты
-        newSubscriptions = [...new Set(newSubscriptions)]
-        
-        // Якщо є преміум-підписка, видаляємо базову
-        const hasPremium = newSubscriptions.some(sub => 
-          sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
-        )
-        if (hasPremium) {
-          newSubscriptions = newSubscriptions.filter(sub => sub !== 'logistic-spy')
-          console.log('🧹 Removed base subscription, keeping only premium:', newSubscriptions)
+      // Обновляем выбранную ML модель на первую доступную из подписок
+      if (subscriptions && subscriptions.length > 0) {
+        const firstAvailableModel = subscriptions[0]
+        if (firstAvailableModel !== selectedMLModel) {
+          setSelectedMLModel(firstAvailableModel)
+          console.log('🔄 ML model updated to:', firstAvailableModel)
         }
-        
-        // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ с новым массивом
-        setUserSubscriptions([...newSubscriptions])
-        console.log('✅ User subscriptions loaded:', newSubscriptions)
-        
-        // Обновляем выбранную ML модель на первую доступную из подписок
-        if (newSubscriptions && newSubscriptions.length > 0) {
-          const firstAvailableModel = newSubscriptions[0]
-          if (firstAvailableModel !== selectedMLModel) {
-            setSelectedMLModel(firstAvailableModel)
-            console.log('🔄 ML model updated to:', firstAvailableModel)
-          }
-        }
-        
-        // Принудительный перерендер через 100мс
-        setTimeout(() => {
-          setUserSubscriptions(prev => [...prev])
-        }, 100)
-        
-      } else {
-        console.error('❌ Ошибка загрузки подписок:', data.error)
-        setUserSubscriptions(['logistic-spy'])
       }
     } catch (error) {
-      console.error('❌ Ошибка загрузки подписок:', error)
+      console.error('❌ Error loading subscriptions:', error)
       setUserSubscriptions(['logistic-spy'])
     } finally {
       setIsLoadingSubscriptions(false)
@@ -138,7 +124,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         // Если это текущий пользователь, обновляем его подписку
         if (userId === userData?.id) {
           setUserSubscriptions(subscriptions)
+          console.log('✅ Current user subscriptions updated:', subscriptions)
         }
+        
+        // Принудительно обновляем подписки для всех пользователей
+        console.log('🔄 Subscription changed, refreshing user data')
+        if (userData?.id) {
+          // Обновляем подписки текущего пользователя
+          setTimeout(() => {
+            loadUserSubscriptions(userData.id)
+          }, 100)
+        }
+        
         console.log('User subscription updated:', subscriptions)
         return true
       } else {
@@ -226,16 +223,10 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   useEffect(() => {
     if (currentScreen === 'ml-settings' && userData?.id) {
       console.log('🔄 Going to ML settings - loading subscriptions')
-      // Принудительная загрузка с задержкой для гарантии
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 1000)
+      // Принудительная загрузка через subscriptionService
+      import('./services/subscriptionService').then(({ subscriptionService }) => {
+        subscriptionService.loadSubscriptions(userData.id, true)
+      })
     }
   }, [currentScreen, userData?.id])
   
@@ -307,6 +298,27 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }, (type, title, message) => {
     showNotification(type, title, message);
   });
+
+  // Подписка на изменения через subscriptionService
+  useEffect(() => {
+    if (!userData?.id) return
+
+    const unsubscribe = subscriptionService.subscribe((newSubscriptions) => {
+      console.log('🔔 SubscriptionService update:', newSubscriptions)
+      setUserSubscriptions(newSubscriptions)
+      
+      // Обновляем выбранную модель
+      if (newSubscriptions && newSubscriptions.length > 0) {
+        const firstAvailableModel = newSubscriptions[0]
+        if (firstAvailableModel !== selectedMLModel) {
+          setSelectedMLModel(firstAvailableModel)
+          console.log('🔄 ML model updated via subscriptionService:', firstAvailableModel)
+        }
+      }
+    })
+
+    return unsubscribe
+  }, [userData?.id, selectedMLModel])
   // Функция для загрузки шаблонов подписок
   const loadSubscriptionTemplates = async () => {
     try {
@@ -1057,6 +1069,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         // Обновляем данные
         loadAdminStats()
         loadAccessRequests()
+        
+        // Принудительно обновляем подписки текущего пользователя
+        if (userData?.id) {
+          setTimeout(() => {
+            loadUserSubscriptions(userData.id)
+          }, 500)
+        }
       } else {
         console.error('❌ Ошибка одобрения:', data.error)
         alert(t('errorOccurredWith', {error: data.error}))
@@ -8163,6 +8182,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Authorization Screen
   if (currentScreen === 'auth') {
+    // Принудительное обновление подписок при каждом рендере экрана auth
+    if (userData?.id) {
+      console.log('🔄 Auth render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div>
       <TelegramAuth 
@@ -8175,6 +8206,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Language Selection Screen
   if (currentScreen === 'language-select') {
+    // Принудительное обновление подписок при каждом рендере экрана language-select
+    if (userData?.id) {
+      console.log('🔄 Language Select render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         <ToastNotification />
@@ -8282,6 +8325,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Welcome Screen
   if (currentScreen === 'welcome') {
+    // Принудительное обновление подписок при каждом рендере экрана welcome
+    if (userData?.id) {
+      console.log('🔄 Welcome render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         {/* Animated background elements */}
@@ -8370,6 +8425,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     if (userData?.id) {
       console.log('🔄 Menu render - force loading subscriptions')
       loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
     }
     
     return (
@@ -8498,6 +8559,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Generating Screen - Анимация процесса генерации
   if (currentScreen === 'generating') {
+    // Принудительное обновление подписок при каждом рендере экрана generating
+    if (userData?.id) {
+      console.log('🔄 Generating render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         {/* Animated background */}
@@ -8554,6 +8627,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Signal Selection Screen - Выбор сигнала из сгенерированных
   if (currentScreen === 'signal-selection') {
+    // Принудительное обновление подписок при каждом рендере экрана signal-selection
+    if (userData?.id) {
+      console.log('🔄 Signal Selection render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     console.log('🔍 [SIGNAL-SELECTION DEBUG] Рендерим signal-selection экран')
     console.log('🔍 [SIGNAL-SELECTION DEBUG] generatedSignals:', generatedSignals)
     console.log('🔍 [SIGNAL-SELECTION DEBUG] Количество сигналов:', generatedSignals.length)
@@ -8875,6 +8960,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Analytics Screen - List of completed signals for AI analysis
   if (currentScreen === 'analytics') {
+    // Принудительное обновление подписок при каждом рендере экрана analytics
+    if (userData?.id) {
+      console.log('🔄 Analytics render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     // Проверка VIP доступа к AI Аналитике
     const hasVipAccess = userSubscriptions && userSubscriptions.length > 0
     if (!hasVipAccess) {
@@ -9274,6 +9371,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Main Screen - активный сигнал с блокировкой навигации
   if (currentScreen === 'main') {
+    // Принудительное обновление подписок при каждом рендере экрана main
+    if (userData?.id) {
+      console.log('🔄 Main render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header с блокировкой */}
@@ -9380,6 +9489,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Notifications Settings Screen
   if (currentScreen === 'notifications') {
+    // Принудительное обновление подписок при каждом рендере экрана notifications
+    if (userData?.id) {
+      console.log('🔄 Notifications render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -9655,6 +9776,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Market Selection Screen
   if (currentScreen === 'market-select') {
+    // Принудительное обновление подписок при каждом рендере экрана market-select
+    if (userData?.id) {
+      console.log('🔄 Market Select render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         <MarketStatusBadge />
@@ -9758,6 +9891,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Mode Selection Screen
   if (currentScreen === 'mode-select') {
+    // Принудительное обновление подписок при каждом рендере экрана mode-select
+    if (userData?.id) {
+      console.log('🔄 Mode Select render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         {/* Animated background */}
@@ -9913,6 +10058,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Settings Screen
   if (currentScreen === 'settings') {
+    // Принудительное обновление подписок при каждом рендере экрана настроек
+    if (userData?.id) {
+      console.log('🔄 Settings render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         <ToastNotification />
@@ -10066,23 +10223,16 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   
   // ML Settings Screen - управление купленными моделями
   if (currentScreen === 'ml-settings') {
-    // Принудительная загрузка подписок при каждом рендере экрана
+    // Принудительное обновление подписок при каждом рендере экрана ml-settings
     if (userData?.id) {
-      console.log('🔄 Force loading subscriptions for ml-settings screen')
-      console.log('🔄 Current userSubscriptions:', userSubscriptions)
-      // Множественные попытки загрузки для гарантии
+      console.log('🔄 ML Settings render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
       }, 100)
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
       }, 500)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 1000)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 2000)
     }
     
     // Функция обработки клика по модели
@@ -10230,6 +10380,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
       }, 500)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 1000)
     }
     // Purchase Modal - проверяем внутри экрана ml-selector
     if (showPurchaseModal && selectedModelForPurchase) {
@@ -10525,6 +10678,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   
   // User Statistics Screen
   if (currentScreen === 'user-stats') {
+    // Принудительное обновление подписок при каждом рендере экрана user-stats
+    if (userData?.id) {
+      console.log('🔄 User Stats render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -10661,6 +10826,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
 
   // Admin Panel Screen
   if (currentScreen === 'admin') {
+    // Принудительное обновление подписок при каждом рендере экрана admin
+    if (userData?.id) {
+      console.log('🔄 Admin render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -10944,6 +11121,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Admin User Detail Screen
   if (currentScreen === 'admin-user-detail' && selectedUser) {
+    // Принудительное обновление подписок при каждом рендере экрана admin-user-detail
+    if (userData?.id) {
+      console.log('🔄 Admin User Detail render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -11081,6 +11270,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               // Обновляем данные пользователя после изменения подписок
               console.log('🔄 Subscription changed, refreshing user data')
               loadAdminStats()
+              
+              // Принудительно обновляем подписки текущего пользователя
+              if (userData?.id) {
+                setTimeout(() => {
+                  loadUserSubscriptions(userData.id)
+                }, 100)
+              }
             }}
           />
         </div>
@@ -11089,6 +11285,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Premium ML Models Screen
   if (currentScreen === 'premium') {
+    // Принудительное обновление подписок при каждом рендере экрана premium
+    if (userData?.id) {
+      console.log('🔄 Premium render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}

@@ -19,9 +19,13 @@ timeout /t 3 >nul
 
 echo [3/4] Запуск API сервера...
 start "API Server" cmd /k "python backend/signal_api.py"
-timeout /t 5 >nul
+timeout /t 3 >nul
 
-echo [4/4] Запуск постоянного туннеля...
+echo [4/5] Запуск WebSocket сервера...
+start "WebSocket Server" cmd /k "python backend/websocket_server.py"
+timeout /t 3 >nul
+
+echo [5/5] Запуск постоянного туннеля...
 start "Cloudflare Tunnel" cmd /k ".\cloudflared.exe tunnel --config config.yml run nomoneynohoney-tunnel"
 
 echo.
@@ -32,6 +36,7 @@ echo.
 echo 📊 СТАТУС СИСТЕМЫ:
 echo   • Telegram бот: @Bin_ByB1million_bot
 echo   • API: https://bot.nomoneynohoney.online
+echo   • WebSocket: ws://localhost:8001
 echo   • Веб-сайт: https://app.nomoneynohoney.online
 echo   • Постоянный туннель: nomoneynohoney-tunnel
 echo.

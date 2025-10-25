@@ -4,7 +4,7 @@
     8344456953,
     7613535490
   ],
-  "last_updated": "2025-10-25T20:22:07.215448",
+  "last_updated": "2025-10-25T22:10:53.428659",
   "8428349451": {
     "telegram_id": "8428349451",
     "first_name": "Oleg",
@@ -13,26 +13,11 @@
     "language_code": "ru",
     "is_premium": false,
     "is_admin": false,
-    "last_login": "2025-10-25T20:01:32.651301",
+    "last_login": "2025-10-25T22:10:53.428659",
     "subscriptions": [
       "logistic-spy",
-      "shadow-stack"
+      "forest-necromancer"
     ],
-    "created_at": "2025-10-25T20:01:32.651301"
-  },
-  "7613535490": {
-    "telegram_id": "7613535490",
-    "first_name": ".",
-    "last_name": "",
-    "username": "",
-    "language_code": "ru",
-    "is_premium": false,
-    "is_admin": false,
-    "last_login": "2025-10-25T20:22:07.215448",
-    "subscriptions": [
-      "logistic-spy",
-      "shadow-stack"
-    ],
-    "created_at": "2025-10-25T20:22:07.215448"
+    "created_at": "2025-10-25T22:10:53.428659"
   }
 }
