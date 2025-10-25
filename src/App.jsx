@@ -9938,7 +9938,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                 }
               }}
               className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d shadow-xl ${
-                hasVipAccess() 
+                userSubscriptions.length > 0
                   ? 'cursor-pointer hover:border-purple-500/50 border-slate-700/50' 
                   : 'cursor-not-allowed opacity-60 border-slate-700/50'
               }`}
@@ -9946,14 +9946,14 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 icon-3d shadow-xl shadow-purple-500/20 ${
-                    hasVipAccess() ? 'group-hover:shadow-purple-500/30' : ''
+                    userSubscriptions.length > 0 ? 'group-hover:shadow-purple-500/30' : ''
                   }`}>
                     <Brain className="w-6 h-6 text-purple-400" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-bold text-white">{t('mlModel')}</h3>
-                      {hasVipAccess() ? (
+                      {userSubscriptions.length > 0 ? (
                         <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
                           ✓ ДОСТУПНО
                       </Badge>
@@ -9964,7 +9964,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       )}
                     </div>
                     <p className="text-slate-400 text-sm">
-                      {hasVipAccess() 
+                      {userSubscriptions.length > 0
                         ? 'Настройка и выбор ML моделей' 
                         : 'Для настройки ML моделей необходима премиум подписка'
                       }
@@ -9972,7 +9972,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                   </div>
                 </div>
                 <ChevronRight className={`w-5 h-5 transition-all duration-300 ${
-                  hasVipAccess() 
+                  userSubscriptions.length > 0
                     ? 'text-slate-600 group-hover:text-purple-400 group-hover:translate-x-1' 
                     : 'text-slate-600'
                 }`} />
