@@ -11,16 +11,27 @@ from urllib.parse import parse_qs
 import os
 
 class AuthService:
-    def __init__(self, bot_dir='e:/TelegramBot_RDP'):
+    def __init__(self, bot_dir=None):
         """
-        Инициализация с путями к файлам основного бота
+        Инициализация с путями к файлам
+        Если bot_dir не указан, автоматически используется Production директория
         """
+        if bot_dir is None:
+            # Автоматически определяем Production директорию (каталог выше backend/)
+            bot_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            print(f'[AuthService] Автовизначення Production директорії: {bot_dir}')
+        
         self.bot_dir = bot_dir
         
-        # Пути к файлам данных основного бота
+        # Пути к файлам данных
         self.authorized_users_file = os.path.join(bot_dir, 'authorized_users.json')
+        self.user_subscriptions_file = os.path.join(bot_dir, 'user_subscriptions.json')
         self.user_languages_file = os.path.join(bot_dir, 'user_languages.json')
         self.signal_stats_file = os.path.join(bot_dir, 'signal_stats.json')
+        
+        print(f'[AuthService] Використовується директорія: {bot_dir}')
+        print(f'[AuthService] authorized_users_file: {self.authorized_users_file}')
+        print(f'[AuthService] user_subscriptions_file: {self.user_subscriptions_file}')
         
         self.init_files()
     
@@ -69,6 +80,26 @@ class AuthService:
                 json.dump(users, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f'[ERROR] Ошибка сохранения пользователей: {e}')
+    
+    def load_user_subscriptions(self) -> Dict:
+        """Загрузка подписок пользователей из user_subscriptions.json"""
+        try:
+            if os.path.exists(self.user_subscriptions_file):
+                with open(self.user_subscriptions_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return {}
+        except Exception as e:
+            print(f'[ERROR] Ошибка загрузки подписок: {e}')
+            return {}
+    
+    def save_user_subscriptions(self, subscriptions: Dict):
+        """Сохранение подписок пользователей в user_subscriptions.json"""
+        try:
+            with open(self.user_subscriptions_file, 'w', encoding='utf-8') as f:
+                json.dump(subscriptions, f, ensure_ascii=False, indent=2)
+            print(f'[SYNC] Синхронізовано user_subscriptions.json')
+        except Exception as e:
+            print(f'[ERROR] Ошибка сохранения подписок: {e}')
     
     def load_user_languages(self) -> Dict:
         """Загрузка языков пользователей"""
@@ -199,16 +230,26 @@ class AuthService:
     def update_subscriptions(self, telegram_id: str, subscriptions: list) -> bool:
         """Обновление подписок пользователя"""
         try:
+            print(f'[AUTH-SERVICE] update_subscriptions для користувача {telegram_id}: {subscriptions}')
+            print(f'[AUTH-SERVICE] Файл: {self.authorized_users_file}')
+            
             users = self.load_authorized_users()
             
             if telegram_id in users:
                 users[telegram_id]['subscriptions'] = subscriptions
+                print(f'[AUTH-SERVICE] Оновлюємо підписки в пам\'яті')
+                
                 self.save_authorized_users(users)
+                print(f'[AUTH-SERVICE] Підписки збережені в {self.authorized_users_file}')
                 return True
+            else:
+                print(f'[AUTH-SERVICE] Користувач {telegram_id} не знайдений в базі')
             
             return False
         except Exception as e:
             print(f'[ERROR] Ошибка обновления подписок: {e}')
+            import traceback
+            traceback.print_exc()
             return False
     
     def get_all_users(self) -> list:
@@ -259,16 +300,29 @@ class AuthService:
     def grant_subscription(self, telegram_id: str, model_id: str, admin_id: str) -> bool:
         """Назначить подписку на модель пользователю"""
         try:
+            print(f'[AUTH-SERVICE] grant_subscription викликано для користувача {telegram_id}, модель {model_id}')
+            print(f'[AUTH-SERVICE] Файл для збереження: {self.authorized_users_file}')
+            
             users = self.load_authorized_users()
+            print(f'[AUTH-SERVICE] Завантажено {len(users)} користувачів')
             
             if telegram_id in users:
                 user = users[telegram_id]
                 subscriptions = user.get('subscriptions', ['logistic-spy'])
+                print(f'[AUTH-SERVICE] Поточні підписки користувача {telegram_id}: {subscriptions}')
                 
                 if model_id not in subscriptions:
                     subscriptions.append(model_id)
                     user['subscriptions'] = subscriptions
+                    print(f'[AUTH-SERVICE] Збереження підписок: {subscriptions}')
+                    
                     self.save_authorized_users(users)
+                    print(f'[AUTH-SERVICE] Підписки збережені в {self.authorized_users_file}')
+                    
+                    # СИНХРОНІЗАЦІЯ: оновлюємо також user_subscriptions.json
+                    user_subs = self.load_user_subscriptions()
+                    user_subs[str(telegram_id)] = subscriptions
+                    self.save_user_subscriptions(user_subs)
                     
                     # Логируем в историю
                     self.log_subscription_change(telegram_id, admin_id, 
@@ -281,10 +335,14 @@ class AuthService:
                 else:
                     print(f'[WARN] Пользователь {telegram_id} уже имеет подписку {model_id}')
                     return True  # Уже есть подписка
+            else:
+                print(f'[ERROR] Користувач {telegram_id} не знайдений в базі')
             
             return False
         except Exception as e:
             print(f'[ERROR] Ошибка назначения подписки: {e}')
+            import traceback
+            traceback.print_exc()
             return False
     
     def revoke_subscription(self, telegram_id: str, model_id: str, admin_id: str) -> bool:
@@ -305,6 +363,11 @@ class AuthService:
                     
                     user['subscriptions'] = subscriptions
                     self.save_authorized_users(users)
+                    
+                    # СИНХРОНІЗАЦІЯ: оновлюємо також user_subscriptions.json
+                    user_subs = self.load_user_subscriptions()
+                    user_subs[str(telegram_id)] = subscriptions
+                    self.save_user_subscriptions(user_subs)
                     
                     # Логируем в историю
                     self.log_subscription_change(telegram_id, admin_id, 

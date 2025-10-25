@@ -14,7 +14,8 @@
     "is_admin": false,
     "last_login": "2025-10-25T02:32:56.652905",
     "subscriptions": [
-      "logistic-spy"
+      "logistic-spy",
+      "shadow-stack"
     ],
     "created_at": "2025-10-25T02:32:56.652905"
   },
@@ -28,7 +29,8 @@
     "is_admin": false,
     "last_login": "2025-10-25T05:04:01.459104",
     "subscriptions": [
-      "logistic-spy"
+      "logistic-spy",
+      "shadow-stack"
     ],
     "created_at": "2025-10-25T05:04:01.459104"
   }

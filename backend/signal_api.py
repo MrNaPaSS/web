@@ -1294,14 +1294,20 @@ def get_user_subscriptions():
                 'error': 'user_id is required'
             }), 400
 
+        print(f'[GET-SUBS] Запит підписок для користувача {user_id}')
+        
         # Загружаем подписки пользователей
         subscriptions_file = os.path.join(ROOT_DIR, 'user_subscriptions.json')
+        print(f'[GET-SUBS] Читаємо з файлу: {subscriptions_file}')
+        
         if os.path.exists(subscriptions_file):
             with open(subscriptions_file, 'r', encoding='utf-8') as f:
                 subscriptions_data = json.load(f)
             user_subscriptions = subscriptions_data.get(str(user_id), ['logistic-spy'])
+            print(f'[GET-SUBS] Знайдено підписки: {user_subscriptions}')
         else:
             user_subscriptions = ['logistic-spy']  # Базовая модель по умолчанию
+            print(f'[GET-SUBS] Файл не знайдено, використовуємо базову підписку')
 
         return jsonify({
             'success': True,
@@ -1310,6 +1316,8 @@ def get_user_subscriptions():
 
     except Exception as e:
         print(f'[ERROR] Ошибка получения подписок пользователя: {e}')
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)
@@ -1347,6 +1355,13 @@ def update_user_subscriptions():
         # Сохраняем обратно
         with open(subscriptions_file, 'w', encoding='utf-8') as f:
             json.dump(subscriptions_data, f, ensure_ascii=False, indent=2)
+
+        # СИНХРОНІЗАЦІЯ: оновлюємо також authorized_users.json
+        try:
+            auth_service.update_subscriptions(str(user_id), subscriptions)
+            print(f'[SYNC] Синхронізовано підписки з authorized_users.json для користувача {user_id}')
+        except Exception as sync_error:
+            print(f'[WARNING] Помилка синхронізації з authorized_users.json: {sync_error}')
 
         # Логируем изменение в аудит
         audit_logger.log_subscription_change(
@@ -2427,23 +2442,32 @@ def grant_subscription(user_id, model_id):
                 'error': 'admin_id is required'
             }), 400
         
-        # Используем глобальный экземпляр AuthService
+        print(f'[GRANT] Спроба призначити підписку {model_id} користувачу {user_id}')
+        print(f'[GRANT] AuthService директорія: {auth_service.bot_dir}')
+        print(f'[GRANT] AuthService файл: {auth_service.authorized_users_file}')
         
+        # Используем глобальный экземпляр AuthService
         success = auth_service.grant_subscription(user_id, model_id, admin_id)
         
         if success:
+            subscriptions = auth_service.get_user_subscriptions(user_id)
+            print(f'[GRANT] Підписки користувача {user_id} після призначення: {subscriptions}')
+            
             # Отправляем WebSocket уведомление
             try:
                 import requests
-                subscriptions = auth_service.get_user_subscriptions(user_id)
+                print(f'[GRANT] Відправляємо WebSocket повідомлення: {subscriptions}')
                 requests.post('http://localhost:8001/notify-subscription-update', 
-                           json={'user_id': user_id, 'subscriptions': subscriptions})
-            except:
-                pass
+                           json={'user_id': user_id, 'subscriptions': subscriptions},
+                           timeout=2)
+                print(f'[GRANT] WebSocket повідомлення відправлено')
+            except Exception as ws_error:
+                print(f'[WARNING] Помилка WebSocket: {ws_error}')
             
             return jsonify({
                 'success': True,
-                'message': f'Подписка {model_id} назначена пользователю {user_id}'
+                'message': f'Подписка {model_id} назначена пользователю {user_id}',
+                'subscriptions': subscriptions
             })
         else:
             return jsonify({
@@ -2453,6 +2477,8 @@ def grant_subscription(user_id, model_id):
         
     except Exception as e:
         print(f'❌ Ошибка назначения подписки: {e}')
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)
@@ -2471,23 +2497,32 @@ def revoke_subscription(user_id, model_id):
                 'error': 'admin_id is required'
             }), 400
         
-        # Используем глобальный экземпляр AuthService
+        print(f'[REVOKE] Спроба відмінити підписку {model_id} у користувача {user_id}')
+        print(f'[REVOKE] AuthService директорія: {auth_service.bot_dir}')
+        print(f'[REVOKE] AuthService файл: {auth_service.authorized_users_file}')
         
+        # Используем глобальный экземпляр AuthService
         success = auth_service.revoke_subscription(user_id, model_id, admin_id)
         
         if success:
+            subscriptions = auth_service.get_user_subscriptions(user_id)
+            print(f'[REVOKE] Підписки користувача {user_id} після відміни: {subscriptions}')
+            
             # Отправляем WebSocket уведомление
             try:
                 import requests
-                subscriptions = auth_service.get_user_subscriptions(user_id)
+                print(f'[REVOKE] Відправляємо WebSocket повідомлення: {subscriptions}')
                 requests.post('http://localhost:8001/notify-subscription-update', 
-                           json={'user_id': user_id, 'subscriptions': subscriptions})
-            except:
-                pass
+                           json={'user_id': user_id, 'subscriptions': subscriptions},
+                           timeout=2)
+                print(f'[REVOKE] WebSocket повідомлення відправлено')
+            except Exception as ws_error:
+                print(f'[WARNING] Помилка WebSocket: {ws_error}')
             
             return jsonify({
                 'success': True,
-                'message': f'Подписка {model_id} отменена у пользователя {user_id}'
+                'message': f'Подписка {model_id} отменена у пользователя {user_id}',
+                'subscriptions': subscriptions
             })
         else:
             return jsonify({
@@ -2497,6 +2532,8 @@ def revoke_subscription(user_id, model_id):
         
     except Exception as e:
         print(f'❌ Ошибка отмены подписки: {e}')
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)
