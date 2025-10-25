@@ -327,26 +327,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           duration: 8000
         })
 
-        // Отправляем уведомление администратору
-        try {
-          await fetch(`${getApiUrl()}/api/admin-notification`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              type: 'subscription_request',
-              user_id: currentUserId,
-              user_name: userData?.firstName || 'Пользователь',
-              model_name: selectedModelForPurchase.name,
-              subscription_type: subscriptionType,
-              message: `Новый запрос на подписку: ${userData?.firstName || 'Пользователь'} запросил ${subscriptionType === 'monthly' ? 'ежемесячную' : 'пожизненную'} подписку на модель "${selectedModelForPurchase.name}"`
-            })
-          })
-          console.log('📧 Admin notification sent')
-        } catch (error) {
-          console.error('❌ Failed to send admin notification:', error)
-        }
+        // Уведомление админу отправляется автоматически через backend
         
         // Закрываем модальное окно
         setShowPurchaseModal(false)
@@ -9969,7 +9950,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     <p className="text-slate-400 text-sm">{t('monthlyPrice')}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-400">$49</div>
+                    <div className="text-2xl font-bold text-blue-400">{selectedModelForPurchase?.monthlyPrice || '$49'}</div>
                     <div className="text-slate-400 text-sm">{t('perMonth')}</div>
                   </div>
                 </div>
@@ -9993,7 +9974,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     <p className="text-slate-400 text-sm">{t('lifetimePrice')}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-green-400">$299</div>
+                    <div className="text-2xl font-bold text-green-400">{selectedModelForPurchase?.lifetimePrice || '$299'}</div>
                     <div className="text-slate-400 text-sm">{t('forever')}</div>
                   </div>
                 </div>
