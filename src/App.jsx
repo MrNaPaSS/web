@@ -7111,7 +7111,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       color: 'from-red-600 to-red-800',
       warning: t('sniper80xWarning'),
       price: '$999',
-      monthlyPrice: '$199',
+      monthlyPrice: '$300',
       lifetimePrice: '$999'
     }
   ]
@@ -10962,11 +10962,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       </div>
                       <div>
                         <h3 className="text-lg font-bold text-white mb-1">{model.name}</h3>
-                        {model.status === 'active' && (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs">
-                            АКТИВНА
-                          </Badge>
-                        )}
                         {model.status === 'restricted' && (
                           <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-xs">
                             <Lock className="w-3 h-3 mr-1" />
@@ -11016,6 +11011,14 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                           <span className="text-xs text-slate-500">{t('lifetime')}</span>
                           <span className="text-green-400 font-bold text-sm">{model.lifetimePrice}</span>
                         </div>
+                      </div>
+                    )}
+                    {/* Status badge in bottom right */}
+                    {model.status === 'active' && (
+                      <div className="flex justify-end mt-2">
+                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs">
+                          АКТИВНА
+                        </Badge>
                       </div>
                     )}
                   </div>
