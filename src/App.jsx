@@ -36,7 +36,11 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   // КОНФИГУРАЦИЯ АДМИНА - УДАЛЕНО ИЗ ФРОНТЕНДА ДЛЯ БЕЗОПАСНОСТИ
   // Функция для определения правильного API URL
   const getApiUrl = (port) => {
-    // Временно используем локальный API для тестирования
+    // В продакшене используем внешний домен
+    if (window.location.hostname === 'app.nomoneynohoney.online') {
+      return 'https://bot.nomoneynohoney.online'
+    }
+    // Для локальной разработки
     return `http://localhost:5000`
   }
   const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
