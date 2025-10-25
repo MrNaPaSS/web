@@ -168,8 +168,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       console.log('🔄 Going to admin panel - loading templates')
       loadSubscriptionTemplates()
       loadSubscriptionRequests()
-      loadAdminStats()
-      loadAccessRequests()
+      // Временно отключаем для диагностики
+      // loadAdminStats()
+      // loadAccessRequests()
     }
   }, [currentScreen, isAdmin])
   
