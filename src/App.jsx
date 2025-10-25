@@ -221,6 +221,20 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       }, 500)
     }
   }, [currentScreen, userData?.id])
+  
+  // Загрузка подписок при переходе на экран управления ML моделями
+  useEffect(() => {
+    if (currentScreen === 'ml-settings' && userData?.id) {
+      console.log('🔄 Going to ML settings - loading subscriptions')
+      // Принудительная загрузка с задержкой для гарантии
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+  }, [currentScreen, userData?.id])
   // Загрузка шаблонов при переходе в админ-панель
   useEffect(() => {
     if (currentScreen === 'admin' && isAdmin) {
@@ -243,7 +257,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }, [currentScreen])
   // Fallback механизм - множественные попытки загрузки подписок
   useEffect(() => {
-    if (userData?.id && (currentScreen === 'menu' || currentScreen === 'ml-selector' || currentScreen === 'settings')) {
+    if (userData?.id && (currentScreen === 'menu' || currentScreen === 'ml-selector' || currentScreen === 'settings' || currentScreen === 'ml-settings')) {
       console.log('🔄 Screen changed to:', currentScreen, '- loading subscriptions')
       
       // Первая загрузка
@@ -10048,6 +10062,17 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   
   // ML Settings Screen - управление купленными моделями
   if (currentScreen === 'ml-settings') {
+    // Принудительная загрузка подписок при каждом рендере экрана
+    if (userData?.id) {
+      console.log('🔄 Force loading subscriptions for ml-settings screen')
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
+    }
+    
     // Функция обработки клика по модели
     const handleModelClick = (model) => {
       const isOwned = userSubscriptions.includes(model.id)
