@@ -221,8 +221,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       }, 500)
     }
   }, [currentScreen, userData?.id])
-  
-  // Загрузка подписок при переходе на экран управления ML моделями
+
+  // Загрузка подписок при переходе на экран ml-settings
   useEffect(() => {
     if (currentScreen === 'ml-settings' && userData?.id) {
       console.log('🔄 Going to ML settings - loading subscriptions')
@@ -233,8 +233,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
       }, 500)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 1000)
     }
   }, [currentScreen, userData?.id])
+  
   // Загрузка шаблонов при переходе в админ-панель
   useEffect(() => {
     if (currentScreen === 'admin' && isAdmin) {
@@ -10065,12 +10069,20 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительная загрузка подписок при каждом рендере экрана
     if (userData?.id) {
       console.log('🔄 Force loading subscriptions for ml-settings screen')
+      console.log('🔄 Current userSubscriptions:', userSubscriptions)
+      // Множественные попытки загрузки для гарантии
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
       }, 100)
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
       }, 500)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 1000)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 2000)
     }
     
     // Функция обработки клика по модели
@@ -10125,18 +10137,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         
         {/* Content */}
         <div className="container mx-auto px-4 py-4 max-w-md">
-          {/* Индикатор активных подписок */}
-          <Card className="mb-4 p-3 border-emerald-500/30 card-3d shadow-xl">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="text-emerald-400" />
-              <div>
-                <p className="text-sm font-semibold text-white">Активных подписок: {userSubscriptions.length}</p>
-                <p className="text-xs text-slate-400">
-                  Активная модель: {mlModels.find(m => m.id === selectedMLModel)?.name}
-                </p>
-              </div>
-            </div>
-          </Card>
           
           {/* ML Models List - компактные карточки */}
           <div className="space-y-3">
