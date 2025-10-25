@@ -47,7 +47,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Для локальной разработки
     return `http://localhost:5000`
   }
-  const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, notifications, analytics, generating, signal-selection
+  const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, ml-settings, notifications, analytics, generating, signal-selection
   const [selectedLanguage, setSelectedLanguage] = useState(null) // ru, en, es, fr, de, it, pt, zh, ja, ko, ar, hi
   const [selectedMarket, setSelectedMarket] = useState(null) // forex, otc
   const [selectedMode, setSelectedMode] = useState(null) // top3, single
@@ -9913,10 +9913,14 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           <div className="space-y-4">
             <Card 
               onClick={() => {
-                if (hasVipAccess()) {
-                  setCurrentScreen('ml-selector')
+                // Проверяем наличие хотя бы одной подписки (включая базовую)
+                const hasAnySubscription = userSubscriptions.length > 0
+                
+                if (hasAnySubscription) {
+                  setCurrentScreen('ml-settings') // Новый экран управления
                 } else {
-                  showNotification('warning', 'Требуется премиум подписка', 'Для настройки ML моделей необходима премиум подписка. Перейдите в раздел выбора моделей для покупки подписки.')
+                  setCurrentScreen('ml-selector') // Экран покупки
+                  showNotification('info', 'Доступные ML модели', 'Выберите модель для покупки подписки')
                 }
               }}
               className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 group card-3d shadow-xl ${
@@ -10041,6 +10045,155 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       </div>
     )
   }
+  
+  // ML Settings Screen - управление купленными моделями
+  if (currentScreen === 'ml-settings') {
+    // Функция обработки клика по модели
+    const handleModelClick = (model) => {
+      const isOwned = userSubscriptions.includes(model.id)
+      const isRestricted = model.status === 'restricted'
+      
+      if (isRestricted) {
+        alert(t('modelRestrictedAlert'))
+        return
+      }
+      
+      if (isOwned) {
+        // Переключить активную модель
+        setSelectedMLModel(model.id)
+        showNotification('success', 'Модель активирована', `${model.name} теперь активна`)
+      } else {
+        // Перейти на экран покупки
+        setCurrentScreen('ml-selector')
+      }
+    }
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <ToastNotification />
+        {/* Header */}
+        <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/50 shadow-xl">
+          <div className="container mx-auto px-3 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 icon-3d">
+                  <Brain className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-white">Управление ML моделями</h1>
+                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-xs">
+                    НАСТРОЙКИ
+                  </Badge>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setCurrentScreen('settings')}
+                variant="ghost" 
+                size="icon" 
+                className="text-slate-400 hover:text-white hover:bg-slate-800/50 w-10 h-10"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" />
+              </Button>
+            </div>
+          </div>
+        </header>
+        
+        {/* Content */}
+        <div className="container mx-auto px-4 py-4 max-w-md">
+          {/* Индикатор активных подписок */}
+          <Card className="mb-4 p-3 border-emerald-500/30 card-3d shadow-xl">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="text-emerald-400" />
+              <div>
+                <p className="text-sm font-semibold text-white">Активных подписок: {userSubscriptions.length}</p>
+                <p className="text-xs text-slate-400">
+                  Активная модель: {mlModels.find(m => m.id === selectedMLModel)?.name}
+                </p>
+              </div>
+            </div>
+          </Card>
+          
+          {/* ML Models List - компактные карточки */}
+          <div className="space-y-3">
+            {mlModels.map((model) => {
+              const isOwned = userSubscriptions.includes(model.id)
+              const isActive = selectedMLModel === model.id
+              const isRestricted = model.status === 'restricted'
+              
+              return (
+                <Card 
+                  key={model.id}
+                  onClick={() => handleModelClick(model)}
+                  className={`glass-effect p-3 backdrop-blur-sm transition-all duration-300 card-3d shadow-xl cursor-pointer min-h-[80px] touch-manipulation ${
+                    isActive 
+                      ? 'border-emerald-500/70 bg-emerald-500/10 shadow-emerald-500/50' 
+                      : isOwned
+                      ? 'border-purple-500/50 hover:border-purple-400/70 hover:scale-[1.02] active:scale-[0.98]'
+                      : isRestricted
+                      ? 'border-red-500/30 bg-red-500/5 opacity-60 cursor-not-allowed'
+                      : 'border-yellow-500/50 hover:border-yellow-400/70 hover:scale-[1.02] active:scale-[0.98]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 h-full">
+                    {/* Icon */}
+                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${model.color} flex items-center justify-center icon-3d shadow-lg`}>
+                      <span className="text-xl">{model.emoji}</span>
+                    </div>
+                    
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-sm font-bold text-white truncate">{model.name}</h3>
+                        {isActive && (
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs px-2 py-0.5">
+                            АКТИВНА
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-emerald-400 font-semibold">{model.winrate}</span>
+                        <span className="text-slate-600">•</span>
+                        <span className="text-xs text-slate-400 truncate">{model.style}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Status indicator */}
+                    <div className="flex-shrink-0">
+                      {isActive ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                      ) : isOwned ? (
+                        <CheckCircle2 className="w-5 h-5 text-purple-400" />
+                      ) : isRestricted ? (
+                        <Lock className="w-5 h-5 text-red-400" />
+                      ) : (
+                        <Lock className="w-5 h-5 text-yellow-400" />
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+          
+          {/* Info */}
+          <Card className="glass-effect border-cyan-500/30 p-4 mt-4 card-3d shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center icon-3d shadow-lg shadow-cyan-500/20">
+                <Brain className="w-4 h-4 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white mb-1">Управление моделями</h3>
+                <p className="text-slate-400 text-sm">
+                  Переключайтесь между купленными моделями. Кликните на заблокированную модель для покупки подписки.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+  
   // ML Model Selector Screen
   if (currentScreen === 'ml-selector') {
     // Принудительное обновление подписок при каждом рендере экрана
