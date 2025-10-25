@@ -11098,21 +11098,34 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     <div className="flex items-center gap-2">
                       <Button
                         onClick={() => {
-                          alert(`📝 НАПОМИНАНИЕ: Пользователь ${request.user_data?.first_name} ${request.user_data?.last_name} (ID: ${request.user_id}) запросил подписку на модель ${request.model_id}.\n\nПерейдите в его статистику для назначения подписки.`)
-                        }}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm"
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Напомнить
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          alert(`📝 НАПОМИНАНИЕ: Пользователь ${request.user_data?.first_name} ${request.user_data?.last_name} (ID: ${request.user_id}) запросил подписку на модель ${request.model_id}.\n\nПерейдите в его статистику для назначения подписки.`)
+                          // Находим пользователя в списке topUsers для перехода к его статистике
+                          const userForStats = adminStats.topUsers.find(user => user.id === request.user_id)
+                          if (userForStats) {
+                            setSelectedUser(userForStats)
+                            setCurrentScreen('admin-user-detail')
+                          } else {
+                            // Если пользователь не найден в topUsers, создаем объект пользователя
+                            const userData = {
+                              id: request.user_id,
+                              name: `${request.user_data?.first_name} ${request.user_data?.last_name}`,
+                              signals: 0,
+                              successful: 0,
+                              failed: 0,
+                              winRate: 0,
+                              tradingDays: 0,
+                              avgSignalsPerDay: 0,
+                              bestPair: 'N/A',
+                              worstPair: 'N/A',
+                              signalsByMonth: []
+                            }
+                            setSelectedUser(userData)
+                            setCurrentScreen('admin-user-detail')
+                          }
                         }}
                         className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 text-sm"
                       >
                         <span className="mr-2">📋</span>
-                        К статистике
+                        Перейти
                       </Button>
                     </div>
                   </div>
