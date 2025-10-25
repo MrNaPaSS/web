@@ -73,7 +73,17 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       const data = await response.json()
       if (data.success) {
         console.log('📥 Raw subscription data:', data)
-        const newSubscriptions = data.subscriptions || ['logistic-spy']
+        let newSubscriptions = data.subscriptions || ['logistic-spy']
+        
+        // Якщо є преміум-підписка, видаляємо базову
+        const hasPremium = newSubscriptions.some(sub => 
+          sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
+        )
+        if (hasPremium) {
+          newSubscriptions = newSubscriptions.filter(sub => sub !== 'logistic-spy')
+          console.log('🧹 Removed base subscription, keeping only premium:', newSubscriptions)
+        }
+        
         setUserSubscriptions(newSubscriptions)
         console.log('✅ User subscriptions loaded:', newSubscriptions)
         
