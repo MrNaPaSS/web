@@ -57,9 +57,21 @@ async def notify_subscription_update(data: dict):
     
     if user_id:
         await manager.send_subscription_update(str(user_id), subscriptions)
+        print(f"📤 WebSocket notification sent to user {user_id}: {subscriptions}")
         return {"status": "success", "message": f"Notification sent to user {user_id}"}
     
     return {"status": "error", "message": "user_id is required"}
+
+
+@app.get("/health")
+async def health_check():
+    """Проверка работоспособности WebSocket сервера"""
+    return {
+        "status": "success", 
+        "message": "WebSocket server is running",
+        "active_connections": len(manager.active_connections),
+        "total_connections": sum(len(conns) for conns in manager.active_connections.values())
+    }
 
 if __name__ == "__main__":
     import uvicorn

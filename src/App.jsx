@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.j
 import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check, RefreshCw } from 'lucide-react'
 import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import { useWebSocket } from './hooks/useWebSocket'
+import UserSubscriptionManager from './components/admin/UserSubscriptionManager.jsx'
 import './App.css'
 function App() {
   // ВЕРСИЯ ПРИЛОЖЕНИЯ - для проверки обновлений
@@ -72,12 +73,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       const data = await response.json()
       if (data.success) {
         console.log('📥 Raw subscription data:', data)
-        setUserSubscriptions(data.subscriptions)
-        console.log('✅ User subscriptions loaded:', data.subscriptions)
-        console.log('🎯 Current userSubscriptions state:', userSubscriptions)
+        const newSubscriptions = data.subscriptions || ['logistic-spy']
+        setUserSubscriptions(newSubscriptions)
+        console.log('✅ User subscriptions loaded:', newSubscriptions)
+        
         // Обновляем выбранную ML модель на первую доступную из подписок
-        if (data.subscriptions && data.subscriptions.length > 0) {
-          const firstAvailableModel = data.subscriptions[0]
+        if (newSubscriptions && newSubscriptions.length > 0) {
+          const firstAvailableModel = newSubscriptions[0]
           if (firstAvailableModel !== selectedMLModel) {
             setSelectedMLModel(firstAvailableModel)
             console.log('🔄 ML model updated to:', firstAvailableModel)
@@ -85,9 +87,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         }
       } else {
         console.error('❌ Ошибка загрузки подписок:', data.error)
+        // При ошибке устанавливаем базовую подписку
+        setUserSubscriptions(['logistic-spy'])
       }
     } catch (error) {
       console.error('❌ Ошибка загрузки подписок:', error)
+      // При ошибке устанавливаем базовую подписку
+      setUserSubscriptions(['logistic-spy'])
     }
   }
   // Функция для обновления подписки пользователя
@@ -133,22 +139,36 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   // Принудительная загрузка подписок при каждом переходе в меню
   useEffect(() => {
     if (currentScreen === 'menu' && userData?.id) {
-      // Небольшая задержка для гарантии загрузки
-      const timer = setTimeout(() => {
-        console.log('🔄 Force loading subscriptions in menu')
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      return () => clearTimeout(timer)
+      console.log('🔄 Force loading subscriptions in menu')
+      // Множественные попытки загрузки для гарантии
+      loadUserSubscriptions(userData.id)
+      setTimeout(() => loadUserSubscriptions(userData.id), 100)
+      setTimeout(() => loadUserSubscriptions(userData.id), 500)
+      setTimeout(() => loadUserSubscriptions(userData.id), 1000)
     }
   }, [currentScreen])
-  // Периодическая проверка подписок каждые 500мс для мгновенного обновления
+  // Fallback polling каждые 10 секунд (только если WebSocket недоступен)
   useEffect(() => {
     if (!userData?.id) return
-    const interval = setInterval(() => {
-      console.log('🔄 Periodic subscription check')
-      loadUserSubscriptions(userData.id)
-    }, 500) // 500мс для мгновенного обновления
-    return () => clearInterval(interval)
+    
+    let fallbackInterval = null
+    
+    // Проверяем WebSocket соединение каждые 5 секунд
+    const checkConnection = () => {
+      // Если WebSocket недоступен, включаем fallback polling
+      fallbackInterval = setInterval(() => {
+        console.log('🔄 Fallback subscription check (WebSocket unavailable)')
+        loadUserSubscriptions(userData.id)
+      }, 10000) // 10 секунд fallback
+    }
+    
+    // Запускаем проверку через 5 секунд после инициализации
+    const checkTimeout = setTimeout(checkConnection, 5000)
+    
+    return () => {
+      if (fallbackInterval) clearInterval(fallbackInterval)
+      clearTimeout(checkTimeout)
+    }
   }, [userData?.id])
   // Загрузка подписок при инициализации пользователя
   useEffect(() => {
@@ -211,6 +231,14 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   useWebSocket(userData?.id, (newSubscriptions) => {
     setUserSubscriptions(newSubscriptions);
     console.log('🔄 Subscriptions updated via WebSocket:', newSubscriptions);
+    // Принудительно обновляем выбранную модель если текущая недоступна
+    if (newSubscriptions && newSubscriptions.length > 0) {
+      const firstAvailableModel = newSubscriptions[0];
+      if (firstAvailableModel !== selectedMLModel) {
+        setSelectedMLModel(firstAvailableModel);
+        console.log('🔄 ML model updated to:', firstAvailableModel);
+      }
+    }
   }, (type, title, message) => {
     showNotification(type, title, message);
   });
@@ -537,18 +565,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   // Функция проверки активной подписки для ML настроек
   const hasActiveSubscription = () => {
     if (!userSubscriptions || userSubscriptions.length === 0) {
+      console.log('🔍 No subscriptions found')
       return false
     }
-    // Проверяем, есть ли хотя бы одна НЕ-базовая подписка
-    const hasActiveSub = userSubscriptions.some(sub => 
-      sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
-    )
+    
+    // Проверяем, есть ли хотя бы одна подписка (включая базовую)
+    const hasAnySub = userSubscriptions.length > 0
     console.log('🔍 Active Subscription Check:', {
       userSubscriptions,
-      hasActiveSub,
-      result: hasActiveSub
+      hasAnySub,
+      result: hasAnySub
     })
-    return hasActiveSub
+    return hasAnySub
   }
 
   // Функция загрузки кешированных ТОП-3 сигналов
@@ -8261,6 +8289,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Main Menu Screen
   if (currentScreen === 'menu') {
+    // Принудительное обновление подписок при каждом рендере меню
+    if (userData?.id) {
+      console.log('🔄 Menu render - force loading subscriptions')
+      loadUserSubscriptions(userData.id)
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         <ToastNotification />
@@ -10079,25 +10113,11 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         <div className="container mx-auto px-4 py-4 max-w-md">
           <div className="space-y-3">
             {mlModels.map((model) => {
-              // Принудительное обновление подписок при каждом рендере карточки
-              if (userData?.id) {
-                console.log('🔄 Force loading subscriptions for card render')
-                setTimeout(() => {
-                  loadUserSubscriptions(userData.id)
-                }, 50)
-                setTimeout(() => {
-                  loadUserSubscriptions(userData.id)
-                }, 200)
-                setTimeout(() => {
-                  loadUserSubscriptions(userData.id)
-                }, 500)
-              }
-              
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
               const isRestricted = model.status === 'restricted'
               
-              console.log(`🔍 Model ${model.id}: isOwned=${isOwned}, userSubscriptions=`, userSubscriptions)
+              console.log(`🔍 Model ${model.id}: isOwned=${isOwned}, isActive=${isActive}, userSubscriptions=`, userSubscriptions)
               return (
                 <Card 
                   key={model.id}
@@ -10127,14 +10147,14 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       console.log('🛒 Modal state set:', { showPurchaseModal: true, selectedModel: model.name })
                     }
                   }}
-                  className={`glass-effect p-4 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl cursor-pointer min-h-[120px] touch-manipulation ${
+                  className={`glass-effect p-4 backdrop-blur-sm transition-all duration-300 card-3d shadow-xl cursor-pointer min-h-[120px] touch-manipulation ${
                     isActive 
-                      ? 'border-emerald-500/70 bg-emerald-500/10' 
+                      ? 'border-emerald-500/70 bg-emerald-500/10 shadow-emerald-500/50' 
                       : isOwned
-                      ? 'hover:border-purple-500/50 hover:scale-[1.02] active:scale-[0.98]'
+                      ? 'border-purple-500/50 hover:border-purple-400/70 hover:scale-[1.02] active:scale-[0.98]'
                       : isRestricted
                       ? 'border-red-500/30 bg-red-500/5 opacity-60 cursor-not-allowed'
-                      : 'hover:border-yellow-500/50 hover:scale-[1.02] active:scale-[0.98]'
+                      : 'border-yellow-500/50 hover:border-yellow-400/70 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
                   <div className="flex flex-col gap-4 h-full">
@@ -10791,115 +10811,15 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
             </div>
           </Card>
           {/* Subscription Management */}
-          <Card className="glass-effect border-amber-500/30 p-6 card-3d shadow-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center icon-3d shadow-lg shadow-amber-500/20">
-                <Crown className="w-5 h-5 text-amber-400" />
-              </div>
-              <h3 className="text-lg font-bold text-white">{t('subscriptionManagement')}</h3>
-            </div>
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/30">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-slate-300 font-medium">{t('mlModel')}</span>
-                  <Badge className={`${selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-slate-500/20 text-slate-400 border-slate-500/50'}`}>
-                    {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 ? t('active') : t('inactive')}
-                  </Badge>
-                </div>
-                <div className="space-y-4">
-                  {/* Выбор ML моделей */}
-                  <div>
-                    <span className="text-slate-400 text-sm mb-2 block">{t('selectMLModels')}</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['logistic-spy', 'shadow-stack', 'forest-necromancer', 'gray-cardinal', 'sniper-80x'].map((model) => (
-                        <label key={model} className="flex items-center gap-2 p-2 bg-slate-800/30 rounded-lg border border-slate-700/30 hover:border-cyan-500/50 cursor-pointer transition-all">
-                          <input
-                            type="checkbox"
-                            checked={selectedUser.subscriptions && selectedUser.subscriptions.includes(model)}
-                            onChange={(e) => {
-                              const currentSubs = selectedUser.subscriptions || []
-                              let newSubs
-                              if (e.target.checked) {
-                                newSubs = [...currentSubs, model]
-                              } else {
-                                newSubs = currentSubs.filter(sub => sub !== model)
-                              }
-                              const updatedUser = {
-                                ...selectedUser,
-                                subscriptions: newSubs
-                              }
-                              setSelectedUser(updatedUser)
-                            }}
-                            className="w-4 h-4 text-cyan-500 bg-slate-700 border-slate-600 rounded focus:ring-cyan-500"
-                          />
-                          <span className="text-slate-300 text-sm">{model}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Кнопки управления */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      onClick={async () => {
-                        // Сохраняем изменения
-                        console.log('Сохранение подписки для пользователя:', selectedUser.id, selectedUser.subscriptions)
-                        // Обновляем подписку пользователя через API
-                        const success = await updateUserSubscription(selectedUser.id, selectedUser.subscriptions)
-                        if (success) {
-                          alert(t('subscriptionUpdated').replace('{name}', selectedUser.name))
-                        } else {
-                          alert(t('subscriptionUpdateError').replace('{name}', selectedUser.name))
-                        }
-                      }}
-                      className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50"
-                      size="sm"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Сохранить
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        // Отключаем все подписки
-                        const updatedUser = {
-                          ...selectedUser,
-                          subscriptions: []
-                        }
-                        setSelectedUser(updatedUser)
-                        // Обновляем через API
-                        const success = await updateUserSubscription(selectedUser.id, [])
-                        if (success) {
-                          alert(t('subscriptionDisabled').replace('{name}', selectedUser.name))
-                        } else {
-                          alert(t('subscriptionDisableError').replace('{name}', selectedUser.name))
-                        }
-                      }}
-                      variant="ghost"
-                      className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/20"
-                      size="sm"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Отключить все
-                    </Button>
-                  </div>
-                </div>
-                {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 && (
-                  <div className="mt-4 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Crown className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-400 font-medium text-sm">{t('availableModels')}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedUser.subscriptions.map((model, index) => (
-                        <Badge key={index} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-xs">
-                          {model}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
+          <UserSubscriptionManager 
+            userId={selectedUser.id}
+            userData={selectedUser}
+            onSubscriptionChange={() => {
+              // Обновляем данные пользователя после изменения подписок
+              console.log('🔄 Subscription changed, refreshing user data')
+              loadAdminStats()
+            }}
+          />
         </div>
       </div>
     )
@@ -10962,7 +10882,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white mb-1">
-                    🎯 АКТИВНАЯ МОДЕЛЬ: {mlModels.find(m => m.status === 'active')?.emoji} {mlModels.find(m => m.status === 'active')?.name}
+                    🎯 АКТИВНАЯ МОДЕЛЬ: {mlModels.find(m => m.id === selectedMLModel)?.emoji} {mlModels.find(m => m.id === selectedMLModel)?.name}
                   </h3>
                   <p className="text-emerald-400 text-sm">✅ {t('modelReady')}</p>
                 </div>
@@ -10976,20 +10896,20 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {mlModels.sort((a, b) => {
               // Сначала активная модель, затем остальные
-              if (a.status === 'active') return -1
-              if (b.status === 'active') return 1
+              if (a.id === selectedMLModel) return -1
+              if (b.id === selectedMLModel) return 1
               return 0
             }).map((model, index) => (
               <Card 
                 key={model.id}
                 onClick={() => model.status !== 'restricted' && setSelectedMLModel(model.id)}
                 className={`glass-effect p-6 backdrop-blur-sm transition-all duration-300 card-3d border-slate-700/50 shadow-xl hover:scale-105 ${
-                  model.status === 'active' 
+                  selectedMLModel === model.id
                     ? 'border-emerald-500/50 bg-emerald-500/10 cursor-default' 
                     : model.status === 'restricted'
                     ? 'border-red-500/30 bg-red-500/5 cursor-not-allowed opacity-60'
-                    : selectedMLModel === model.id
-                    ? 'border-yellow-500/50 bg-yellow-500/10 cursor-pointer hover:border-yellow-500/70'
+                    : userSubscriptions.includes(model.id)
+                    ? 'border-purple-500/50 bg-purple-500/10 cursor-pointer hover:border-purple-500/70'
                     : 'cursor-pointer hover:border-yellow-500/30'
                 }`}
               >

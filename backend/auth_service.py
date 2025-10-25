@@ -243,6 +243,121 @@ class AuthService:
         """Получение статистики пользователя из файла бота"""
         stats = self.load_signal_stats()
         return stats.get(telegram_id)
+    
+    def get_user_subscriptions(self, telegram_id: str) -> list:
+        """Получение подписок пользователя"""
+        try:
+            users = self.load_authorized_users()
+            user = users.get(telegram_id)
+            if user:
+                return user.get('subscriptions', ['logistic-spy'])
+            return ['logistic-spy']  # Базовая подписка по умолчанию
+        except Exception as e:
+            print(f'[ERROR] Ошибка получения подписок: {e}')
+            return ['logistic-spy']
+    
+    def grant_subscription(self, telegram_id: str, model_id: str, admin_id: str) -> bool:
+        """Назначить подписку на модель пользователю"""
+        try:
+            users = self.load_authorized_users()
+            
+            if telegram_id in users:
+                user = users[telegram_id]
+                subscriptions = user.get('subscriptions', ['logistic-spy'])
+                
+                if model_id not in subscriptions:
+                    subscriptions.append(model_id)
+                    user['subscriptions'] = subscriptions
+                    self.save_authorized_users(users)
+                    
+                    # Логируем в историю
+                    self.log_subscription_change(telegram_id, admin_id, 
+                                               user.get('subscriptions', []), 
+                                               subscriptions, 
+                                               f'Granted {model_id}')
+                    
+                    print(f'[GRANT] Пользователь {telegram_id} получил подписку {model_id}')
+                    return True
+                else:
+                    print(f'[WARN] Пользователь {telegram_id} уже имеет подписку {model_id}')
+                    return True  # Уже есть подписка
+            
+            return False
+        except Exception as e:
+            print(f'[ERROR] Ошибка назначения подписки: {e}')
+            return False
+    
+    def revoke_subscription(self, telegram_id: str, model_id: str, admin_id: str) -> bool:
+        """Отменить подписку на модель у пользователя"""
+        try:
+            users = self.load_authorized_users()
+            
+            if telegram_id in users:
+                user = users[telegram_id]
+                subscriptions = user.get('subscriptions', ['logistic-spy'])
+                old_subscriptions = subscriptions.copy()
+                
+                if model_id in subscriptions:
+                    subscriptions.remove(model_id)
+                    # Убеждаемся что остается базовая подписка
+                    if 'logistic-spy' not in subscriptions:
+                        subscriptions.insert(0, 'logistic-spy')
+                    
+                    user['subscriptions'] = subscriptions
+                    self.save_authorized_users(users)
+                    
+                    # Логируем в историю
+                    self.log_subscription_change(telegram_id, admin_id, 
+                                               old_subscriptions, 
+                                               subscriptions, 
+                                               f'Revoked {model_id}')
+                    
+                    print(f'[REVOKE] У пользователя {telegram_id} отменена подписка {model_id}')
+                    return True
+                else:
+                    print(f'[WARN] У пользователя {telegram_id} нет подписки {model_id}')
+                    return True  # Уже нет подписки
+            
+            return False
+        except Exception as e:
+            print(f'[ERROR] Ошибка отмены подписки: {e}')
+            return False
+    
+    def log_subscription_change(self, user_id: str, admin_id: str, 
+                               old_subscriptions: list, new_subscriptions: list, 
+                               reason: str):
+        """Логирование изменений подписок"""
+        try:
+            # Создаем простой лог файл для истории подписок
+            log_file = os.path.join(self.bot_dir, 'subscription_history.json')
+            
+            if os.path.exists(log_file):
+                with open(log_file, 'r', encoding='utf-8') as f:
+                    history = json.load(f)
+            else:
+                history = []
+            
+            log_entry = {
+                'timestamp': datetime.now().isoformat(),
+                'user_id': user_id,
+                'admin_id': admin_id,
+                'old_subscriptions': old_subscriptions,
+                'new_subscriptions': new_subscriptions,
+                'reason': reason,
+                'ip_address': '127.0.0.1'  # Для локальной разработки
+            }
+            
+            history.append(log_entry)
+            
+            # Ограничиваем историю последними 1000 записями
+            if len(history) > 1000:
+                history = history[-1000:]
+            
+            with open(log_file, 'w', encoding='utf-8') as f:
+                json.dump(history, f, ensure_ascii=False, indent=2)
+                
+        except Exception as e:
+            print(f'[ERROR] Ошибка логирования подписки: {e}')
 
 
 if __name__ == '__main__':

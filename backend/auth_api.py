@@ -102,16 +102,57 @@ def get_user(telegram_id):
         }), 500
 
 
-@app.route('/api/user/<telegram_id>/subscriptions', methods=['PUT'])
-def update_subscriptions(telegram_id):
+@app.route('/api/user/subscriptions', methods=['GET'])
+def get_user_subscriptions():
+    """Получение подписок пользователя"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id is required'
+            }), 400
+        
+        subscriptions = auth_service.get_user_subscriptions(user_id)
+        
+        return jsonify({
+            'success': True,
+            'subscriptions': subscriptions
+        })
+    
+    except Exception as e:
+        print(f'❌ Ошибка получения подписок: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/user/subscriptions', methods=['POST'])
+def update_user_subscriptions():
     """Обновление подписок пользователя"""
     try:
         data = request.get_json()
+        user_id = data.get('user_id')
         subscriptions = data.get('subscriptions', [])
         
-        success = auth_service.update_subscriptions(telegram_id, subscriptions)
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id is required'
+            }), 400
+        
+        success = auth_service.update_subscriptions(user_id, subscriptions)
         
         if success:
+            # Отправляем WebSocket уведомление
+            try:
+                import requests
+                requests.post('http://localhost:8001/notify-subscription-update', 
+                           json={'user_id': user_id, 'subscriptions': subscriptions})
+            except:
+                pass  # WebSocket сервер может быть недоступен
+            
             return jsonify({
                 'success': True,
                 'message': 'Подписки обновлены'
@@ -124,6 +165,92 @@ def update_subscriptions(telegram_id):
     
     except Exception as e:
         print(f'❌ Ошибка обновления подписок: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/admin/user/<user_id>/subscription/<model_id>', methods=['POST'])
+def grant_subscription(user_id, model_id):
+    """Назначить подписку на модель пользователю"""
+    try:
+        data = request.get_json()
+        admin_id = data.get('admin_id')
+        
+        if admin_id != ADMIN_TELEGRAM_ID:
+            return jsonify({
+                'success': False,
+                'error': 'Access denied'
+            }), 403
+        
+        success = auth_service.grant_subscription(user_id, model_id, admin_id)
+        
+        if success:
+            # Отправляем WebSocket уведомление
+            try:
+                import requests
+                subscriptions = auth_service.get_user_subscriptions(user_id)
+                requests.post('http://localhost:8001/notify-subscription-update', 
+                           json={'user_id': user_id, 'subscriptions': subscriptions})
+            except:
+                pass
+            
+            return jsonify({
+                'success': True,
+                'message': f'Подписка {model_id} назначена пользователю {user_id}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to grant subscription'
+            }), 500
+    
+    except Exception as e:
+        print(f'❌ Ошибка назначения подписки: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/admin/user/<user_id>/subscription/<model_id>', methods=['DELETE'])
+def revoke_subscription(user_id, model_id):
+    """Отменить подписку на модель у пользователя"""
+    try:
+        data = request.get_json()
+        admin_id = data.get('admin_id')
+        
+        if admin_id != ADMIN_TELEGRAM_ID:
+            return jsonify({
+                'success': False,
+                'error': 'Access denied'
+            }), 403
+        
+        success = auth_service.revoke_subscription(user_id, model_id, admin_id)
+        
+        if success:
+            # Отправляем WebSocket уведомление
+            try:
+                import requests
+                subscriptions = auth_service.get_user_subscriptions(user_id)
+                requests.post('http://localhost:8001/notify-subscription-update', 
+                           json={'user_id': user_id, 'subscriptions': subscriptions})
+            except:
+                pass
+            
+            return jsonify({
+                'success': True,
+                'message': f'Подписка {model_id} отменена у пользователя {user_id}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to revoke subscription'
+            }), 500
+    
+    except Exception as e:
+        print(f'❌ Ошибка отмены подписки: {e}')
         return jsonify({
             'success': False,
             'error': str(e)
