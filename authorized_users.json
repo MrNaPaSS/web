@@ -1,8 +1,9 @@
 {
   "authorized_users": [
-    8428349451
+    8428349451,
+    8344456953
   ],
-  "last_updated": "2025-10-25T02:32:56.652905",
+  "last_updated": "2025-10-25T05:04:01.459104",
   "8428349451": {
     "telegram_id": "8428349451",
     "first_name": "Oleg",
@@ -16,5 +17,19 @@
       "logistic-spy"
     ],
     "created_at": "2025-10-25T02:32:56.652905"
+  },
+  "8344456953": {
+    "telegram_id": "8344456953",
+    "first_name": "Максим",
+    "last_name": "",
+    "username": "",
+    "language_code": "ru",
+    "is_premium": false,
+    "is_admin": false,
+    "last_login": "2025-10-25T05:04:01.459104",
+    "subscriptions": [
+      "logistic-spy"
+    ],
+    "created_at": "2025-10-25T05:04:01.459104"
   }
 }

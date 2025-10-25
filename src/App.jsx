@@ -569,14 +569,16 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       return false
     }
     
-    // Проверяем, есть ли хотя бы одна подписка (включая базовую)
-    const hasAnySub = userSubscriptions.length > 0
+    // Проверяем, есть ли хотя бы одна НЕ-базовая подписка
+    const hasPremiumSub = userSubscriptions.some(sub => 
+      sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
+    )
     console.log('🔍 Active Subscription Check:', {
       userSubscriptions,
-      hasAnySub,
-      result: hasAnySub
+      hasPremiumSub,
+      result: hasPremiumSub
     })
-    return hasAnySub
+    return hasPremiumSub
   }
 
   // Функция загрузки кешированных ТОП-3 сигналов

@@ -1,1 +1,32 @@
-{}
+{
+  "req_8428349451_1761361269": {
+    "request_id": "req_8428349451_1761361269",
+    "user_id": "8428349451",
+    "model_id": "gray-cardinal",
+    "subscription_type": "lifetime",
+    "price": "$249 навсегда",
+    "status": "pending",
+    "created_at": "2025-10-25T05:01:09.589537",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  },
+  "req_8344456953_1761361416": {
+    "request_id": "req_8344456953_1761361416",
+    "user_id": "8344456953",
+    "model_id": "gray-cardinal",
+    "subscription_type": "lifetime",
+    "price": "$249 навсегда",
+    "status": "pending",
+    "created_at": "2025-10-25T05:03:36.357843",
+    "user_data": {
+      "first_name": "Пользователь",
+      "last_name": "",
+      "username": "",
+      "language_code": "ru"
+    }
+  }
+}
