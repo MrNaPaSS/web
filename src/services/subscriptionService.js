@@ -33,6 +33,8 @@ class SubscriptionService {
   async loadSubscriptions(userId, forceRefresh = false) {
     if (!userId) return []
 
+    console.log('🔄 loadSubscriptions called:', { userId, forceRefresh })
+
     // Проверка кэша
     if (!forceRefresh) {
       const cached = this.getCachedSubscriptions()
@@ -62,6 +64,8 @@ class SubscriptionService {
         let subscriptions = data.subscriptions || ['logistic-spy']
         subscriptions = [...new Set(subscriptions)]
 
+        console.log('📥 Raw subscriptions from API:', subscriptions)
+
         // Удаляем базовую если есть премиум
         const hasPremium = subscriptions.some(sub => 
           sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
@@ -69,6 +73,8 @@ class SubscriptionService {
         if (hasPremium) {
           subscriptions = subscriptions.filter(sub => sub !== 'logistic-spy')
         }
+
+        console.log('✅ Filtered subscriptions:', subscriptions)
 
         this.currentSubscriptions = subscriptions
         this.cacheSubscriptions(subscriptions)
@@ -78,6 +84,7 @@ class SubscriptionService {
         
         // Принудительно обновляем состояние в App.jsx
         if (window.updateUserSubscriptions) {
+          console.log('🔄 Calling window.updateUserSubscriptions with:', subscriptions)
           window.updateUserSubscriptions(subscriptions)
         }
         

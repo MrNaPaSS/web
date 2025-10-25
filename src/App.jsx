@@ -209,6 +209,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   useEffect(() => {
     if (currentScreen === 'ml-selector' && userData?.id) {
       console.log('🔄 Going to ML model selection - loading subscriptions')
+      // Очищаем кэш для принудительной загрузки
+      subscriptionService.clearCache()
       // Принудительная загрузка с задержкой для гарантии
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
@@ -216,6 +218,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       setTimeout(() => {
         loadUserSubscriptions(userData.id)
       }, 500)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 1000)
     }
   }, [currentScreen, userData?.id])
 
@@ -223,10 +228,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   useEffect(() => {
     if (currentScreen === 'ml-settings' && userData?.id) {
       console.log('🔄 Going to ML settings - loading subscriptions')
+      // Очищаем кэш для принудительной загрузки
+      subscriptionService.clearCache()
       // Принудительная загрузка через subscriptionService
-      import('./services/subscriptionService').then(({ subscriptionService }) => {
+      setTimeout(() => {
         subscriptionService.loadSubscriptions(userData.id, true)
-      })
+      }, 100)
+      setTimeout(() => {
+        subscriptionService.loadSubscriptions(userData.id, true)
+      }, 500)
+      setTimeout(() => {
+        subscriptionService.loadSubscriptions(userData.id, true)
+      }, 1000)
     }
   }, [currentScreen, userData?.id])
   

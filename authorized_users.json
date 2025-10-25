@@ -1,10 +1,21 @@
 {
   "authorized_users": [
-    8428349451,
-    8344456953,
-    7613535490
+    511442168,
+    8428349451
   ],
-  "last_updated": "2025-10-25T22:10:53.428659",
+  "last_updated": "2025-10-25T22:38:15.335755",
+  "511442168": {
+    "telegram_id": "511442168",
+    "first_name": "Admin",
+    "last_name": "",
+    "username": "",
+    "language_code": "ru",
+    "is_premium": false,
+    "is_admin": true,
+    "last_login": "2025-01-25T22:45:00.000000",
+    "subscriptions": [],
+    "created_at": "2025-01-25T22:45:00.000000"
+  },
   "8428349451": {
     "telegram_id": "8428349451",
     "first_name": "Oleg",
@@ -13,11 +24,11 @@
     "language_code": "ru",
     "is_premium": false,
     "is_admin": false,
-    "last_login": "2025-10-25T22:10:53.428659",
+    "last_login": "2025-10-25T22:38:15.335755",
     "subscriptions": [
       "logistic-spy",
-      "forest-necromancer"
+      "shadow-stack"
     ],
-    "created_at": "2025-10-25T22:10:53.428659"
+    "created_at": "2025-10-25T22:38:15.335755"
   }
 }
