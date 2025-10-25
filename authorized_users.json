@@ -3,7 +3,7 @@
     511442168,
     8428349451
   ],
-  "last_updated": "2025-10-25T22:38:15.335755",
+  "last_updated": "2025-10-25T23:45:27.464681",
   "511442168": {
     "telegram_id": "511442168",
     "first_name": "Admin",
@@ -24,11 +24,10 @@
     "language_code": "ru",
     "is_premium": false,
     "is_admin": false,
-    "last_login": "2025-10-25T22:38:15.335755",
+    "last_login": "2025-10-25T23:45:27.464681",
     "subscriptions": [
-      "logistic-spy",
-      "shadow-stack"
+      "logistic-spy"
     ],
-    "created_at": "2025-10-25T22:38:15.335755"
+    "created_at": "2025-10-25T23:45:27.464681"
   }
 }

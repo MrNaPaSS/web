@@ -1,26 +1,31 @@
 """
 Flask API для авторизации пользователей
+ВЕРСИЯ С SQL БАЗОЙ ДАННЫХ
 """
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from auth_service import AuthService
+from auth_service_sql import AuthServiceSQL
+from auth_decorators import login_required, admin_required, get_current_user
 import os
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения
+load_dotenv('config.env')
 
 app = Flask(__name__)
 CORS(app)  # Разрешаем CORS для фронтенда
 
-# КОНФИГУРАЦИЯ - УКАЖИ СВОИ ДАННЫЕ!
-BOT_DIR = 'e:/TelegramBot_RDP'  # Путь к директории основного бота
-BOT_TOKEN = '8365963410:AAFVnrFboehOUxWmkeivDVvC4nft_hjjcCQ'  # Твой токен бота  
-ADMIN_TELEGRAM_ID = '511442168'  # Твой Telegram ID
+# КОНФИГУРАЦИЯ из переменных окружения
+BOT_TOKEN = os.getenv('BOT_TOKEN', '8365963410:AAFVnrFboehOUxWmkeivDVvC4nft_hjjcCQ')
+ADMIN_TELEGRAM_ID = os.getenv('ADMIN_TELEGRAM_ID', '511442168')
 
-# Инициализация сервиса авторизации (интеграция с основным ботом)
-auth_service = AuthService(bot_dir=BOT_DIR)
+# Инициализация SQL сервиса авторизации
+auth_service = AuthServiceSQL()
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """
-    Авторизация пользователя через Telegram WebApp
+    Авторизация пользователя через Telegram WebApp с JWT токеном
     
     Ожидаемый payload:
     {
@@ -60,12 +65,36 @@ def login():
         else:
             print('⚠️ Режим разработки: проверка Telegram данных пропущена')
         
-        # Регистрируем или обновляем пользователя
-        user = auth_service.register_or_update_user(user_data, ADMIN_TELEGRAM_ID)
+        # Регистрируем или обновляем пользователя в SQL
+        user_info = auth_service.register_or_update_user(user_data, ADMIN_TELEGRAM_ID)
+        
+        if not user_info:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to register user'
+            }), 500
+        
+        # Создаем JWT токен
+        telegram_id = str(user_data.get('id'))
+        token = auth_service.create_access_token(telegram_id)
+        
+        if not token:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create access token'
+            }), 500
         
         return jsonify({
             'success': True,
-            'user': user,
+            'token': token,
+            'user': {
+                'id': telegram_id,
+                'name': f"{user_info['first_name']} {user_info['last_name']}".strip(),
+                'role': user_info['role'],
+                'subscriptions': user_info['subscriptions'],
+                'is_admin': user_info['role'] == 'admin',
+                'is_premium': user_info['is_premium']
+            },
             'message': 'Авторизация успешна'
         })
     
@@ -172,19 +201,19 @@ def update_user_subscriptions():
 
 
 @app.route('/api/admin/user/<user_id>/subscription/<model_id>', methods=['POST'])
+@login_required
+@admin_required
 def grant_subscription(user_id, model_id):
     """Назначить подписку на модель пользователю"""
     try:
         data = request.get_json()
-        admin_id = data.get('admin_id')
+        expiry_days = data.get('expiry_days')  # None = пожизненно
         
-        if admin_id != ADMIN_TELEGRAM_ID:
-            return jsonify({
-                'success': False,
-                'error': 'Access denied'
-            }), 403
+        # Получаем ID админа из токена
+        current_user = get_current_user()
+        admin_id = current_user['user_id']
         
-        success = auth_service.grant_subscription(user_id, model_id, admin_id)
+        success = auth_service.grant_subscription(user_id, model_id, admin_id, expiry_days)
         
         if success:
             # Отправляем WebSocket уведомление
@@ -215,17 +244,14 @@ def grant_subscription(user_id, model_id):
 
 
 @app.route('/api/admin/user/<user_id>/subscription/<model_id>', methods=['DELETE'])
+@login_required
+@admin_required
 def revoke_subscription(user_id, model_id):
     """Отменить подписку на модель у пользователя"""
     try:
-        data = request.get_json()
-        admin_id = data.get('admin_id')
-        
-        if admin_id != ADMIN_TELEGRAM_ID:
-            return jsonify({
-                'success': False,
-                'error': 'Access denied'
-            }), 403
+        # Получаем ID админа из токена
+        current_user = get_current_user()
+        admin_id = current_user['user_id']
         
         success = auth_service.revoke_subscription(user_id, model_id, admin_id)
         
@@ -258,18 +284,11 @@ def revoke_subscription(user_id, model_id):
 
 
 @app.route('/api/admin/users', methods=['GET'])
+@login_required
+@admin_required
 def get_all_users():
     """Получение всех пользователей (только для админа)"""
     try:
-        # Проверка админских прав
-        admin_id = request.headers.get('X-Admin-ID')
-        
-        if admin_id != ADMIN_TELEGRAM_ID:
-            return jsonify({
-                'success': False,
-                'error': 'Access denied'
-            }), 403
-        
         users = auth_service.get_all_users()
         
         return jsonify({
@@ -287,18 +306,11 @@ def get_all_users():
 
 
 @app.route('/api/admin/user/<telegram_id>', methods=['DELETE'])
+@login_required
+@admin_required
 def delete_user(telegram_id):
     """Удаление пользователя (только для админа)"""
     try:
-        # Проверка админских прав
-        admin_id = request.headers.get('X-Admin-ID')
-        
-        if admin_id != ADMIN_TELEGRAM_ID:
-            return jsonify({
-                'success': False,
-                'error': 'Access denied'
-            }), 403
-        
         success = auth_service.delete_user(telegram_id)
         
         if success:
@@ -319,6 +331,28 @@ def delete_user(telegram_id):
             'error': str(e)
         }), 500
 
+
+@app.route('/api/auth/my-subscriptions', methods=['GET'])
+@login_required
+def get_my_subscriptions():
+    """Получение подписок текущего пользователя"""
+    try:
+        current_user = get_current_user()
+        user_id = current_user['user_id']
+        
+        subscriptions = auth_service.get_user_subscriptions(user_id)
+        
+        return jsonify({
+            'success': True,
+            'subscriptions': subscriptions
+        })
+    
+    except Exception as e:
+        print(f'❌ Ошибка получения подписок: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
