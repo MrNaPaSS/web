@@ -1,32 +1,18 @@
 @echo off
-echo Building project...
+echo 🔨 Building frontend...
 call npm run build
-echo Build completed!
-
-echo Copying files to web directory...
-if exist "dist\index.html" (
-    copy "dist\index.html" "web\index.html"
-    echo index.html copied
+if %errorlevel% neq 0 (
+    echo ❌ Build failed
+    pause
+    exit /b 1
 )
 
-if exist "dist\assets" (
-    if exist "web\assets" rmdir /s /q "web\assets"
-    xcopy "dist\assets" "web\assets" /e /i
-    echo assets copied
-)
-
-if exist "dist\favicon.ico" (
-    copy "dist\favicon.ico" "web\favicon.ico"
-    echo favicon.ico copied
-)
-
-echo Files copied successfully!
-echo Now deploying to GitHub...
-
-cd web
+echo ✅ Build successful
+echo 📦 Committing changes...
 git add .
-git commit -m "Security fix: Remove ADMIN_TELEGRAM_ID from frontend - $(date)"
-git push
+git commit -m "🔧 FIX: Add subscription endpoints to signal_api.py + fix hasActiveSubscription logic"
+git push origin main
 
-echo Deployment completed!
+echo 🚀 Deployment complete!
+echo 🌐 Site will be updated at: https://app.nomoneynohoney.online
 pause
