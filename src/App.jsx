@@ -32,6 +32,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   console.log('💥 NUCLEAR CACHE BUST:', Date.now() + Math.random())
   console.log('🌌 GALACTIC CACHE BUST:', Date.now() + Math.random())
   console.log('🚀 COSMIC CACHE BUST:', Date.now() + Math.random())
+  console.log('🔥 FORCE UPDATE: ML CARDS FIXED - CACHE DESTROYER')
+  console.log('⚡ SNIPER 80X PRICING: $300/$999 - ACTIVE')
+  console.log('🎯 LOGISTIC SPY BADGE: BOTTOM-RIGHT POSITIONED')
   
   // КОНФИГУРАЦИЯ АДМИНА - УДАЛЕНО ИЗ ФРОНТЕНДА ДЛЯ БЕЗОПАСНОСТИ
   // Функция для определения правильного API URL
