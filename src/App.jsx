@@ -168,6 +168,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       console.log('🔄 Going to admin panel - loading templates')
       loadSubscriptionTemplates()
       loadSubscriptionRequests()
+      loadAdminStats()
+      loadAccessRequests()
     }
   }, [currentScreen, isAdmin])
   
@@ -10328,13 +10330,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       </div>
     )
   }
-  // Загружаем данные админ-панели при входе
-  useEffect(() => {
-    if (currentScreen === 'admin' && isAdmin) {
-      loadAdminStats()
-      loadAccessRequests()
-    }
-  }, [currentScreen, isAdmin])
 
   // Admin Panel Screen
   if (currentScreen === 'admin') {
