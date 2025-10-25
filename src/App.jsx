@@ -65,15 +65,22 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   const [showPurchaseModal, setShowPurchaseModal] = useState(false) // Показать модальное окно покупки
   const [isSubmitting, setIsSubmitting] = useState(false) // Состояние отправки запроса
   const [notification, setNotification] = useState(null) // Уведомления пользователю
+  const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false) // Состояние загрузки подписок
   // Функция для загрузки подписок пользователя
   const loadUserSubscriptions = async (userId) => {
     try {
+      setIsLoadingSubscriptions(true)
       console.log('🔄 Loading subscriptions for user:', userId)
+      
       const response = await fetch(`${getApiUrl()}/api/user/subscriptions?user_id=${userId}`)
       const data = await response.json()
+      
       if (data.success) {
         console.log('📥 Raw subscription data:', data)
         let newSubscriptions = data.subscriptions || ['logistic-spy']
+        
+        // Удаляем дубликаты
+        newSubscriptions = [...new Set(newSubscriptions)]
         
         // Якщо є преміум-підписка, видаляємо базову
         const hasPremium = newSubscriptions.some(sub => 
@@ -84,7 +91,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           console.log('🧹 Removed base subscription, keeping only premium:', newSubscriptions)
         }
         
-        setUserSubscriptions(newSubscriptions)
+        // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ с новым массивом
+        setUserSubscriptions([...newSubscriptions])
         console.log('✅ User subscriptions loaded:', newSubscriptions)
         
         // Обновляем выбранную ML модель на первую доступную из подписок
@@ -95,15 +103,21 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
             console.log('🔄 ML model updated to:', firstAvailableModel)
           }
         }
+        
+        // Принудительный перерендер через 100мс
+        setTimeout(() => {
+          setUserSubscriptions(prev => [...prev])
+        }, 100)
+        
       } else {
         console.error('❌ Ошибка загрузки подписок:', data.error)
-        // При ошибке устанавливаем базовую подписку
         setUserSubscriptions(['logistic-spy'])
       }
     } catch (error) {
       console.error('❌ Ошибка загрузки подписок:', error)
-      // При ошибке устанавливаем базовую подписку
       setUserSubscriptions(['logistic-spy'])
+    } finally {
+      setIsLoadingSubscriptions(false)
     }
   }
   // Функция для обновления подписки пользователя
@@ -227,16 +241,39 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       setSelectedModelForPurchase(null)
     }
   }, [currentScreen])
-  // Глобальное обновление подписок при всех переходах между экранами
+  // Fallback механизм - множественные попытки загрузки подписок
   useEffect(() => {
-    if (userData?.id && currentScreen !== 'auth' && currentScreen !== 'language-select') {
-      console.log('🔄 Global subscription update when switching to screen:', currentScreen)
-      // Принудительное обновление с задержкой
-      setTimeout(() => {
+    if (userData?.id && (currentScreen === 'menu' || currentScreen === 'ml-selector' || currentScreen === 'settings')) {
+      console.log('🔄 Screen changed to:', currentScreen, '- loading subscriptions')
+      
+      // Первая загрузка
+      loadUserSubscriptions(userData.id)
+      
+      // Fallback через 1 секунду
+      const fallback1 = setTimeout(() => {
+        console.log('🔄 Fallback 1: Reloading subscriptions')
         loadUserSubscriptions(userData.id)
-      }, 100)
+      }, 1000)
+      
+      // Fallback через 3 секунды
+      const fallback2 = setTimeout(() => {
+        console.log('🔄 Fallback 2: Reloading subscriptions')
+        loadUserSubscriptions(userData.id)
+      }, 3000)
+      
+      // Fallback через 5 секунд
+      const fallback3 = setTimeout(() => {
+        console.log('🔄 Fallback 3: Final reload')
+        loadUserSubscriptions(userData.id)
+      }, 5000)
+      
+      return () => {
+        clearTimeout(fallback1)
+        clearTimeout(fallback2)
+        clearTimeout(fallback3)
+      }
     }
-  }, [currentScreen, userData?.id])
+  }, [userData?.id, currentScreen])
   // WebSocket для real-time обновлений подписок
   useWebSocket(userData?.id, (newSubscriptions) => {
     setUserSubscriptions(newSubscriptions);
@@ -555,40 +592,50 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     return timeDiff >= tenMinutes
   }
 
-  // Функция проверки VIP-доступа к TOP-3
-  const hasVipAccess = () => {
-    if (!userSubscriptions || userSubscriptions.length === 0) {
-      return false
-    }
-    // Проверяем, есть ли хотя бы одна НЕ-базовая подписка
-    const hasVipSubscription = userSubscriptions.some(sub => 
-      sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
-    )
-    console.log('🔍 VIP Access Check:', {
-      userSubscriptions,
-      hasVipSubscription,
-      result: hasVipSubscription
-    })
-    return hasVipSubscription
-  }
+  // Список всех премиум моделей
+  const PREMIUM_MODELS = ['shadow-stack', 'forest-necromancer', 'gray-cardinal', 'sniper-80x']
 
-  // Функция проверки активной подписки для ML настроек
-  const hasActiveSubscription = () => {
+  // Улучшенная функция проверки VIP доступа
+  const hasVipAccess = () => {
+    console.log('🔍 VIP Access Check - Current subscriptions:', userSubscriptions)
+    
     if (!userSubscriptions || userSubscriptions.length === 0) {
-      console.log('🔍 No subscriptions found')
+      console.log('❌ No subscriptions found')
       return false
     }
     
-    // Проверяем, есть ли хотя бы одна НЕ-базовая подписка
-    const hasPremiumSub = userSubscriptions.some(sub => 
-      sub !== 'logistic-spy' && sub !== 'basic' && sub !== 'free'
+    // Проверяем наличие хотя бы одной премиум подписки
+    const hasVipSubscription = userSubscriptions.some(sub => 
+      PREMIUM_MODELS.includes(sub)
     )
-    console.log('🔍 Active Subscription Check:', {
+    
+    console.log('🔍 VIP Access Result:', {
       userSubscriptions,
-      hasPremiumSub,
-      result: hasPremiumSub
+      hasVipSubscription,
+      premiumModels: PREMIUM_MODELS
     })
-    return hasPremiumSub
+    
+    return hasVipSubscription
+  }
+
+  // Улучшенная функция проверки активной подписки
+  const hasActiveSubscription = () => {
+    console.log('🔍 Active Subscription Check - Current subscriptions:', userSubscriptions)
+    
+    if (!userSubscriptions || userSubscriptions.length === 0) {
+      console.log('❌ No subscriptions found')
+      return false
+    }
+    
+    // Проверяем наличие любой подписки
+    const hasAnySubscription = userSubscriptions.length > 0
+    
+    console.log('🔍 Active Subscription Result:', {
+      userSubscriptions,
+      hasAnySubscription
+    })
+    
+    return hasAnySubscription
   }
 
   // Функция загрузки кешированных ТОП-3 сигналов
@@ -10105,9 +10152,18 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-white">{t('mlModelSelection')}</h1>
-                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-xs">
-                    SELECT MODEL
-                  </Badge>
+                  
+                  {/* ДОБАВЛЕНО: Индикатор загрузки */}
+                  {isLoadingSubscriptions ? (
+                    <div className="flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3 text-purple-400 animate-spin" />
+                      <span className="text-xs text-purple-400">Загрузка подписок...</span>
+                    </div>
+                  ) : (
+                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-xs">
+                      {userSubscriptions.length} активных
+                    </Badge>
+                  )}
                 </div>
               </div>
               <Button 
@@ -10123,6 +10179,23 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         </header>
         {/* ML Models List - Mobile Optimized */}
         <div className="container mx-auto px-4 py-4 max-w-md">
+          {/* ДОБАВЛЕНО: Отображение активных подписок */}
+          {userSubscriptions.length > 0 && (
+            <Card className="glass-effect border-green-500/30 p-3 mb-4 card-3d shadow-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <span className="text-sm font-semibold text-white">Ваши активные подписки:</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {userSubscriptions.map((subscription, index) => (
+                  <Badge key={index} className="bg-green-500/20 text-green-400 border-green-500/50 text-xs">
+                    ✓ {subscription}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          )}
+          
           <div className="space-y-3">
             {mlModels.map((model) => {
               const isOwned = userSubscriptions.includes(model.id)

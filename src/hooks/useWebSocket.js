@@ -33,13 +33,29 @@ export const useWebSocket = (userId, onSubscriptionUpdate, onNotification) => {
           
           if (data.type === 'subscription_update') {
             console.log('📥 Получено обновление подписки:', data.subscriptions);
-            onSubscriptionUpdate(data.subscriptions);
+            
+            // Создаем новый массив для принудительного обновления
+            const newSubscriptions = [...data.subscriptions];
+            onSubscriptionUpdate(newSubscriptions);
+            
+            // ДОБАВЛЕНО: Дополнительная проверка через 500мс
+            setTimeout(() => {
+              console.log('🔄 Double-check subscription update')
+              onSubscriptionUpdate([...data.subscriptions]);
+            }, 500);
+            
+            // ДОБАВЛЕНО: Третья проверка через 1 секунду
+            setTimeout(() => {
+              console.log('🔄 Triple-check subscription update')
+              onSubscriptionUpdate([...data.subscriptions]);
+            }, 1000);
+            
           } else if (data.type === 'subscription_approved') {
             console.log('✅ Подписка одобрена:', data);
             if (onNotification) {
               onNotification('success', 'Подписка активирована!', `Модель ${data.model_id} теперь доступна для использования.`)
             }
-            onSubscriptionUpdate(data.subscriptions);
+            onSubscriptionUpdate([...data.subscriptions]);
           } else if (data.type === 'subscription_rejected') {
             console.log('❌ Подписка отклонена:', data);
             if (onNotification) {
