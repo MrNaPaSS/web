@@ -10036,7 +10036,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
               const isRestricted = model.status === 'restricted'
-              const hasVipAccess = userData?.subscriptions && userData.subscriptions.length > 0
               return (
                 <Card 
                   key={model.id}
@@ -10058,9 +10057,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     } else if (isRestricted) {
                       console.log('⚠️ Model is restricted')
                       alert(t('modelRestrictedAlert'))
-                    } else if (!hasVipAccess) {
-                      console.log('⚠️ No VIP access')
-                      alert('Для доступа к ML-моделям необходимо оформить подписку')
                     } else {
                       // Открываем модальное окно покупки при клике на любую часть карточки
                       console.log('🛒 Opening purchase modal for:', model.name)
@@ -10076,8 +10072,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       ? 'hover:border-purple-500/50 hover:scale-[1.02] active:scale-[0.98]'
                       : isRestricted
                       ? 'border-red-500/30 bg-red-500/5 opacity-60 cursor-not-allowed'
-                      : !hasVipAccess
-                      ? 'border-slate-600/30 bg-slate-600/5 opacity-50 cursor-not-allowed'
                       : 'hover:border-yellow-500/50 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
@@ -10105,13 +10099,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                               ЗАБЛОКИРОВАНА
                             </Badge>
                           )}
-                          {!isOwned && !isRestricted && !hasVipAccess && (
-                          <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/50 text-xs px-2 py-1">
-                            <Lock className="w-3 h-3" />
-                            VIP ТРЕБУЕТСЯ
-                          </Badge>
-                          )}
-                          {!isOwned && !isRestricted && hasVipAccess && (
+                          {!isOwned && !isRestricted && (
                           <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-xs px-2 py-1">
                             <Lock className="w-3 h-3" />
                             </Badge>
