@@ -852,8 +852,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       if (data.success) {
         console.log('✅ Запрос подписки одобрен')
         alert(t('subscriptionApproved'))
-        // Перезагружаем список запросов
+        // Перезагружаем список запросов и статистику
         loadSubscriptionRequests()
+        loadAdminStats()
       } else {
         console.error('❌ Ошибка одобрения подписки:', data.error)
         alert(t('errorOccurredWith', {error: data.error}))
@@ -10035,6 +10036,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
               const isRestricted = model.status === 'restricted'
+              const hasVipAccess = userData?.subscriptions && userData.subscriptions.length > 0
               return (
                 <Card 
                   key={model.id}
@@ -10056,6 +10058,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     } else if (isRestricted) {
                       console.log('⚠️ Model is restricted')
                       alert(t('modelRestrictedAlert'))
+                    } else if (!hasVipAccess) {
+                      console.log('⚠️ No VIP access')
+                      alert('Для доступа к ML-моделям необходимо оформить подписку')
                     } else {
                       // Открываем модальное окно покупки при клике на любую часть карточки
                       console.log('🛒 Opening purchase modal for:', model.name)
@@ -10071,6 +10076,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       ? 'hover:border-purple-500/50 hover:scale-[1.02] active:scale-[0.98]'
                       : isRestricted
                       ? 'border-red-500/30 bg-red-500/5 opacity-60 cursor-not-allowed'
+                      : !hasVipAccess
+                      ? 'border-slate-600/30 bg-slate-600/5 opacity-50 cursor-not-allowed'
                       : 'hover:border-yellow-500/50 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
@@ -10098,7 +10105,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                               ЗАБЛОКИРОВАНА
                             </Badge>
                           )}
-                          {!isOwned && !isRestricted && (
+                          {!isOwned && !isRestricted && !hasVipAccess && (
+                          <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/50 text-xs px-2 py-1">
+                            <Lock className="w-3 h-3" />
+                            VIP ТРЕБУЕТСЯ
+                          </Badge>
+                          )}
+                          {!isOwned && !isRestricted && hasVipAccess && (
                           <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50 text-xs px-2 py-1">
                             <Lock className="w-3 h-3" />
                             </Badge>
@@ -10405,7 +10418,14 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       {index + 1}
                     </div>
                     <div>
-                      <div className="text-white font-semibold group-hover:text-cyan-400 transition-colors">{user.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-white font-semibold group-hover:text-cyan-400 transition-colors">{user.name}</div>
+                        {user.subscriptions && user.subscriptions.length > 0 && (
+                          <div className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full border border-emerald-500/50">
+                            VIP
+                          </div>
+                        )}
+                      </div>
                       <div className="text-xs text-slate-400">{user.signals} {t('signals')}</div>
                     </div>
                   </div>
@@ -10717,37 +10737,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                   </div>
                 )
               })}
-            </div>
-          </Card>
-          {/* Subscription Templates */}
-          <Card className="glass-effect border-blue-500/30 p-6 card-3d shadow-2xl mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center icon-3d shadow-lg shadow-blue-500/20">
-                <Sparkles className="w-5 h-5 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-bold text-white">{t('quickTemplates')}</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {subscriptionTemplates.map(template => (
-                <Button
-                  key={template.id}
-                  onClick={() => {
-                    if (selectedUser) {
-                      const updatedUser = {
-                        ...selectedUser,
-                        subscriptions: template.subscriptions
-                      };
-                      setSelectedUser(updatedUser);
-                      console.log(`Применен шаблон ${template.name} для пользователя ${selectedUser.id}`);
-                    }
-                  }}
-                  className={`bg-${template.color_scheme}-500/20 hover:bg-${template.color_scheme}-500/30 text-${template.color_scheme}-400 border-${template.color_scheme}-500/50`}
-                  size="sm"
-                >
-                  <span className="mr-2">{template.icon}</span>
-                  {template.name}
-                </Button>
-              ))}
             </div>
           </Card>
           {/* Subscription Management */}
