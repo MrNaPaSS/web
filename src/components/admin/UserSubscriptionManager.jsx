@@ -59,7 +59,10 @@ const UserSubscriptionManager = ({ userId, userData, onSubscriptionChange }) => 
     
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/user/subscriptions?user_id=${userId}`)
+      const apiUrl = window.location.hostname === 'app.nomoneynohoney.online' 
+        ? 'https://bot.nomoneynohoney.online'
+        : 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/user/subscriptions?user_id=${userId}`)
       const data = await response.json()
       
       if (data.success) {
@@ -79,13 +82,16 @@ const UserSubscriptionManager = ({ userId, userData, onSubscriptionChange }) => 
   const grantSubscription = async (modelId) => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/admin/user/${userId}/subscription/${modelId}`, {
+      const apiUrl = window.location.hostname === 'app.nomoneynohoney.online' 
+        ? 'https://bot.nomoneynohoney.online'
+        : 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/admin/user/${userId}/subscription/${modelId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          admin_id: 'admin_user_id' // Замените на реальный admin ID
+          admin_id: '511442168' // Admin ID
         })
       })
       
@@ -121,13 +127,16 @@ const UserSubscriptionManager = ({ userId, userData, onSubscriptionChange }) => 
   const revokeSubscription = async (modelId) => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/admin/user/${userId}/subscription/${modelId}`, {
+      const apiUrl = window.location.hostname === 'app.nomoneynohoney.online' 
+        ? 'https://bot.nomoneynohoney.online'
+        : 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/admin/user/${userId}/subscription/${modelId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          admin_id: 'admin_user_id' // Замените на реальный admin ID
+          admin_id: '511442168' // Admin ID
         })
       })
       
