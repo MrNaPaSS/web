@@ -52,9 +52,19 @@
       "pair": "USD/CHF (OTC)",
       "direction": "BUY",
       "confidence": 0.8604604854700513
+    },
+    {
+      "user_id": "8428349451",
+      "signal_id": "otc_GBP_USD_(OTC)_1761351563",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-25T02:21:46.139733",
+      "pair": "GBP/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.7503599999999999
     }
   ],
-  "last_updated": "2025-10-25T00:02:58.600642",
+  "last_updated": "2025-10-25T02:21:46.139733",
   "7613535490": {
     "total_signals": 3,
     "forex_signals": 0,
@@ -83,14 +93,14 @@
     "win_rate": 0.0
   },
   "8428349451": {
-    "total_signals": 2,
+    "total_signals": 4,
     "forex_signals": 0,
-    "otc_signals": 2,
-    "successful_trades": 1,
+    "otc_signals": 4,
+    "successful_trades": 2,
     "failed_trades": 0,
     "pending_trades": 0,
     "win_rate": 100.0
   },
-  "successful_signals": 4,
-  "total_signals": 4
+  "successful_signals": 5,
+  "total_signals": 5
 }

@@ -13,6 +13,7 @@ class BotConfig:
     
     # Telegram Bot Token (сигнальный бот) - ТЕСТОВЫЙ
     BOT_TOKEN = "8365963410:AAFVnrFboehOUxWmkeivDVvC4nft_hjjcCQ"
+    TELEGRAM_BOT_TOKEN = BOT_TOKEN  # Алиас для совместимости
     
     # Twelvedata API Keys (ротация для избежания лимитов)
     TWELVEDATA_API_KEYS = [
@@ -30,6 +31,7 @@ class BotConfig:
     
     # ID администратора (только для него доступен статус системы)
     ADMIN_ID = 511442168
+    ADMIN_TELEGRAM_ID = ADMIN_ID  # Алиас для совместимости
     
     # Настройки генерации сигналов
     SIGNAL_SETTINGS = {

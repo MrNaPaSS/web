@@ -2,7 +2,7 @@
   "authorized_users": [
     8428349451
   ],
-  "last_updated": "2025-10-23T22:47:19.412795",
+  "last_updated": "2025-10-25T02:32:56.652905",
   "8428349451": {
     "telegram_id": "8428349451",
     "first_name": "Oleg",
@@ -11,10 +11,10 @@
     "language_code": "ru",
     "is_premium": false,
     "is_admin": false,
-    "last_login": "2025-10-23T22:47:19.412795",
+    "last_login": "2025-10-25T02:32:56.652905",
     "subscriptions": [
       "logistic-spy"
     ],
-    "created_at": "2025-10-23T22:47:19.412795"
+    "created_at": "2025-10-25T02:32:56.652905"
   }
 }

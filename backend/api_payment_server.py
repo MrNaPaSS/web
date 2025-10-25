@@ -14,7 +14,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)  # Разрешаем CORS для фронтенда
+CORS(app, origins=['https://app.nomoneynohoney.online'], 
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'])
 
 # Конфигурация
 TELEGRAM_BOT_TOKEN = "7812637462:AAEAC-GizoyEczsNeb3IJgo8mCcKbhPnWLg"
@@ -85,7 +87,7 @@ def get_currencies():
         }), 500
 
 
-@app.route('/api/payment/create', methods=['POST'])
+@app.route('/api/payment/create', methods=['POST', 'OPTIONS'])
 def create_payment():
     """
     Создать инвойс для оплаты
@@ -98,6 +100,10 @@ def create_payment():
         "currency": "USDT"
     }
     """
+    # Обработка CORS preflight запроса
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         data = request.get_json()
         
@@ -261,11 +267,15 @@ def get_subscriptions(user_id):
         }), 500
 
 
-@app.route('/webhook/cryptobot', methods=['POST'])
+@app.route('/webhook/cryptobot', methods=['POST', 'OPTIONS'])
 def cryptobot_webhook():
     """
     Webhook от CryptoBot для автоматической обработки
     """
+    # Обработка CORS preflight запроса
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         signature = request.headers.get('crypto-pay-api-signature')
         body = request.get_data(as_text=True)
@@ -313,11 +323,15 @@ def cryptobot_webhook():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/admin-notification', methods=['POST'])
+@app.route('/api/admin-notification', methods=['POST', 'OPTIONS'])
 def admin_notification():
     """
     API endpoint для отправки уведомлений администратору
     """
+    # Обработка CORS preflight запроса
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         data = request.get_json()
         

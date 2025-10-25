@@ -1,0 +1,17 @@
+[
+  {
+    "timestamp": "2025-10-25T03:12:15.452347",
+    "admin_id": "system",
+    "action": "subscription_change",
+    "target_user_id": "test",
+    "details": {
+      "old_subscriptions": [
+        "test"
+      ],
+      "new_subscriptions": [
+        "test"
+      ]
+    },
+    "ip_address": "127.0.0.1"
+  }
+]

@@ -33,6 +33,36 @@ class AuditLogger:
         with open(self.log_file, 'w') as f:
             json.dump(logs, f, indent=2)
     
+    def log_subscription_change(self, user_id, admin_id, old_subs, new_subs, ip_address):
+        """Логирование изменения подписки"""
+        log_entry = {
+            'timestamp': datetime.now().isoformat(),
+            'admin_id': str(admin_id),
+            'action': 'subscription_change',
+            'target_user_id': str(user_id),
+            'details': {
+                'old_subscriptions': old_subs,
+                'new_subscriptions': new_subs
+            },
+            'ip_address': ip_address
+        }
+        
+        # Загружаем существующий лог
+        if os.path.exists(self.log_file):
+            with open(self.log_file, 'r') as f:
+                logs = json.load(f)
+        else:
+            logs = []
+        
+        logs.append(log_entry)
+        
+        # Храним последние 10000 записей
+        if len(logs) > 10000:
+            logs = logs[-10000:]
+        
+        with open(self.log_file, 'w') as f:
+            json.dump(logs, f, indent=2)
+    
     def get_logs(self, admin_id=None, limit=100):
         """Получение логов"""
         if not os.path.exists(self.log_file):

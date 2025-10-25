@@ -27,7 +27,9 @@ from powerful_otc_generator import PowerfulOTCGenerator
 from config import BotConfig
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=['https://app.nomoneynohoney.online'], 
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'])
 
 def async_route(f):
     """Декоратор для async функций в Flask"""
@@ -2407,6 +2409,80 @@ def reject_subscription_request():
     except Exception as e:
         print(f'[ERROR] Ошибка отклонения подписки: {e}')
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin-notification', methods=['POST', 'OPTIONS'])
+def admin_notification():
+    """API endpoint для отправки уведомлений администратору"""
+    # Обработка CORS preflight запроса
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    try:
+        data = request.get_json()
+        
+        user_id = data.get('user_id')
+        user_name = data.get('user_name', 'Пользователь')
+        model_name = data.get('model_name', 'Неизвестная модель')
+        subscription_type = data.get('subscription_type', 'monthly')
+        message = data.get('message', '')
+        
+        if not user_id:
+            return jsonify({
+                "success": False,
+                "error": "user_id is required"
+            }), 400
+        
+        # Отправляем уведомление в Telegram
+        try:
+            import requests
+            
+            # Получаем токен бота из конфигурации
+            bot_token = BotConfig.TELEGRAM_BOT_TOKEN
+            admin_id = BotConfig.ADMIN_TELEGRAM_ID
+            
+            notification_text = f"""
+🔔 Новое уведомление от пользователя
+
+👤 Пользователь: {user_name} (ID: {user_id})
+🤖 Модель: {model_name}
+📅 Подписка: {subscription_type}
+💬 Сообщение: {message}
+
+Время: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}
+            """.strip()
+            
+            telegram_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            telegram_data = {
+                'chat_id': admin_id,
+                'text': notification_text,
+                'parse_mode': 'HTML'
+            }
+            
+            response = requests.post(telegram_url, data=telegram_data, timeout=10)
+            
+            if response.status_code == 200:
+                return jsonify({
+                    "success": True,
+                    "message": "Notification sent successfully"
+                }), 200
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": f"Telegram API error: {response.status_code}"
+                }), 500
+                
+        except Exception as telegram_error:
+            return jsonify({
+                "success": False,
+                "error": f"Failed to send Telegram notification: {str(telegram_error)}"
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 if __name__ == '__main__':
     import sys
