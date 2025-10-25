@@ -71,8 +71,10 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       const response = await fetch(`${getApiUrl()}/api/user/subscriptions?user_id=${userId}`)
       const data = await response.json()
       if (data.success) {
+        console.log('📥 Raw subscription data:', data)
         setUserSubscriptions(data.subscriptions)
         console.log('✅ User subscriptions loaded:', data.subscriptions)
+        console.log('🎯 Current userSubscriptions state:', userSubscriptions)
         // Обновляем выбранную ML модель на первую доступную из подписок
         if (data.subscriptions && data.subscriptions.length > 0) {
           const firstAvailableModel = data.subscriptions[0]
@@ -139,13 +141,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       return () => clearTimeout(timer)
     }
   }, [currentScreen])
-  // Периодическая проверка подписок каждые 2 секунды
+  // Периодическая проверка подписок каждые 1 секунду для мгновенного обновления
   useEffect(() => {
     if (!userData?.id) return
     const interval = setInterval(() => {
       console.log('🔄 Periodic subscription check')
       loadUserSubscriptions(userData.id)
-    }, 2000) // 2 секунды для очень быстрого обновления
+    }, 1000) // 1 секунда для мгновенного обновления
     return () => clearInterval(interval)
   }, [userData?.id])
   // Загрузка подписок при инициализации пользователя
@@ -166,7 +168,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   useEffect(() => {
     if (currentScreen === 'ml-selector' && userData?.id) {
       console.log('🔄 Going to ML model selection - loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      // Принудительная загрузка с задержкой для гарантии
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 100)
+      setTimeout(() => {
+        loadUserSubscriptions(userData.id)
+      }, 500)
     }
   }, [currentScreen, userData?.id])
   // Загрузка шаблонов при переходе в админ-панель
@@ -10043,6 +10051,15 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
               const isRestricted = model.status === 'restricted'
+              
+              console.log(`🔍 Model ${model.id}: isOwned=${isOwned}, userSubscriptions=`, userSubscriptions)
+              
+              // Принудительное обновление подписок при рендере карточек
+              if (userData?.id) {
+                setTimeout(() => {
+                  loadUserSubscriptions(userData.id)
+                }, 100)
+              }
               return (
                 <Card 
                   key={model.id}
