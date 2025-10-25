@@ -45,6 +45,10 @@ TWELVEDATA_API_KEY = BotConfig.TWELVEDATA_API_KEY
 forex_generator = SignalGenerator(TWELVEDATA_API_KEY)
 otc_generator = PowerfulOTCGenerator()
 
+# Инициализация AuthService
+from auth_service import AuthService
+auth_service = AuthService(bot_dir=ROOT_DIR)
+
 # Файлы статистики
 SIGNAL_STATS_FILE = os.path.join(ROOT_DIR, 'signal_stats.json')
 AUTHORIZED_USERS_FILE = os.path.join(ROOT_DIR, 'authorized_users.json')
@@ -2423,9 +2427,7 @@ def grant_subscription(user_id, model_id):
                 'error': 'admin_id is required'
             }), 400
         
-        # Импортируем AuthService
-        from auth_service import AuthService
-        auth_service = AuthService(bot_dir=ROOT_DIR)
+        # Используем глобальный экземпляр AuthService
         
         success = auth_service.grant_subscription(user_id, model_id, admin_id)
         
@@ -2469,9 +2471,7 @@ def revoke_subscription(user_id, model_id):
                 'error': 'admin_id is required'
             }), 400
         
-        # Импортируем AuthService
-        from auth_service import AuthService
-        auth_service = AuthService(bot_dir=ROOT_DIR)
+        # Используем глобальный экземпляр AuthService
         
         success = auth_service.revoke_subscription(user_id, model_id, admin_id)
         
