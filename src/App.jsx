@@ -10607,21 +10607,22 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
-                        onClick={() => approveSubscriptionRequest(request.request_id)}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm"
+                        onClick={() => {
+                          alert(`📝 НАПОМИНАНИЕ: Пользователь ${request.user_data?.first_name} ${request.user_data?.last_name} (ID: ${request.user_id}) запросил подписку на модель ${request.model_id}.\n\nПерейдите в его статистику для назначения подписки.`)
+                        }}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm"
                       >
                         <Check className="w-4 h-4 mr-2" />
-                        Одобрить
+                        Напомнить
                       </Button>
                       <Button
                         onClick={() => {
-                          const reason = prompt('Причина отклонения (необязательно):')
-                          rejectSubscriptionRequest(request.request_id, reason || 'Не указана')
+                          alert(`📝 НАПОМИНАНИЕ: Пользователь ${request.user_data?.first_name} ${request.user_data?.last_name} (ID: ${request.user_id}) запросил подписку на модель ${request.model_id}.\n\nПерейдите в его статистику для назначения подписки.`)
                         }}
-                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 text-sm"
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 text-sm"
                       >
-                        <span className="mr-2">✕</span>
-                        Отклонить
+                        <span className="mr-2">📋</span>
+                        К статистике
                       </Button>
                     </div>
                   </div>
