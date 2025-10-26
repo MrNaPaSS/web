@@ -7967,22 +7967,28 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     return true
   }
   // Обработчик успешной авторизации
-  const handleAuthSuccess = (authData) => {
+  // Получаем login из Zustand
+  const login = useAuthStore(state => state.login)
+  
+  const handleAuthSuccess = async (authData) => {
+    console.log('✅ Auth success:', authData)
+    
     // Обновляем локальные state
     setUserId(authData.userId)
     setIsAdmin(authData.isAdmin)
     setUserData(authData.userData)
     setIsAuthorized(true)
     
-    // Обновляем Zustand через login
-    const { login } = useAuthStore.getState()
-    login({
-      userId: authData.userId,
-      isAdmin: authData.isAdmin,
-      userData: authData.userData,
-      token: null, // Токен будет получен через useAuthSync
-      subscriptions: authData.subscriptions || ['logistic-spy']
-    })
+    // Обновляем Zustand через login (асинхронно, чтобы избежать ошибки)
+    setTimeout(() => {
+      login({
+        userId: authData.userId,
+        isAdmin: authData.isAdmin,
+        userData: authData.userData,
+        token: null, // Токен будет получен через useAuthSync
+        subscriptions: authData.subscriptions || ['logistic-spy']
+      })
+    }, 0)
     
     // Проверяем сохраненный язык
     const savedLanguage = localStorage.getItem('selectedLanguage')
