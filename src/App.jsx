@@ -10578,12 +10578,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       : 'border-yellow-500/50 hover:border-yellow-400/70 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
-                  {/* Зелёный круг с галочкой в правом нижнем углу для активных подписок */}
-                  {isOwned && (
-                    <div className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shadow-lg z-10">
-                      <Check className="w-5 h-5 text-white" />
-                    </div>
-                  )}
                   <div className="flex flex-col gap-4 h-full">
                     {/* Top row: Icon, title and status */}
                     <div className="flex items-start justify-between">
@@ -10628,7 +10622,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                         )}
                     
                     {/* Bottom row: Pricing and status */}
-                    <div className="flex items-center justify-between mt-auto">
+                    <div className="flex items-center justify-between mt-auto relative">
                         {!isOwned && (
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2 text-sm">
@@ -10647,8 +10641,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                             </Badge>
                         )}
                         {isActive ? (
-                          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          <div className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg">
+                            <CheckCircle2 className="w-5 h-5 text-white" />
                         </div>
                       ) : isOwned && !isRestricted ? (
                           <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">

@@ -52,16 +52,26 @@
       "pair": "NZD/USD (OTC)",
       "direction": "SELL",
       "confidence": 0.768
+    },
+    {
+      "user_id": "511442168",
+      "signal_id": "mock_EUR_USD (OTC)_1761441530844",
+      "signal_type": "otc",
+      "feedback": "success",
+      "timestamp": "2025-10-26T02:46:18.487046",
+      "pair": "EUR/USD (OTC)",
+      "direction": "BUY",
+      "confidence": 0.9671564351549063
     }
   ],
-  "last_updated": "2025-10-26T02:06:58.958316",
+  "last_updated": "2025-10-26T02:46:18.487046",
   "511442168": {
-    "total_signals": 19,
+    "total_signals": 20,
     "forex_signals": 5,
-    "otc_signals": 14,
-    "successful_trades": 4,
+    "otc_signals": 15,
+    "successful_trades": 5,
     "failed_trades": 0,
-    "pending_trades": 11,
+    "pending_trades": 10,
     "win_rate": 100.0
   },
   "123": {
@@ -73,8 +83,8 @@
     "pending_trades": 1,
     "win_rate": 0.0
   },
-  "successful_signals": 5,
-  "total_signals": 5,
+  "successful_signals": 6,
+  "total_signals": 6,
   "failed_signals": 0,
   "win_rate": 100.0
 }
