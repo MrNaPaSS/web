@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { subscriptionService } from '../services/subscriptionService';
 import { syncService } from '../services/syncService';
+import { useAuthStore } from '../store/useAuthStore';
 
 export const useWebSocket = (userId, onSubscriptionUpdate, onNotification) => {
   const wsRef = useRef(null);
@@ -8,6 +9,9 @@ export const useWebSocket = (userId, onSubscriptionUpdate, onNotification) => {
   const [isConnected, setIsConnected] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 10;
+  
+  // Берем функцию обновления из Zustand
+  const updateUserSubscriptions = useAuthStore(state => state.updateUserSubscriptions);
 
   useEffect(() => {
     if (!userId) return;
@@ -39,23 +43,32 @@ export const useWebSocket = (userId, onSubscriptionUpdate, onNotification) => {
             // Создаем новый массив для принудительного обновления
             const newSubscriptions = [...data.subscriptions];
             
-            // Обновляем subscriptionService
+            // ШАГ 1: Обновляем Zustand (все меню сразу перерисуются)
+            updateUserSubscriptions(newSubscriptions);
+            
+            // ШАГ 2: Обновляем subscriptionService (для обратной совместимости)
             subscriptionService.currentSubscriptions = newSubscriptions;
             subscriptionService.cacheSubscriptions(newSubscriptions);
             subscriptionService.notify();
             
-            // Синхронизируем между вкладками
+            // ШАГ 3: Синхронизируем между вкладками
             syncService.broadcastSubscriptionUpdate(newSubscriptions);
             
-            // Вызываем callback для обратной совместимости
+            // ШАГ 4: Вызываем callback для обратной совместимости
             onSubscriptionUpdate(newSubscriptions);
             
           } else if (data.type === 'subscription_approved') {
             console.log('✅ Подписка одобрена:', data);
+            
+            const newSubscriptions = [...data.subscriptions];
+            
+            // Обновляем Zustand
+            updateUserSubscriptions(newSubscriptions);
+            
             if (onNotification) {
               onNotification('success', 'Подписка активирована!', `Модель ${data.model_id} теперь доступна для использования.`)
             }
-            onSubscriptionUpdate([...data.subscriptions]);
+            onSubscriptionUpdate(newSubscriptions);
           } else if (data.type === 'subscription_rejected') {
             console.log('❌ Подписка отклонена:', data);
             if (onNotification) {
@@ -104,7 +117,7 @@ export const useWebSocket = (userId, onSubscriptionUpdate, onNotification) => {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [userId, onSubscriptionUpdate, onNotification]);
+  }, [userId, onSubscriptionUpdate, onNotification, updateUserSubscriptions]);
 
   return { isConnected, reconnectAttempts };
 };
