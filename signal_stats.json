@@ -46,12 +46,12 @@
   ],
   "last_updated": "2025-10-25T22:10:51.554291",
   "511442168": {
-    "total_signals": 16,
+    "total_signals": 17,
     "forex_signals": 5,
-    "otc_signals": 11,
+    "otc_signals": 12,
     "successful_trades": 3,
     "failed_trades": 0,
-    "pending_trades": 10,
+    "pending_trades": 11,
     "win_rate": 100.0
   },
   "123": {

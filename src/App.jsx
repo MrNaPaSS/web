@@ -8750,7 +8750,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
 {t('confidence')}
                           </span>
                           <span className="text-white font-semibold">
-                            {signal.confidence.toFixed(1)}%
+                            {(signal.confidence * 100).toFixed(1)}%
                           </span>
                         </div>
                         <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden shadow-inner">
@@ -8837,7 +8837,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
 {t('confidence')}
                           </span>
                           <span className="text-white font-semibold">
-                            {signal.confidence.toFixed(1)}%
+                            {(signal.confidence * 100).toFixed(1)}%
                           </span>
                         </div>
                         <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden shadow-inner">
@@ -11600,7 +11600,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   {t('confidence')}
                             </span>
                             <span className="text-white font-semibold">
-                              {signal.confidence.toFixed(1)}%
+                              {(signal.confidence * 100).toFixed(1)}%
                             </span>
                           </div>
                           <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden shadow-inner">
