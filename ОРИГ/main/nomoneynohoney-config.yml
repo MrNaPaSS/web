@@ -1,7 +1,0 @@
-tunnel: bedd1007-8e35-4ced-8091-bc186ce2a198
-credentials-file: C:\Users\Admin\.cloudflared\bedd1007-8e35-4ced-8091-bc186ce2a198.json
-
-ingress:
-  - hostname: app.nomoneynohoney.online
-    service: http://localhost:5000
-  - service: http_status:404
