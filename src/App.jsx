@@ -10523,25 +10523,17 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         </header>
         {/* ML Models List - Mobile Optimized */}
         <div className="container mx-auto px-4 py-4 max-w-md">
-          {/* ДОБАВЛЕНО: Отображение активных подписок */}
-          {userSubscriptions.length > 0 && (
-            <Card className="glass-effect border-green-500/30 p-3 mb-4 card-3d shadow-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
-                <span className="text-sm font-semibold text-white">Ваши активные подписки:</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {userSubscriptions.map((subscription, index) => (
-                  <Badge key={index} className="bg-green-500/20 text-green-400 border-green-500/50 text-xs">
-                    ✓ {subscription}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
-          )}
-          
           <div className="space-y-3">
-            {mlModels.map((model) => {
+            {mlModels
+              .sort((a, b) => {
+                // Сначала модели, которые есть в подписках пользователя
+                const aIsOwned = userSubscriptions.includes(a.id)
+                const bIsOwned = userSubscriptions.includes(b.id)
+                if (aIsOwned && !bIsOwned) return -1
+                if (!aIsOwned && bIsOwned) return 1
+                return 0
+              })
+              .map((model) => {
               const isOwned = userSubscriptions.includes(model.id)
               const isActive = selectedMLModel === model.id
               const isRestricted = model.status === 'restricted'
@@ -10576,7 +10568,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       console.log('🛒 Modal state set:', { showPurchaseModal: true, selectedModel: model.name })
                     }
                   }}
-                  className={`glass-effect p-4 backdrop-blur-sm transition-all duration-300 card-3d shadow-xl cursor-pointer min-h-[120px] touch-manipulation ${
+                  className={`glass-effect p-4 backdrop-blur-sm transition-all duration-300 card-3d shadow-xl cursor-pointer min-h-[120px] touch-manipulation relative ${
                     isActive 
                       ? 'border-emerald-500/70 bg-emerald-500/10 shadow-emerald-500/50' 
                       : isOwned
@@ -10586,6 +10578,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                       : 'border-yellow-500/50 hover:border-yellow-400/70 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
+                  {/* Зелёный круг с галочкой в правом нижнем углу для активных подписок */}
+                  {isOwned && (
+                    <div className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shadow-lg z-10">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                  )}
                   <div className="flex flex-col gap-4 h-full">
                     {/* Top row: Icon, title and status */}
                     <div className="flex items-start justify-between">
