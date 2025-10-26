@@ -8757,7 +8757,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                           <div 
                             className="h-full transition-all duration-500 shadow-lg"
                             style={{ 
-                              width: `${signal.confidence}%`,
+                              width: `${signal.confidence * 100}%`,
                               background: `linear-gradient(to right, 
                                 #ef4444 0%, 
                                 #f97316 20%, 
@@ -8844,7 +8844,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                           <div 
                             className="h-full transition-all duration-500 shadow-lg"
                             style={{ 
-                              width: `${signal.confidence}%`,
+                              width: `${signal.confidence * 100}%`,
                               background: `linear-gradient(to right, 
                                 #ef4444 0%, 
                                 #f97316 20%, 
@@ -11607,7 +11607,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                             <div 
                               className="h-full transition-all duration-500 shadow-lg"
                               style={{ 
-                                width: `${signal.confidence}%`,
+                                width: `${signal.confidence * 100}%`,
                                 background: `linear-gradient(to right, 
                                   #ef4444 0%, 
                                   #f97316 20%, 
