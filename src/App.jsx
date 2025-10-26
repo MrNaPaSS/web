@@ -7,6 +7,8 @@ import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Ac
 import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useSubscriptions } from './hooks/useSubscriptions'
+import { useAuthSync } from './hooks/useAuthSync'
+import { useAuthStore } from './store/useAuthStore'
 import { subscriptionService } from './services/subscriptionService'
 import { syncService } from './services/syncService'
 import UserSubscriptionManager from './components/admin/UserSubscriptionManager.jsx'
@@ -61,51 +63,14 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   const [userData, setUserData] = useState(null) // Данные пользователя из Telegram
   const [selectedMLModel, setSelectedMLModel] = useState('logistic-spy') // shadow-stack, forest-necromancer, gray-cardinal, logistic-spy, sniper-80x
   const [selectedUser, setSelectedUser] = useState(null) // Выбранный пользователь для детальной статистики
-  const [userSubscriptions, setUserSubscriptions] = useState(['logistic-spy']) // Купленные модели пользователя (по умолчанию базовая)
+  // userSubscriptions теперь читаем из Zustand (единый источник правды)
+  const userSubscriptions = useAuthStore(state => state.userSubscriptions)
   const [subscriptionTemplates, setSubscriptionTemplates] = useState([]) // Шаблоны подписок
   const [selectedUsersForBulk, setSelectedUsersForBulk] = useState([]) // Выбранные пользователи для массовых операций
   const [selectedModelForPurchase, setSelectedModelForPurchase] = useState(null) // Модель для покупки
   const [showPurchaseModal, setShowPurchaseModal] = useState(false) // Показать модальное окно покупки
   const [isSubmitting, setIsSubmitting] = useState(false) // Состояние отправки запроса
   const [notification, setNotification] = useState(null) // Уведомления пользователю
-  const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false) // Состояние загрузки подписок
-  
-  // Глобальная функция для обновления подписок из subscriptionService
-  useEffect(() => {
-    window.updateUserSubscriptions = (subscriptions) => {
-      console.log('🔄 Global subscription update:', subscriptions)
-      setUserSubscriptions(subscriptions)
-    }
-    
-    return () => {
-      delete window.updateUserSubscriptions
-    }
-  }, [])
-  
-  // Функция для загрузки подписок пользователя
-  const loadUserSubscriptions = async (userId) => {
-    try {
-      setIsLoadingSubscriptions(true)
-      console.log('🔄 Loading subscriptions for user:', userId)
-      
-      const subscriptions = await subscriptionService.loadSubscriptions(userId, true)
-      setUserSubscriptions(subscriptions)
-      
-      // Обновляем выбранную ML модель на первую доступную из подписок
-      if (subscriptions && subscriptions.length > 0) {
-        const firstAvailableModel = subscriptions[0]
-        if (firstAvailableModel !== selectedMLModel) {
-          setSelectedMLModel(firstAvailableModel)
-          console.log('🔄 ML model updated to:', firstAvailableModel)
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error loading subscriptions:', error)
-      setUserSubscriptions(['logistic-spy'])
-    } finally {
-      setIsLoadingSubscriptions(false)
-    }
-  }
   // Функция для обновления подписки пользователя
   const updateUserSubscription = async (userId, subscriptions) => {
     try {
@@ -121,22 +86,8 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       })
       const data = await response.json()
       if (data.success) {
-        // Если это текущий пользователь, обновляем его подписку
-        if (userId === userData?.id) {
-          setUserSubscriptions(subscriptions)
-          console.log('✅ Current user subscriptions updated:', subscriptions)
-        }
-        
-        // Принудительно обновляем подписки для всех пользователей
-        console.log('🔄 Subscription changed, refreshing user data')
-        if (userData?.id) {
-          // Обновляем подписки текущего пользователя
-          setTimeout(() => {
-            loadUserSubscriptions(userData.id)
-          }, 100)
-        }
-        
         console.log('User subscription updated:', subscriptions)
+        // Zustand автоматически обновится через WebSocket
         return true
       } else {
         console.error('Subscription update error:', data.error)
@@ -150,98 +101,9 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   const [selectedSignalForAnalysis, setSelectedSignalForAnalysis] = useState(null) // Выбранный сигнал для анализа
   const [analysisResult, setAnalysisResult] = useState(null) // Результат анализа от GPT
   const [isAnalyzing, setIsAnalyzing] = useState(false) // Флаг процесса анализа
-  // Автоматическая загрузка подписок при возврате в меню
-  useEffect(() => {
-    if (currentScreen === 'menu' && userData?.id) {
-      console.log('🔄 Returning to menu - loading subscriptions')
-      loadUserSubscriptions(userData.id)
-    }
-  }, [currentScreen, userData?.id])
-  // Принудительная загрузка подписок при каждом переходе в меню
-  useEffect(() => {
-    if (currentScreen === 'menu' && userData?.id) {
-      console.log('🔄 Force loading subscriptions in menu')
-      // Множественные попытки загрузки для гарантии
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => loadUserSubscriptions(userData.id), 100)
-      setTimeout(() => loadUserSubscriptions(userData.id), 500)
-      setTimeout(() => loadUserSubscriptions(userData.id), 1000)
-    }
-  }, [currentScreen])
-  // Fallback polling каждые 10 секунд (только если WebSocket недоступен)
-  useEffect(() => {
-    if (!userData?.id) return
-    
-    let fallbackInterval = null
-    
-    // Проверяем WebSocket соединение каждые 5 секунд
-    const checkConnection = () => {
-      // Если WebSocket недоступен, включаем fallback polling
-      fallbackInterval = setInterval(() => {
-        console.log('🔄 Fallback subscription check (WebSocket unavailable)')
-        loadUserSubscriptions(userData.id)
-      }, 10000) // 10 секунд fallback
-    }
-    
-    // Запускаем проверку через 5 секунд после инициализации
-    const checkTimeout = setTimeout(checkConnection, 5000)
-    
-    return () => {
-      if (fallbackInterval) clearInterval(fallbackInterval)
-      clearTimeout(checkTimeout)
-    }
-  }, [userData?.id])
-  // Загрузка подписок при инициализации пользователя
-  useEffect(() => {
-    if (userData?.id) {
-      console.log('🔄 User initialization - loading subscriptions')
-      loadUserSubscriptions(userData.id)
-    }
-  }, [userData?.id])
-  // Загрузка подписок при переходе на экран настроек
-  useEffect(() => {
-    if (currentScreen === 'settings' && userData?.id) {
-      console.log('🔄 Going to settings - loading subscriptions')
-      loadUserSubscriptions(userData.id)
-    }
-  }, [currentScreen, userData?.id])
-  // Загрузка подписок при переходе на экран выбора ML модели
-  useEffect(() => {
-    if (currentScreen === 'ml-selector' && userData?.id) {
-      console.log('🔄 Going to ML model selection - loading subscriptions')
-      // Очищаем кэш для принудительной загрузки
-      subscriptionService.clearCache()
-      // Принудительная загрузка с задержкой для гарантии
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 1000)
-    }
-  }, [currentScreen, userData?.id])
-
-  // Загрузка подписок при переходе на экран ml-settings
-  useEffect(() => {
-    if (currentScreen === 'ml-settings' && userData?.id) {
-      console.log('🔄 Going to ML settings - loading subscriptions')
-      // Очищаем кэш для принудительной загрузки
-      subscriptionService.clearCache()
-      // Принудительная загрузка через subscriptionService
-      setTimeout(() => {
-        subscriptionService.loadSubscriptions(userData.id, true)
-      }, 100)
-      setTimeout(() => {
-        subscriptionService.loadSubscriptions(userData.id, true)
-      }, 500)
-      setTimeout(() => {
-        subscriptionService.loadSubscriptions(userData.id, true)
-      }, 1000)
-    }
-  }, [currentScreen, userData?.id])
+  
+  // ИНИЦИАЛИЗАЦИЯ useAuthSync - синхронизация React Query с Zustand
+  useAuthSync()
   
   // Загрузка шаблонов при переходе в админ-панель
   useEffect(() => {
@@ -263,75 +125,24 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       setSelectedModelForPurchase(null)
     }
   }, [currentScreen])
-  // Fallback механизм - множественные попытки загрузки подписок
-  useEffect(() => {
-    if (userData?.id && (currentScreen === 'menu' || currentScreen === 'ml-selector' || currentScreen === 'settings' || currentScreen === 'ml-settings')) {
-      console.log('🔄 Screen changed to:', currentScreen, '- loading subscriptions')
-      
-      // Первая загрузка
-      loadUserSubscriptions(userData.id)
-      
-      // Fallback через 1 секунду
-      const fallback1 = setTimeout(() => {
-        console.log('🔄 Fallback 1: Reloading subscriptions')
-        loadUserSubscriptions(userData.id)
-      }, 1000)
-      
-      // Fallback через 3 секунды
-      const fallback2 = setTimeout(() => {
-        console.log('🔄 Fallback 2: Reloading subscriptions')
-        loadUserSubscriptions(userData.id)
-      }, 3000)
-      
-      // Fallback через 5 секунд
-      const fallback3 = setTimeout(() => {
-        console.log('🔄 Fallback 3: Final reload')
-        loadUserSubscriptions(userData.id)
-      }, 5000)
-      
-      return () => {
-        clearTimeout(fallback1)
-        clearTimeout(fallback2)
-        clearTimeout(fallback3)
-      }
-    }
-  }, [userData?.id, currentScreen])
+  
   // WebSocket для real-time обновлений подписок
+  // Теперь WebSocket напрямую обновляет Zustand через useWebSocket
   useWebSocket(userData?.id, (newSubscriptions) => {
-    setUserSubscriptions(newSubscriptions);
-    console.log('🔄 Subscriptions updated via WebSocket:', newSubscriptions);
+    // WebSocket уже обновил Zustand внутри useWebSocket
+    console.log('🔄 WebSocket callback received:', newSubscriptions)
+    
     // Принудительно обновляем выбранную модель если текущая недоступна
     if (newSubscriptions && newSubscriptions.length > 0) {
-      const firstAvailableModel = newSubscriptions[0];
+      const firstAvailableModel = newSubscriptions[0]
       if (firstAvailableModel !== selectedMLModel) {
-        setSelectedMLModel(firstAvailableModel);
-        console.log('🔄 ML model updated to:', firstAvailableModel);
+        setSelectedMLModel(firstAvailableModel)
+        console.log('🔄 ML model updated to:', firstAvailableModel)
       }
     }
   }, (type, title, message) => {
-    showNotification(type, title, message);
-  });
-
-  // Подписка на изменения через subscriptionService
-  useEffect(() => {
-    if (!userData?.id) return
-
-    const unsubscribe = subscriptionService.subscribe((newSubscriptions) => {
-      console.log('🔔 SubscriptionService update:', newSubscriptions)
-      setUserSubscriptions(newSubscriptions)
-      
-      // Обновляем выбранную модель
-      if (newSubscriptions && newSubscriptions.length > 0) {
-        const firstAvailableModel = newSubscriptions[0]
-        if (firstAvailableModel !== selectedMLModel) {
-          setSelectedMLModel(firstAvailableModel)
-          console.log('🔄 ML model updated via subscriptionService:', firstAvailableModel)
-        }
-      }
-    })
-
-    return unsubscribe
-  }, [userData?.id, selectedMLModel])
+    showNotification(type, title, message)
+  })
   // Функция для загрузки шаблонов подписок
   const loadSubscriptionTemplates = async () => {
     try {
@@ -1008,12 +819,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         loadSubscriptionRequests()
         loadAdminStats()
         
-        // Принудительно обновляем подписки пользователя
-        if (userData?.id) {
-          setTimeout(() => {
-            loadUserSubscriptions(userData.id)
-          }, 500)
-        }
+        // Zustand автоматически обновится через WebSocket
       } else {
         console.error('❌ Ошибка одобрения:', data.error)
         alert(`❌ Ошибка: ${data.error}`)
@@ -1083,12 +889,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         loadAdminStats()
         loadAccessRequests()
         
-        // Принудительно обновляем подписки текущего пользователя
-        if (userData?.id) {
-          setTimeout(() => {
-            loadUserSubscriptions(userData.id)
-          }, 500)
-        }
+        // Zustand автоматически обновится через WebSocket
       } else {
         console.error('❌ Ошибка одобрения:', data.error)
         alert(t('errorOccurredWith', {error: data.error}))
@@ -8198,12 +7999,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана auth
     if (userData?.id) {
       console.log('🔄 Auth render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -8222,12 +8023,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана language-select
     if (userData?.id) {
       console.log('🔄 Language Select render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -8341,12 +8142,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана welcome
     if (userData?.id) {
       console.log('🔄 Welcome render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -8419,7 +8220,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           <Button 
             onClick={() => {
               if (userData?.id) {
-                loadUserSubscriptions(userData.id)
+                /* WebSocket auto-updates Zustand */
               }
               setCurrentScreen('menu')
             }}
@@ -8437,12 +8238,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере меню
     if (userData?.id) {
       console.log('🔄 Menu render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -8516,7 +8317,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
             <Card 
               onClick={() => {
                 if (userData?.id) {
-                  loadUserSubscriptions(userData.id)
+                  /* WebSocket auto-updates Zustand */
                 }
                 setCurrentScreen('ml-selector')
               }}
@@ -8538,7 +8339,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
             <Card 
               onClick={() => {
                 if (userData?.id) {
-                  loadUserSubscriptions(userData.id)
+                  /* WebSocket auto-updates Zustand */
                 }
                 setCurrentScreen('settings')
               }}
@@ -8575,12 +8376,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана generating
     if (userData?.id) {
       console.log('🔄 Generating render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -8643,12 +8444,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана signal-selection
     if (userData?.id) {
       console.log('🔄 Signal Selection render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -8976,12 +8777,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана analytics
     if (userData?.id) {
       console.log('🔄 Analytics render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -9008,7 +8809,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                 <Button 
                   onClick={() => {
                     if (userData?.id) {
-                      loadUserSubscriptions(userData.id)
+                      /* WebSocket auto-updates Zustand */
                     }
                     setCurrentScreen('menu')
                   }}
@@ -9050,7 +8851,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                     <Button 
                       onClick={() => {
                         if (userData?.id) {
-                          loadUserSubscriptions(userData.id)
+                          /* WebSocket auto-updates Zustand */
                         }
                         setCurrentScreen('menu')
                       }}
@@ -9087,7 +8888,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               <Button 
                 onClick={() => {
                   if (userData?.id) {
-                    loadUserSubscriptions(userData.id)
+                    /* WebSocket auto-updates Zustand */
                   }
                   setCurrentScreen('menu')
                 }}
@@ -9387,12 +9188,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана main
     if (userData?.id) {
       console.log('🔄 Main render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -9505,12 +9306,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана notifications
     if (userData?.id) {
       console.log('🔄 Notifications render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -9792,12 +9593,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана market-select
     if (userData?.id) {
       console.log('🔄 Market Select render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -9889,7 +9690,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           <Button 
             onClick={() => {
                   if (userData?.id) {
-                    loadUserSubscriptions(userData.id)
+                    /* WebSocket auto-updates Zustand */
                   }
                   setCurrentScreen('menu')
                 }}
@@ -9907,12 +9708,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана mode-select
     if (userData?.id) {
       console.log('🔄 Mode Select render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -10074,12 +9875,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана настроек
     if (userData?.id) {
       console.log('🔄 Settings render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -10220,7 +10021,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           <Button 
             onClick={() => {
                   if (userData?.id) {
-                    loadUserSubscriptions(userData.id)
+                    /* WebSocket auto-updates Zustand */
                   }
                   setCurrentScreen('menu')
                 }}
@@ -10239,12 +10040,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана ml-settings
     if (userData?.id) {
       console.log('🔄 ML Settings render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -10388,13 +10189,13 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     if (userData?.id) {
       console.log('🔄 Force loading subscriptions for ml-selector screen')
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 1000)
     }
     // Purchase Modal - проверяем внутри экрана ml-selector
@@ -10694,12 +10495,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана user-stats
     if (userData?.id) {
       console.log('🔄 User Stats render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -10842,12 +10643,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана admin
     if (userData?.id) {
       console.log('🔄 Admin render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -11150,12 +10951,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана admin-user-detail
     if (userData?.id) {
       console.log('🔄 Admin User Detail render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -11300,7 +11101,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               // Принудительно обновляем подписки текущего пользователя
               if (userData?.id) {
                 setTimeout(() => {
-                  loadUserSubscriptions(userData.id)
+                  /* WebSocket auto-updates Zustand */
                 }, 100)
               }
             }}
@@ -11314,12 +11115,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     // Принудительное обновление подписок при каждом рендере экрана premium
     if (userData?.id) {
       console.log('🔄 Premium render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
+      /* WebSocket auto-updates Zustand */
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 100)
       setTimeout(() => {
-        loadUserSubscriptions(userData.id)
+        /* WebSocket auto-updates Zustand */
       }, 500)
     }
     
@@ -11343,7 +11144,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
               <Button 
                 onClick={() => {
                   if (userData?.id) {
-                    loadUserSubscriptions(userData.id)
+                    /* WebSocket auto-updates Zustand */
                   }
                   setCurrentScreen('menu')
                 }}

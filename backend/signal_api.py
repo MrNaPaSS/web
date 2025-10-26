@@ -2344,14 +2344,17 @@ def approve_subscription_request():
         # Отправляем WebSocket уведомление пользователю
         try:
             import requests
-            requests.post('http://localhost:8001/notify-subscription-update', json={
+            ws_payload = {
                 'user_id': str(user_id),
                 'subscriptions': user_subscriptions[str(user_id)],
                 'type': 'subscription_approved',
                 'model_id': model_id
-            }, timeout=1)
-        except:
-            pass
+            }
+            print(f'[WS-NOTIFY] Sending to user {user_id}: {ws_payload}')
+            response = requests.post('http://localhost:8001/notify-subscription-update', json=ws_payload, timeout=1)
+            print(f'[WS-NOTIFY] Response: {response.status_code} - {response.text}')
+        except Exception as e:
+            print(f'[WS-NOTIFY-ERROR] Failed to send WebSocket notification: {e}')
         
         print(f'[SUBSCRIPTION-APPROVE] Подписка {model_id} одобрена для пользователя {user_id}')
         

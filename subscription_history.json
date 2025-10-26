@@ -13,5 +13,18 @@
     ],
     "reason": "Granted shadow-stack",
     "ip_address": "127.0.0.1"
+  },
+  {
+    "timestamp": "2025-10-26T01:58:33.513271",
+    "user_id": "511442168",
+    "admin_id": "511442168",
+    "old_subscriptions": [
+      "shadow-stack"
+    ],
+    "new_subscriptions": [
+      "shadow-stack"
+    ],
+    "reason": "Granted shadow-stack",
+    "ip_address": "127.0.0.1"
   }
 ]
