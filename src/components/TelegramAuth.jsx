@@ -101,6 +101,25 @@ export function TelegramAuth({ onAuthSuccess, onAuthError, t }) {
     }
   }
 
+  const handleDevLogin = () => {
+    const devUserData = {
+      userId: 'admin_test_id',
+      isAdmin: true,
+      userData: {
+        telegram_id: 123456,
+        first_name: 'Dev',
+        last_name: 'Admin',
+        username: 'dev_admin',
+        language_code: 'ru',
+        is_admin: true
+      },
+      subscriptions: ['logistic-spy']
+    }
+    console.log('🚀 Developer bypass login activated')
+    setUserData(devUserData)
+    setAuthState('success')
+    onAuthSuccess(devUserData)
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
@@ -135,6 +154,18 @@ export function TelegramAuth({ onAuthSuccess, onAuthError, t }) {
             </Button>
           </div>
         )}
+
+        {/* Dev Mode Bypass */}
+        <div className="mt-8 pt-6 border-t border-slate-700/50">
+          <p className="text-[10px] text-slate-500 text-center mb-3 uppercase tracking-widest">Панель разработки</p>
+          <Button 
+            onClick={handleDevLogin}
+            variant="outline"
+            className="w-full border-purple-500/50 text-purple-400 hover:bg-purple-500/10 text-xs h-9"
+          >
+            Войти как Администратор (Bypass)
+          </Button>
+        </div>
 
       </Card>
     </div>

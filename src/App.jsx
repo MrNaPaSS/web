@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button.jsx'
 import { Card } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
-import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check, RefreshCw } from 'lucide-react'
+import { TrendingUp, TrendingDown, Copy, Clock, Target, Shield, ChevronRight, Activity, BarChart3, Settings, Sparkles, Zap, Crown, CheckCircle2, ArrowRight, Users, Globe, Brain, Lock, Star, Eye, Trash2, UserCheck, Bell, BellOff, Volume2, VolumeX, Vibrate, Mail, Newspaper, UserPlus, User, Check, RefreshCw, X } from 'lucide-react'
 import { TelegramAuth } from '@/components/TelegramAuth.jsx'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useSubscriptions } from './hooks/useSubscriptions'
@@ -13,32 +13,7 @@ import UserSubscriptionManager from './components/admin/UserSubscriptionManager.
 import './App.css'
 function App() {
   // ВЕРСИЯ ПРИЛОЖЕНИЯ - для проверки обновлений
-console.log('🚀 APP VERSION: 2024.12.24 - FINAL CACHE DESTROYER - ' + Math.random().toString(36).substr(2, 9))
-console.log('🔄 CACHE BUST: ' + Date.now())
-console.log('💥 FORCE REBUILD: ' + Math.random().toString(36).substr(2, 9))
-console.log('🔥 ATOMIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
-console.log('⚡ QUANTUM CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
-console.log('🌟 GALACTIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
-console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 9))
-  // UNIQUE CACHE BUST: 1735064400000
-  // FORCE REBUILD: ' + Math.random().toString(36).substr(2, 9)
-  // FINAL CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  // BREAKTHROUGH CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  // ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  // NUCLEAR CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  // ATOMIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  // QUANTUM CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  // GALACTIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  // COSMIC CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  // INFINITE CACHE BUST: ' + Math.random().toString(36).substr(2, 9)
-  const ULTIMATE_VERSION = '2024.12.24 - SUBSCRIPTION SYSTEM COMPLETE - FORCE UPDATE'
-  console.log('🚀 ULTIMATE VERSION:', ULTIMATE_VERSION)
-  console.log('💥 NUCLEAR CACHE BUST:', Date.now() + Math.random())
-  console.log('🌌 GALACTIC CACHE BUST:', Date.now() + Math.random())
-  console.log('🚀 COSMIC CACHE BUST:', Date.now() + Math.random())
-  console.log('🔥 FORCE UPDATE: ML CARDS FIXED - CACHE DESTROYER')
-  console.log('⚡ SNIPER 80X PRICING: $300/$999 - ACTIVE')
-  console.log('🎯 LOGISTIC SPY BADGE: BOTTOM-RIGHT POSITIONED')
+  // Forex Signals Pro — v2.0
   
   // КОНФИГУРАЦИЯ АДМИНА - УДАЛЕНО ИЗ ФРОНТЕНДА ДЛЯ БЕЗОПАСНОСТИ
   // Функция для определения правильного API URL
@@ -47,7 +22,11 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     if (window.location.hostname === 'app.nomoneynohoney.online') {
       return 'https://bot.nomoneynohoney.online'
     }
-    // Для локальной разработки
+    // Для локальной разработки используем прокси Vite (относительные пути)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return ''
+    }
+    // Резервный вариант
     return `http://localhost:5000`
   }
   const [currentScreen, setCurrentScreen] = useState('auth') // auth, language-select, welcome, menu, market-select, mode-select, main, settings, admin, premium, user-stats, admin-user-detail, ml-selector, ml-settings, notifications, analytics, generating, signal-selection
@@ -381,11 +360,12 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
 
   // Функция отправки запроса на подписку
-  const handleSubscriptionRequest = async (subscriptionType) => {
+  const handleSubscriptionRequest = async (subscriptionType, method = 'stars') => {
     console.log('🔄 handleSubscriptionRequest called:', {
       subscriptionType,
+      method,
       selectedModelForPurchase: selectedModelForPurchase?.name,
-      userId: userData?.id,
+      userId: userData?.id || userId,
       isSubmitting
     })
     
@@ -424,12 +404,46 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     setIsSubmitting(true)
     
     try {
-      console.log('🔄 Sending subscription request:', {
-        user_id: currentUserId,
-        model_id: selectedModelForPurchase.id,
-        subscription_type: subscriptionType
-      })
+      if (method === 'stars') {
+        const tg = window.Telegram?.WebApp
+        if (tg && typeof tg.openInvoice === 'function') {
+          try {
+            const invoiceResponse = await fetch(`${getApiUrl()}/api/subscription/create-stars-invoice`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                user_id: currentUserId,
+                model_id: selectedModelForPurchase.id,
+                subscription_type: subscriptionType
+              })
+            })
+            const invoiceData = await invoiceResponse.json()
 
+            if (invoiceData.success && invoiceData.invoice_link) {
+              setIsSubmitting(false)
+              tg.openInvoice(invoiceData.invoice_link, (status) => {
+                if (status === 'paid') {
+                  showNotification('success', '✅ Оплата успешна!', t('starsPaymentSuccess'))
+                  setShowPurchaseModal(false)
+                  setSelectedModelForPurchase(null)
+                  subscriptionService.clearCache()
+                  const uid = currentUserId
+                  setTimeout(() => loadUserSubscriptions(uid), 2000)
+                } else if (status === 'cancelled') {
+                  showNotification('warning', 'Оплата отменена', t('starsPaymentCancelled'))
+                } else {
+                  showNotification('error', 'Ошибка оплаты', t('starsPaymentFailed'))
+                }
+              })
+              return
+            }
+          } catch (starsError) {
+            console.warn('⚠️ Stars invoice failed:', starsError)
+          }
+        }
+      }
+
+      // Fallback: ручной запрос к администратору
       const response = await fetch(`${getApiUrl()}/api/subscription-request`, {
         method: 'POST',
         headers: {
@@ -439,6 +453,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
           user_id: currentUserId,
           model_id: selectedModelForPurchase.id,
           subscription_type: subscriptionType,
+          payment_method: method,
           user_data: {
             first_name: userData?.firstName || 'Пользователь',
             last_name: userData?.lastName || '',
@@ -451,21 +466,23 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       const data = await response.json()
       
       if (data.success) {
-        console.log('✅ Subscription request sent successfully')
-        
-        // Показываем уведомление пользователю
-        setNotification({
-          type: 'success',
-          title: 'Запрос на подписку отправлен!',
-          message: `Ваш запрос на ${subscriptionType === 'monthly' ? 'ежемесячную' : 'пожизненную'} подписку для модели "${selectedModelForPurchase.name}" отправлен администратору. Вы получите уведомление после одобрения.`,
-          duration: 8000
-        })
-
-        // Уведомление админу отправляется автоматически через backend
-        
-        // Закрываем модальное окно
-        setShowPurchaseModal(false)
-        setSelectedModelForPurchase(null)
+        if (method === 'crypto') {
+          showNotification('success', 'Запрос отправлен!', 'Заявка на оплату Криптой создана. Перенаправляем к администратору...')
+          setTimeout(() => {
+            setShowPurchaseModal(false)
+            setSelectedModelForPurchase(null)
+            const adminLink = 'https://t.me/MrNaPaSS'
+            if (window.Telegram?.WebApp?.openTelegramLink) {
+              window.Telegram.WebApp.openTelegramLink(adminLink)
+            } else {
+              window.open(adminLink, '_blank')
+            }
+          }, 2000)
+        } else {
+          showNotification('success', 'Запрос отправлен!', `Ваш запрос на подписку для "${selectedModelForPurchase.name}" отправлен. Ожидайте уведомления.`)
+          setShowPurchaseModal(false)
+          setSelectedModelForPurchase(null)
+        }
       } else {
         console.error('❌ Ошибка отправки запроса:', data.error)
         setNotification({
@@ -1003,20 +1020,15 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       
       if (data.success) {
         console.log('✅ Запрос подписки одобрен')
-        alert('✅ Подписка успешно активирована!')
-        // Перезагружаем список запросов и статистику
+        showNotification('success', '✅ Подписка активирована', 'Пользователь получил доступ к выбранной ML модели.')
         loadSubscriptionRequests()
         loadAdminStats()
-        
-        // Принудительно обновляем подписки пользователя
         if (userData?.id) {
-          setTimeout(() => {
-            loadUserSubscriptions(userData.id)
-          }, 500)
+          setTimeout(() => loadUserSubscriptions(userData.id), 500)
         }
       } else {
         console.error('❌ Ошибка одобрения:', data.error)
-        alert(`❌ Ошибка: ${data.error}`)
+        showNotification('error', 'Ошибка одобрения', data.error || 'Не удалось одобрить запрос')
       }
     } catch (error) {
       console.error('❌ Ошибка одобрения подписки:', error)
@@ -1049,12 +1061,11 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       
       if (data.success) {
         console.log('✅ Запрос подписки отклонен')
-        alert('❌ Запрос подписки отклонен')
-        // Перезагружаем список запросов
+        showNotification('warning', 'Запрос отклонён', `Причина: ${reason}`)
         loadSubscriptionRequests()
       } else {
         console.error('❌ Ошибка отклонения:', data.error)
-        alert(`❌ Ошибка: ${data.error}`)
+        showNotification('error', 'Ошибка отклонения', data.error || 'Не удалось отклонить запрос')
       }
     } catch (error) {
       console.error('❌ Ошибка отклонения подписки:', error)
@@ -1426,6 +1437,16 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       // Новые ключи для захардкоженных текстов
       hoursAgo: '{count} час{plural} назад',
       daysAgo: '{count} дн{plural} назад',
+      sell: 'ПРОДАТЬ',
+      chooseSubscriptionType: 'Выберите тип подписки',
+      monthlyPrice: 'Ежемесячная оплата • Автопродление',
+      lifetimePrice: 'Единоразовый платёж • Навсегда',
+      payWithStars: '⭐ Оплата Stars',
+      payWithCrypto: '💎 Оплата Crypto',
+      requestFromAdmin: 'Связаться с админом',
+      starsPaymentSuccess: 'Подписка активирована через Telegram Stars!',
+      starsPaymentCancelled: 'Вы отменили платёж. Попробуйте ещё раз.',
+      starsPaymentFailed: 'Платёж не прошёл. Попробуйте ещё раз.',
       selectLanguageDescription: 'Выберите предпочитаемый язык для продолжения / Choose your preferred language to continue',
       // Ключи для интерфейса уведомлений
       notificationsBadge: 'УВЕДОМЛЕНИЯ',
@@ -8128,7 +8149,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
         },
         body: JSON.stringify({
           user_id: userId,
-          feedback: isSuccess ? 'success' : 'failure'
+          feedback: isSuccess ? 'success' : 'failed'
         })
       })
       
@@ -8145,7 +8166,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
     }
     
     // Локально сохраняем результат
-    console.log(`📊 Фидбек: ${isSuccess ? 'success' : 'failure'} для сигнала ${pendingSignal.signal_id}`)
+    console.log(`📊 Фидбек: ${isSuccess ? 'success' : 'failed'} для сигнала ${pendingSignal.signal_id}`)
     // Очищаем состояние
     clearSignalState()
     alert(t(isSuccess ? 'feedbackAcceptedSuccess' : 'feedbackAcceptedFailure'))
@@ -8212,6 +8233,7 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
       <TelegramAuth 
         onAuthSuccess={handleAuthSuccess}
         onAuthError={handleAuthError}
+        t={t}
       />
         <ToastNotification />
       </div>
@@ -8219,18 +8241,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Language Selection Screen
   if (currentScreen === 'language-select') {
-    // Принудительное обновление подписок при каждом рендере экрана language-select
-    if (userData?.id) {
-      console.log('🔄 Language Select render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-    }
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         <ToastNotification />
@@ -9904,18 +9914,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Mode Selection Screen
   if (currentScreen === 'mode-select') {
-    // Принудительное обновление подписок при каждом рендере экрана mode-select
-    if (userData?.id) {
-      console.log('🔄 Mode Select render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-    }
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         {/* Animated background */}
@@ -10071,18 +10069,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Settings Screen
   if (currentScreen === 'settings') {
-    // Принудительное обновление подписок при каждом рендере экрана настроек
-    if (userData?.id) {
-      console.log('🔄 Settings render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-    }
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 overflow-hidden relative">
         <ToastNotification />
@@ -10236,18 +10222,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   
   // ML Settings Screen - управление купленными моделями
   if (currentScreen === 'ml-settings') {
-    // Принудительное обновление подписок при каждом рендере экрана ml-settings
-    if (userData?.id) {
-      console.log('🔄 ML Settings render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-    }
-    
     // Функция обработки клика по модели
     const handleModelClick = (model) => {
       const isOwned = userSubscriptions.includes(model.id)
@@ -10384,19 +10358,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   
   // ML Model Selector Screen
   if (currentScreen === 'ml-selector') {
-    // Принудительное обновление подписок при каждом рендере экрана
-    if (userData?.id) {
-      console.log('🔄 Force loading subscriptions for ml-selector screen')
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 1000)
-    }
     // Purchase Modal - проверяем внутри экрана ml-selector
     if (showPurchaseModal && selectedModelForPurchase) {
       console.log('🛒 Rendering purchase modal:', {
@@ -10413,57 +10374,90 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                 <span className="text-3xl">🛒</span>
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">{t('purchaseModel', { name: selectedModelForPurchase.name })}</h2>
-              <p className="text-slate-400">{t('chooseSubscriptionType')}</p>
+              <p className="text-slate-400 mb-2">{t('chooseSubscriptionType')}</p>
+              {window.Telegram?.WebApp && typeof window.Telegram.WebApp.openInvoice === 'function' ? (
+                <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full px-3 py-1">
+                  <Star className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-amber-400 text-xs font-medium">Telegram Stars</span>
+                  <Star className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 bg-slate-500/10 border border-slate-500/30 rounded-full px-3 py-1">
+                  <span className="text-slate-400 text-xs">Запрос администратору</span>
+                </div>
+              )}
             </div>
             
             <div className="space-y-4">
               {/* Monthly Subscription */}
-              <Card 
-                onClick={() => {
-                  console.log('🖱️ Monthly subscription clicked:', { isSubmitting })
-                  if (!isSubmitting) {
-                    handleSubscriptionRequest('monthly')
-                  }
-                }}
-                className={`glass-effect border-blue-500/30 p-4 cursor-pointer hover:border-blue-500/50 transition-all duration-300 ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between">
+              <div className="space-y-2 p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
+                <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-white">{t('monthlySubscription')}</h3>
-                    <p className="text-slate-400 text-sm">{t('monthlyPrice')}</p>
+                    <p className="text-slate-400 text-xs mt-0.5">{t('monthlyPrice')}</p>
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-blue-400">{selectedModelForPurchase?.monthlyPrice || '$49'}</div>
                     <div className="text-slate-400 text-sm">{t('perMonth')}</div>
                   </div>
                 </div>
-              </Card>
-              
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={() => handleSubscriptionRequest('monthly', 'stars')}
+                    disabled={isSubmitting}
+                    className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 border-amber-500/30 text-[10px] h-9"
+                    variant="outline"
+                  >
+                    <Star className="w-3 h-3 mr-1" />
+                    Stars
+                  </Button>
+                  <Button 
+                    onClick={() => handleSubscriptionRequest('monthly', 'crypto')}
+                    disabled={isSubmitting}
+                    className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-500 border-cyan-500/30 text-[10px] h-9"
+                    variant="outline"
+                  >
+                    <div className="w-3 h-3 bg-cyan-500/20 rounded-full flex items-center justify-center mr-1">💎</div>
+                    Crypto
+                  </Button>
+                </div>
+              </div>
+
               {/* Lifetime Subscription */}
-              <Card 
-                onClick={() => {
-                  console.log('🖱️ Lifetime subscription clicked:', { isSubmitting })
-                  if (!isSubmitting) {
-                    handleSubscriptionRequest('lifetime')
-                  }
-                }}
-                className={`glass-effect border-green-500/30 p-4 cursor-pointer hover:border-green-500/50 transition-all duration-300 ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between">
+              <div className="space-y-2 p-4 rounded-xl border border-green-500/20 bg-green-500/5">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{t('lifetimeSubscription')}</h3>
-                    <p className="text-slate-400 text-sm">{t('lifetimePrice')}</p>
+                    <h3 className="text-lg font-semibold text-white">{t('lifetimePurchase')}</h3>
+                    <p className="text-slate-400 text-xs mt-0.5">{t('lifetimePrice')}</p>
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-green-400">{selectedModelForPurchase?.lifetimePrice || '$299'}</div>
                     <div className="text-slate-400 text-sm">{t('forever')}</div>
                   </div>
                 </div>
-              </Card>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={() => handleSubscriptionRequest('lifetime', 'stars')}
+                    disabled={isSubmitting}
+                    className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 border-amber-500/30 text-[10px] h-9"
+                    variant="outline"
+                  >
+                    <Star className="w-3 h-3 mr-1" />
+                    Stars
+                  </Button>
+                  <Button 
+                    onClick={() => handleSubscriptionRequest('lifetime', 'crypto')}
+                    disabled={isSubmitting}
+                    className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-500 border-cyan-500/30 text-[10px] h-9"
+                    variant="outline"
+                  >
+                    <div className="w-3 h-3 bg-cyan-500/20 rounded-full flex items-center justify-center mr-1">💎</div>
+                    Crypto
+                  </Button>
+                </div>
+              </div>
             </div>
             
             <div className="mt-6 flex gap-3">
@@ -10683,18 +10677,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   
   // User Statistics Screen
   if (currentScreen === 'user-stats') {
-    // Принудительное обновление подписок при каждом рендере экрана user-stats
-    if (userData?.id) {
-      console.log('🔄 User Stats render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-    }
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -10831,18 +10813,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
 
   // Admin Panel Screen
   if (currentScreen === 'admin') {
-    // Принудительное обновление подписок при каждом рендере экрана admin
-    if (userData?.id) {
-      console.log('🔄 Admin render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-    }
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -11087,37 +11057,42 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        onClick={() => approveSubscriptionRequest(request.request_id)}
+                        size="sm"
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 text-xs"
+                      >
+                        <Check className="w-3 h-3 mr-1" />
+                        Одобрить
+                      </Button>
+                      <Button
+                        onClick={() => rejectSubscriptionRequest(request.request_id, 'Отклонено администратором')}
+                        size="sm"
+                        variant="outline"
+                        className="border-red-500/50 text-red-400 hover:bg-red-500/20 px-3 py-2 text-xs"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Отклонить
+                      </Button>
                       <Button
                         onClick={() => {
-                          // Находим пользователя в списке topUsers для перехода к его статистике
-                          const userForStats = adminStats.topUsers.find(user => user.id === request.user_id)
-                          if (userForStats) {
-                            setSelectedUser(userForStats)
-                            setCurrentScreen('admin-user-detail')
-                          } else {
-                            // Если пользователь не найден в topUsers, создаем объект пользователя
-                            const userData = {
-                              id: request.user_id,
-                              name: `${request.user_data?.first_name} ${request.user_data?.last_name}`,
-                              signals: 0,
-                              successful: 0,
-                              failed: 0,
-                              winRate: 0,
-                              tradingDays: 0,
-                              avgSignalsPerDay: 0,
-                              bestPair: 'N/A',
-                              worstPair: 'N/A',
-                              signalsByMonth: []
-                            }
-                            setSelectedUser(userData)
-                            setCurrentScreen('admin-user-detail')
+                          const userForStats = adminStats.topUsers.find(u => u.id === request.user_id) || {
+                            id: request.user_id,
+                            name: `${request.user_data?.first_name || ''} ${request.user_data?.last_name || ''}`.trim(),
+                            signals: 0, successful: 0, failed: 0, winRate: 0,
+                            tradingDays: 0, avgSignalsPerDay: 0,
+                            bestPair: 'N/A', worstPair: 'N/A', signalsByMonth: []
                           }
+                          setSelectedUser(userForStats)
+                          setCurrentScreen('admin-user-detail')
                         }}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 text-sm"
+                        size="sm"
+                        variant="ghost"
+                        className="text-slate-400 hover:text-white text-xs px-3 py-2"
                       >
-                        <span className="mr-2">📋</span>
-                        Перейти
+                        <Eye className="w-3 h-3 mr-1" />
+                        Детали
                       </Button>
                     </div>
                   </div>
@@ -11139,18 +11114,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Admin User Detail Screen
   if (currentScreen === 'admin-user-detail' && selectedUser) {
-    // Принудительное обновление подписок при каждом рендере экрана admin-user-detail
-    if (userData?.id) {
-      console.log('🔄 Admin User Detail render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-    }
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}
@@ -11303,18 +11266,6 @@ console.log('🚀 ULTIMATE CACHE BUST: ' + Math.random().toString(36).substr(2, 
   }
   // Premium ML Models Screen
   if (currentScreen === 'premium') {
-    // Принудительное обновление подписок при каждом рендере экрана premium
-    if (userData?.id) {
-      console.log('🔄 Premium render - force loading subscriptions')
-      loadUserSubscriptions(userData.id)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 100)
-      setTimeout(() => {
-        loadUserSubscriptions(userData.id)
-      }, 500)
-    }
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         {/* Header */}

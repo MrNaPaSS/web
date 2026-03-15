@@ -5,13 +5,16 @@
     "model_id": "shadow-stack",
     "subscription_type": "monthly",
     "price": "$49/мес",
-    "status": "pending",
+    "status": "approved",
     "created_at": "2025-10-25T22:38:42.497899",
     "user_data": {
       "first_name": "Пользователь",
       "last_name": "",
       "username": "",
       "language_code": "ru"
-    }
+    },
+    "reject_reason": "Test rejection reason",
+    "responded_at": "2026-03-15T15:36:32.940895",
+    "admin_id": "511442168"
   }
 }

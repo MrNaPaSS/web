@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "timestamp": "2026-03-15T15:36:32.949421",
+    "type": "subscription_change",
+    "user_id": "8428349451",
+    "admin_id": "511442168",
+    "old_subscriptions": [],
+    "new_subscriptions": [
+      "logistic-spy",
+      "shadow-stack"
+    ],
+    "ip_address": "127.0.0.1"
+  }
+]

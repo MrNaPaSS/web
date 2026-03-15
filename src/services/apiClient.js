@@ -5,7 +5,7 @@
 
 const API_BASE_URL = window.location.hostname === 'app.nomoneynohoney.online' 
   ? 'https://bot.nomoneynohoney.online' 
-  : 'http://localhost:5000'
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'http://localhost:5000')
 
 class ApiClient {
   constructor() {

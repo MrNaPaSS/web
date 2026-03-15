@@ -61,7 +61,7 @@ const UserSubscriptionManager = ({ userId, userData, onSubscriptionChange }) => 
       setIsLoading(true)
       const apiUrl = window.location.hostname === 'app.nomoneynohoney.online' 
         ? 'https://bot.nomoneynohoney.online'
-        : 'http://localhost:5000'
+        : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'http://localhost:5000')
       const response = await fetch(`${apiUrl}/api/user/subscriptions?user_id=${userId}`)
       const data = await response.json()
       
@@ -84,7 +84,7 @@ const UserSubscriptionManager = ({ userId, userData, onSubscriptionChange }) => 
       setIsLoading(true)
       const apiUrl = window.location.hostname === 'app.nomoneynohoney.online' 
         ? 'https://bot.nomoneynohoney.online'
-        : 'http://localhost:5000'
+        : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'http://localhost:5000')
       const response = await fetch(`${apiUrl}/api/admin/user/${userId}/subscription/${modelId}`, {
         method: 'POST',
         headers: {
@@ -129,7 +129,7 @@ const UserSubscriptionManager = ({ userId, userData, onSubscriptionChange }) => 
       setIsLoading(true)
       const apiUrl = window.location.hostname === 'app.nomoneynohoney.online' 
         ? 'https://bot.nomoneynohoney.online'
-        : 'http://localhost:5000'
+        : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'http://localhost:5000')
       const response = await fetch(`${apiUrl}/api/admin/user/${userId}/subscription/${modelId}`, {
         method: 'DELETE',
         headers: {

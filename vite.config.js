@@ -36,7 +36,7 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'https://equations-supervisors-find-cast.trycloudflare.com',
+        target: 'https://bot.nomoneynohoney.online',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api')
       }

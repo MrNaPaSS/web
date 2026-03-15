@@ -14,7 +14,7 @@ export const useWebSocket = (userId, onSubscriptionUpdate, onNotification) => {
 
     const connectWebSocket = () => {
       // Определяем URL WebSocket сервера
-      const wsUrl = window.location.hostname === 'app.nomoneynohoney.online' 
+      const wsUrl = (window.location.hostname === 'app.nomoneynohoney.online' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? `wss://bot.nomoneynohoney.online/ws/${userId}`
         : `ws://localhost:8001/ws/${userId}`;
       

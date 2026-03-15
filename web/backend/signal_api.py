@@ -11,13 +11,13 @@ import asyncio
 import requests
 from datetime import datetime
 from functools import wraps
-from audit_logger import audit_logger
-
 # Добавляем путь к корневой директории проекта
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, ROOT_DIR)
 print(f'[DEBUG] ROOT_DIR: {ROOT_DIR}')
 print(f'[DEBUG] signal_generator exists: {os.path.exists(os.path.join(ROOT_DIR, "signal_generator.py"))}')
+
+from audit_logger import audit_logger
 
 # Импортируем генераторы сигналов из основного бота
 from signal_generator import SignalGenerator
@@ -45,6 +45,8 @@ otc_generator = PowerfulOTCGenerator()
 SIGNAL_STATS_FILE = os.path.join(ROOT_DIR, 'signal_stats.json')
 AUTHORIZED_USERS_FILE = os.path.join(ROOT_DIR, 'authorized_users.json')
 ACTIVE_USERS_FILE = os.path.join(ROOT_DIR, 'active_users.json')
+USER_SUBSCRIPTIONS_FILE = os.path.join(ROOT_DIR, 'user_subscriptions.json')
+SUBSCRIPTION_REQUESTS_FILE = os.path.join(ROOT_DIR, 'subscription_requests.json')
 
 def load_signal_stats():
     """Загрузка статистики сигналов"""
@@ -154,7 +156,7 @@ def save_feedback_to_stats(user_id, signal_id, feedback, pair=None, direction=No
     # Обновляем общую статистику
     if feedback == 'success':
         stats['successful_signals'] = stats.get('successful_signals', 0) + 1
-    elif feedback == 'failed':
+    elif feedback in ['failed', 'failure']:
         stats['failed_signals'] = stats.get('failed_signals', 0) + 1
     
     stats['total_signals'] = stats.get('total_signals', 0) + 1
@@ -222,7 +224,7 @@ def update_user_stats(user_id, signal_type, feedback=None):
         stats[user_id]['successful_trades'] += 1
         if stats[user_id]['pending_trades'] > 0:
             stats[user_id]['pending_trades'] -= 1
-    elif feedback == 'failed':
+    elif feedback in ['failed', 'failure']:
         stats[user_id]['failed_trades'] += 1
         if stats[user_id]['pending_trades'] > 0:
             stats[user_id]['pending_trades'] -= 1
@@ -482,7 +484,7 @@ def submit_feedback():
     {
         "user_id": "123456789",
         "signal_id": "forex_EUR_USD_1234567890",
-        "feedback": "success" | "failure"
+        "feedback": "success" | "failed"
     }
     """
     try:
@@ -1520,31 +1522,154 @@ def bulk_subscription_update():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/admin/subscription-history', methods=['GET'])
-def get_subscription_history():
-    """Получение истории изменений подписок"""
+@app.route('/api/admin/subscription-requests', methods=['GET'])
+def get_admin_subscription_requests():
+    """Получение всех запросов на подписку для админ-панели"""
     try:
-        user_id = request.args.get('user_id')
-        limit = int(request.args.get('limit', 50))
-        
-        # Пока возвращаем заглушку, позже можно подключить к БД
-        history = [
-            {
-                'id': '1',
-                'user_id': user_id,
-                'admin_id': '511442168',
-                'old_subscriptions': ['logistic-spy'],
-                'new_subscriptions': ['logistic-spy', 'shadow-stack'],
-                'reason': 'Bulk update',
-                'created_at': datetime.now().isoformat()
-            }
-        ]
-        
+        if not os.path.exists(SUBSCRIPTION_REQUESTS_FILE):
+            return jsonify({
+                'success': True,
+                'requests': [],
+                'total_requests': 0
+            })
+            
+        with open(SUBSCRIPTION_REQUESTS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        requests = []
+        for req_id, req_data in data.items():
+            if isinstance(req_data, dict):
+                requests.append(req_data)
+                
+        # Сортируем по времени создания (новые сверху)
+        requests.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+                
         return jsonify({
             'success': True,
-            'history': history[:limit]
+            'requests': requests,
+            'total_requests': len(requests)
         })
     except Exception as e:
+        print(f'[ERROR] Ошибка получения запросов подписки: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/admin/approve-subscription', methods=['POST'])
+def approve_subscription():
+    """Одобрение запроса подписки"""
+    try:
+        data = request.get_json()
+        request_id = data.get('request_id')
+        admin_user_id = data.get('admin_user_id')
+        
+        print(f'[ADMIN] Одобрение подписки {request_id} от админа {admin_user_id}')
+        
+        # Проверка прав админа
+        if str(admin_user_id) != '511442168':
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+            
+        if not os.path.exists(SUBSCRIPTION_REQUESTS_FILE):
+            return jsonify({'success': False, 'error': 'Файл запросов не найден'}), 404
+            
+        with open(SUBSCRIPTION_REQUESTS_FILE, 'r', encoding='utf-8') as f:
+            requests_data = json.load(f)
+            
+        if request_id not in requests_data:
+            return jsonify({'success': False, 'error': 'Запрос не найден'}), 404
+            
+        req = requests_data[request_id]
+        user_id = str(req.get('user_id'))
+        model_id = req.get('model_id')
+        
+        # 1. Обновляем статус запроса
+        req['status'] = 'approved'
+        req['responded_at'] = datetime.now().isoformat()
+        req['admin_id'] = admin_user_id
+        
+        # 2. Обновляем подписки пользователя
+        if os.path.exists(USER_SUBSCRIPTIONS_FILE):
+            with open(USER_SUBSCRIPTIONS_FILE, 'r', encoding='utf-8') as f:
+                subs_data = json.load(f)
+        else:
+            subs_data = {}
+            
+        user_subs = subs_data.get(user_id, ['logistic-spy'])
+        if model_id not in user_subs:
+            user_subs.append(model_id)
+            
+        subs_data[user_id] = user_subs
+        
+        # Сохраняем все файлы
+        with open(SUBSCRIPTION_REQUESTS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(requests_data, f, ensure_ascii=False, indent=2)
+            
+        with open(USER_SUBSCRIPTIONS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(subs_data, f, ensure_ascii=False, indent=2)
+            
+        # 3. Логируем в аудит
+        audit_logger.log_subscription_change(
+            user_id=user_id,
+            admin_id=admin_user_id,
+            old_subs=[], # Условно
+            new_subs=user_subs,
+            ip_address=request.remote_addr
+        )
+            
+        return jsonify({
+            'success': True,
+            'message': 'Подписка успешно одобрена'
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка одобрения подписки: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/reject-subscription', methods=['POST'])
+def reject_subscription():
+    """Отклонение запроса подписки"""
+    try:
+        data = request.get_json()
+        request_id = data.get('request_id')
+        admin_user_id = data.get('admin_user_id')
+        reason = data.get('reason', 'Не указана')
+        
+        print(f'[ADMIN] Отклонение подписки {request_id} от админа {admin_user_id}. Причина: {reason}')
+        
+        # Проверка прав админа
+        if str(admin_user_id) != '511442168':
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+            
+        if not os.path.exists(SUBSCRIPTION_REQUESTS_FILE):
+            return jsonify({'success': False, 'error': 'Файл запросов не найден'}), 404
+            
+        with open(SUBSCRIPTION_REQUESTS_FILE, 'r', encoding='utf-8') as f:
+            requests_data = json.load(f)
+            
+        if request_id not in requests_data:
+            return jsonify({'success': False, 'error': 'Запрос не найден'}), 404
+            
+        req = requests_data[request_id]
+        
+        # Обновляем статус запроса
+        req['status'] = 'rejected'
+        req['reject_reason'] = reason
+        req['responded_at'] = datetime.now().isoformat()
+        req['admin_id'] = admin_user_id
+        
+        with open(SUBSCRIPTION_REQUESTS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(requests_data, f, ensure_ascii=False, indent=2)
+            
+        return jsonify({
+            'success': True,
+            'message': 'Запрос успешно отклонен'
+        })
+        
+    except Exception as e:
+        print(f'[ERROR] Ошибка отклонения подписки: {e}')
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
