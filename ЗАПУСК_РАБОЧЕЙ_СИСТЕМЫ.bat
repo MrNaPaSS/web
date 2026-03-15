@@ -23,12 +23,11 @@ start "API Server" cmd /k "python web/backend/signal_api.py"
 timeout /t 3 >nul
 
 echo [4/5] Запуск WebSocket сервера...
-REM start "WebSocket Server" cmd /k "python web/backend/websocket_server.py"
-echo WebSocket server skipped (file missing)
+start "WebSocket Server" cmd /k "python web/backend/websocket_server.py"
 timeout /t 3 >nul
 
 echo [5/5] Запуск постоянного туннеля...
-start "Cloudflare Tunnel" cmd /k ".\cloudflared.exe --config config.yml tunnel run"
+start "Cloudflare Tunnel" cmd /k ".\cloudflared.exe tunnel --config config.yml run nomoneynohoney-tunnel"
 
 echo.
 echo ========================================
