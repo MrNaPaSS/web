@@ -1,5 +1,5 @@
 tunnel: bedd1007-8e35-4ced-8091-bc186ce2a198
-credentials-file: C:\Users\Admin\.cloudflared\bedd1007-8e35-4ced-8091-bc186ce2a198.json
+credentials-file: credentials.json
 
 ingress:
   - hostname: bot.nomoneynohoney.online
