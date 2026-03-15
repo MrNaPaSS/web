@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 title БЫСТРЫЙ СТАРТ СИСТЕМЫ
 color 0A
 

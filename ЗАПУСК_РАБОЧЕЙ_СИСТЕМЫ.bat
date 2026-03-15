@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 title РАБОЧАЯ СИСТЕМА - АВТОМАТИЧЕСКИЙ ЗАПУСК
 color 0A
 
